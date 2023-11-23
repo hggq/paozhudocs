@@ -3,8 +3,8 @@
 
 <svg
    width="48"
-   height="47.999935"
-   viewBox="0 0 12.699998 12.699981"
+   height="48"
+   viewBox="0 0 12.7 12.7"
    version="1.1"
    id="svg1"
    xmlns="http://www.w3.org/2000/svg"
@@ -13,29 +13,29 @@
      id="defs1" />
   <g
      id="layer1"
-     transform="translate(-102.53358,-60.366617)">
+     transform="translate(-192.41982,-1.044755)">
     <path
        id="ellipse1"
-       style="display:inline;fill:#be002f;fill-opacity:1;stroke:#000009;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
-       d="m 105.70862,63.112998 v 8.490476 0.0073 h 0.002 a 3.5898997,0.93395761 0 0 0 3.58821,0.926644 3.5898997,0.93395761 0 0 0 3.58815,-0.926644 h 0.002 v -0.0073 -8.490476 z" />
+       style="display:inline;fill:#df0037;fill-opacity:1;stroke:#000009;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
+       d="m 195.06593,3.7911339 v 8.4904721 0.0073 h 0.001 a 3.5898975,0.9339571 0 0 0 3.5882,0.926641 3.5898975,0.9339571 0 0 0 3.58815,-0.926641 h 0.001 v -0.0073 -8.4904721 z" />
     <ellipse
-       style="display:inline;fill:#8a0022;fill-opacity:1;stroke:#9b4400;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       style="display:inline;fill:#c1002f;fill-opacity:1;stroke:#9b4400;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
        id="path1"
-       cx="109.29851"
-       cy="63.071552"
-       rx="3.5898991"
-       ry="0.93395764" />
+       cx="198.65552"
+       cy="3.7496812"
+       rx="3.5898972"
+       ry="0.9339571" />
     <path
        id="rect2-3"
-       style="display:inline;fill:#f2be45;fill-opacity:1;stroke:#000009;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
-       d="m 105.7086,64.472577 v 0.831335 0.09016 h 0.021 a 3.5898997,0.93395761 0 0 0 3.56894,0.843821 3.5898997,0.93395761 0 0 0 3.5689,-0.843821 h 0.021 v -0.08997 a 3.5898997,0.93395761 0 0 0 4e-5,-1.79e-4 3.5898997,0.93395761 0 0 0 -4e-5,-5.13e-4 v -0.830812 h -0.021 a 3.5898997,0.93395761 0 0 1 -3.5689,0.843821 3.5898997,0.93395761 0 0 1 -3.56894,-0.843821 z" />
+       style="display:inline;fill:#ffd700;fill-opacity:1;stroke:#000009;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
+       d="m 195.06567,5.1507126 v 0.8313349 0.090161 h 0.021 a 3.5898975,0.9339571 0 0 0 3.56894,0.8438203 3.5898975,0.9339571 0 0 0 3.5689,-0.8438203 h 0.0209 v -0.089971 a 3.5898975,0.9339571 0 0 0 5e-5,-1.939e-4 3.5898975,0.9339571 0 0 0 -5e-5,-6.6e-4 V 5.1505864 h -0.0209 a 3.5898975,0.9339571 0 0 1 -3.56891,0.8438207 3.5898975,0.9339571 0 0 1 -3.56895,-0.8438207 z" />
     <path
        id="path3"
-       style="display:inline;fill:#f2be45;fill-opacity:1;stroke:#000009;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
-       d="m 105.7086,69.406754 v 0.831335 0.09016 h 0.021 a 3.5898997,0.93395761 0 0 0 3.56894,0.843823 3.5898997,0.93395761 0 0 0 3.5689,-0.843823 h 0.021 v -0.08997 a 3.5898997,0.93395761 0 0 0 4e-5,-1.81e-4 3.5898997,0.93395761 0 0 0 -4e-5,-5.13e-4 v -0.830812 h -0.021 a 3.5898997,0.93395761 0 0 1 -3.5689,0.843821 3.5898997,0.93395761 0 0 1 -3.56894,-0.843821 z" />
+       style="display:inline;fill:#ffd700;fill-opacity:1;stroke:#000009;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
+       d="m 195.06567,10.084888 v 0.831335 0.09016 h 0.021 a 3.5898975,0.9339571 0 0 0 3.56894,0.843817 3.5898975,0.9339571 0 0 0 3.5689,-0.843817 h 0.0209 v -0.08997 a 3.5898975,0.9339571 0 0 0 5e-5,-1.84e-4 3.5898975,0.9339571 0 0 0 -5e-5,-6.6e-4 v -0.830797 h -0.0209 a 3.5898975,0.9339571 0 0 1 -3.5689,0.843814 3.5898975,0.9339571 0 0 1 -3.56894,-0.843821 z" />
     <g
        id="g17"
-       transform="matrix(0.09221728,0,0,0.09221728,95.040915,44.06963)">
+       transform="matrix(0.09221723,0,0,0.09221723,184.39801,-15.252222)">
       <ellipse
          style="fill:#0aa344;fill-opacity:1;stroke:#000009;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:stroke fill markers"
          id="path16"
