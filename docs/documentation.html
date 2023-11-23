@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>c++ web framework介绍</title>
+<link href="/styles/bootstrap.min.css" rel="stylesheet">
+<link href="/styles/docs.css" rel="stylesheet">
+<link href="/styles/sidebars.css" rel="stylesheet">
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+    <script src="/js/color-modes.js"></script>
+  </head>
+  <body>
+    
+    <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+      <symbol id="check2" viewBox="0 0 16 16">
+        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+      </symbol>
+      <symbol id="circle-half" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
+      </symbol>
+      <symbol id="moon-stars-fill" viewBox="0 0 16 16">
+        <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+        <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+      </symbol>
+      <symbol id="sun-fill" viewBox="0 0 16 16">
+        <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+      </symbol>
+    </svg>
+
+    <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
+      <button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center"
+              id="bd-theme"
+              type="button"
+              aria-expanded="false"
+              data-bs-toggle="dropdown"
+              aria-label="Toggle theme (auto)">
+        <svg class="bi my-1 theme-icon-active" width="1em" height="1em"><use href="#circle-half"></use></svg>
+        <span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
+        <li>
+          <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
+            <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#sun-fill"></use></svg>
+            Light
+            <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
+            <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#moon-stars-fill"></use></svg>
+            Dark
+            <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+          </button>
+        </li>
+        <li>
+          <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="auto" aria-pressed="true">
+            <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#circle-half"></use></svg>
+            Auto
+            <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    
+<svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+  <symbol id="aperture" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83m13.79-4l-5.74 9.94"/>
+  </symbol>
+  <symbol id="cart" viewBox="0 0 16 16">
+    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l.84 4.479 9.144-.459L13.89 4H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+  </symbol>
+  <symbol id="chevron-right" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+  </symbol>
+</svg>
+
+<div class="container-xxl">
+  <header class="pt-3 pb-3">
+<div class="d-flex flex-column flex-md-row align-items-center">
+      <a href="/" class="d-flex align-items-center link-body-emphasis text-decoration-none">
+        <img src="/images/headerlogo.svg" />
+        <span class="fs-2">PaoZhu</span>
+      </a>
+
+      <nav class="d-inline-flex mt-2 mt-md-0 ms-md-auto">
+        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="#">Home</a>
+        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="#">Download</a>
+        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="documentation.html">Documentation</a>
+        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="#">Blog</a>
+        <a class="py-2 link-body-emphasis text-decoration-none" href="about.html">About</a>
+      </nav>
+    </div>
+
+  </header>
+
+ 
+</div>
+
+<div class="container-xxl bd-gutter mt-3 bd-layout">
+    <aside class="bd-sidebar">
+		<div class="flex-shrink-0 bg-white">
+    <a href="/" class="d-flex align-items-center pb-3 mb-3 link-dark text-decoration-none border-bottom">
+      <svg class="bi me-2" width="30" height="24"><use xlink:href="#bootstrap"/></svg>
+      <span class="fs-5 fw-semibold">帮助文档</span>
+    </a>
+    <ul class="list-unstyled ps-0">
+      <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="true">
+          概览
+        </button>
+        <div class="collapse show" id="home-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            <li><a href="#" class="link-dark rounded">简介</a></li>
+			<li><a href="#" class="link-dark rounded">框架地图</a></li>
+            <li><a href="#" class="link-dark rounded">运行环境</a></li>
+            <li><a href="#" class="link-dark rounded">安装</a></li>
+		     <li><a href="#" class="link-dark rounded">Mac OS安装</a></li>
+			<li><a href="#" class="link-dark rounded">Linux安装</a></li>  
+		    <li><a href="#" class="link-dark rounded">服务器配置</a></li>
+			<li><a href="#" class="link-dark rounded">Hello World</a></li>  
+          </ul>
+        </div>
+      </li>
+      <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#frameweb-collapse" aria-expanded="false">
+          WEB 开发
+        </button>
+        <div class="collapse" id="frameweb-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+			<li><a href="#" class="link-dark rounded">开发说明</a></li>
+			<li><a href="#" class="link-dark rounded">开发模式</a></li>
+			<li><a href="#" class="link-dark rounded">微型对象</a></li>
+			<li><a href="#" class="link-dark rounded">URL解析</a></li>	  
+			<li><a href="#" class="link-dark rounded">json输出和解析</a></li>
+			<li><a href="#" class="link-dark rounded">cookie管理</a></li>
+			<li><a href="#" class="link-dark rounded">session管理</a></li>
+			<li><a href="#" class="link-dark rounded">www文件服务</a></li>
+			<li><a href="#" class="link-dark rounded">html模版介绍</a></li>
+			<li><a href="#" class="link-dark rounded">压缩发送</a></li>
+			<li><a href="#" class="link-dark rounded">发送文件</a></li>
+			<li><a href="#" class="link-dark rounded">自定义header</a></li>
+			<li><a href="#" class="link-dark rounded">form表单接收</a></li>
+			<li><a href="#" class="link-dark rounded">json接收</a></li>
+			<li><a href="#" class="link-dark rounded">文件上传</a></li>
+			<li><a href="#" class="link-dark rounded">大文件下载</a></li>
+			<li><a href="#" class="link-dark rounded">404错误</a></li>
+			<li><a href="#" class="link-dark rounded">httpclient</a></li>
+			<li><a href="#" class="link-dark rounded">全站静态</a></li>
+			<li><a href="#" class="link-dark rounded">自动目录列表</a></li>
+          </ul>
+        </div>
+      </li>
+      <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#frameorm-collapse" aria-expanded="false">
+          ORM 使用
+        </button>
+        <div class="collapse" id="frameorm-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            <li><a href="#" class="link-dark rounded">开发说明</a></li>
+            <li><a href="#" class="link-dark rounded">数据库配置</a></li>
+			<li><a href="#" class="link-dark rounded">连接池介绍</a></li>
+            <li><a href="#" class="link-dark rounded">数据表类型支持</a></li>
+            <li><a href="#" class="link-dark rounded">数据模型介绍</a></li>
+			<li><a href="#" class="link-dark rounded">多库模式介绍</a></li>
+			<li><a href="#" class="link-dark rounded">查询操作</a></li>  
+			<li><a href="#" class="link-dark rounded">添加记录</a></li>  
+			<li><a href="#" class="link-dark rounded">更新记录</a></li>  
+			<li><a href="#" class="link-dark rounded">删除记录</a></li>  
+			<li><a href="#" class="link-dark rounded">数据结果操作</a></li>    
+			<li><a href="#" class="link-dark rounded">数据转json</a></li>    
+			<li><a href="#" class="link-dark rounded">数据集列操作</a></li>  
+			<li><a href="#" class="link-dark rounded">数据集转化</a></li>  
+			<li><a href="#" class="link-dark rounded">数据集API介绍</a></li>  
+			<li><a href="#" class="link-dark rounded">模型高级开发</a></li>  
+			<li><a href="#" class="link-dark rounded">数据缓存使用</a></li>  
+			<li><a href="#" class="link-dark rounded">数据事务提交</a></li>  
+          </ul>
+        </div>
+      </li>
+		<li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#httpclient-collapse" aria-expanded="false">
+          HTTPClient
+        </button>
+        <div class="collapse" id="httpclient-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            <li><a href="#" class="link-dark rounded">开发说明</a></li>
+            <li><a href="#" class="link-dark rounded">GET</a></li>
+            <li><a href="#" class="link-dark rounded">POST</a></li>
+			<li><a href="#" class="link-dark rounded">自定义Header信息</a></li>  
+            <li><a href="#" class="link-dark rounded">GET 文件保存</a></li>
+			<li><a href="#" class="link-dark rounded">GET JSON内容</a></li>  
+			<li><a href="#" class="link-dark rounded">POST 文件上传</a></li>
+			<li><a href="#" class="link-dark rounded">JSON 文件上传</a></li>
+          </ul>
+        </div>
+      </li>
+		<li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#websockets-collapse" aria-expanded="false">
+          WebSocket
+        </button>
+        <div class="collapse" id="websockets-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            <li><a href="#" class="link-dark rounded">开发说明</a></li>
+            <li><a href="#" class="link-dark rounded">websocket服务</a></li>
+            <li><a href="#" class="link-dark rounded">服务推送</a></li>
+            <li><a href="#" class="link-dark rounded">推送退出机制</a></li>
+          </ul>
+        </div>
+      </li>
+	 <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#framecache-collapse" aria-expanded="false">
+         框架内存缓存
+        </button>
+        <div class="collapse" id="framecache-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            <li><a href="#" class="link-dark rounded">缓存介绍</a></li>
+            <li><a href="#" class="link-dark rounded">缓存添加</a></li>
+            <li><a href="#" class="link-dark rounded">缓存取出</a></li>
+            <li><a href="#" class="link-dark rounded">缓存生存周期</a></li>
+          </ul>
+        </div>
+      </li>	
+		 <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#httpcli-collapse" aria-expanded="false">
+         CLI 管理
+        </button>
+        <div class="collapse" id="httpcli-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            <li><a href="#" class="link-dark rounded">CLI介绍</a></li>
+            <li><a href="#" class="link-dark rounded">MVC模式</a></li>
+            <li><a href="#" class="link-dark rounded">数据库生成模型</a></li>
+            <li><a href="#" class="link-dark rounded">视图生成</a></li>
+			<li><a href="#" class="link-dark rounded">控制器</a></li>  
+          </ul>
+        </div>
+      </li>		
+	 <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#frameadvance-collapse" aria-expanded="false">
+          框架高级应用
+        </button>
+        <div class="collapse" id="frameadvance-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+			<li><a href="#" class="link-dark rounded">https配置</a></li>  
+			<li><a href="#" class="link-dark rounded">大型项目配置</a></li>    
+		    <li><a href="#" class="link-dark rounded">服务进程介绍</a></li>
+            <li><a href="#" class="link-dark rounded">线程池介绍</a></li>
+            <li><a href="#" class="link-dark rounded">协程应用</a></li>
+            <li><a href="#" class="link-dark rounded">安全措施</a></li>
+            <li><a href="#" class="link-dark rounded">访问日志</a></li>
+			<li><a href="#" class="link-dark rounded">多域名配置</a></li>  
+			<li><a href="#" class="link-dark rounded">泛域名解析</a></li>  
+          </ul>
+        </div>
+      </li>
+		
+      <li class="border-top my-3"></li>
+      <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
+          框架历史
+        </button>
+        <div class="collapse" id="account-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+            <li><a href="#" class="link-dark rounded">修改记录</a></li>
+            <li><a href="#" class="link-dark rounded">框架使命</a></li>
+            <li><a href="#" class="link-dark rounded">加入我们</a></li>
+          </ul>
+        </div>
+      </li>
+    </ul>
+  </div>
+		
+    </aside>
+
+    <main class="bd-main order-1">
+      <div class="bd-intro pt-2 ps-lg-2">
+        <div class="d-md-flex flex-md-row-reverse align-items-center justify-content-between">
+          <a class="btn btn-sm btn-bd-light mb-3 mb-md-0 rounded-2" href="https://github.com/twbs/bootstrap/blob/main/site/content/docs/5.2/getting-started/introduction.md" title="View and edit this file on GitHub" target="_blank" rel="noopener">
+            View on GitHub
+          </a>
+          <h1 class="bd-title mb-0" id="content">Get started with Bootstrap</h1>
+        </div>
+        <p class="bd-lead">Bootstrap is a powerful, feature-packed frontend toolkit. Build anything—from prototype to production—in minutes.</p>
+        
+
+      </div>
+
+
+        <div class="bd-toc mt-3 mb-5 my-lg-0 ps-xl-3 mb-lg-5 text-muted">
+          <button class="btn btn-link link-dark p-md-0 mb-2 mb-md-0 text-decoration-none bd-toc-toggle d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#tocContents" aria-expanded="false" aria-controls="tocContents">
+            On this page
+            <svg class="bi d-md-none ms-2" aria-hidden="true"><use xlink:href="#chevron-expand"></use></svg>
+          </button>
+          <strong class="d-none d-md-block h6 my-2">On this page</strong>
+          <hr class="d-none d-md-block my-2">
+          <div class="collapse bd-toc-collapse" id="tocContents">
+            <nav id="TableOfContents">
+  <ul>
+    <li><a href="#quick-start">Quick start</a></li>
+    <li><a href="#cdn-links">CDN links</a></li>
+    <li><a href="#next-steps">Next steps</a></li>
+    <li><a href="#js-components">JS components</a></li>
+    <li><a href="#important-globals">Important globals</a>
+      <ul>
+        <li><a href="#html5-doctype">HTML5 doctype</a></li>
+        <li><a href="#responsive-meta-tag">Responsive meta tag</a></li>
+        <li><a href="#box-sizing">Box-sizing</a></li>
+        <li><a href="#reboot">Reboot</a></li>
+      </ul>
+    </li>
+    <li><a href="#community">Community</a></li>
+  </ul>
+</nav>
+          </div>
+        </div>
+
+
+      <div class="bd-content ps-lg-2">
+
+
+        <h2 id="quick-start">Quick start <a class="anchor-link" href="#quick-start" aria-label="Link to this section: Quick start"></a></h2>
+<p>Get started by including Bootstrap’s production-ready CSS and JavaScript via CDN without the need for any build steps. See it in practice with this <a href="https://codepen.io/team/bootstrap/pen/qBamdLj">Bootstrap CodePen demo</a>.</p>
+<br>
+<ol>
+<li>
+<p><strong>Create a new <code>index.html</code> file in your project root.</strong> Include the <code>&lt;meta name="viewport&gt;</code> tag as well for <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Viewport_meta_tag">proper responsive behavior</a> in mobile devices.</p>
+<div class="bd-code-snippet">   <div class="bd-clipboard">      <button type="button" class="btn-clipboard">        <svg class="bi" width="1em" height="1em" fill="currentColor" role="img" aria-label="Copy"><use xlink:href="#clipboard"></use></svg>      </button>   </div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="cp">&lt;!doctype html&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">"en"</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">"utf-8"</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">name</span><span class="o">=</span><span class="s">"viewport"</span> <span class="na">content</span><span class="o">=</span><span class="s">"width=device-width, initial-scale=1"</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Bootstrap demo<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>Hello, world!<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</span></span></code></pre></div></div></li>
+<li>
+<p><strong>Include Bootstrap’s CSS and JS.</strong> Place the <code>&lt;link&gt;</code> tag in the <code>&lt;head&gt;</code> for our CSS, and the <code>&lt;script&gt;</code> tag for our JavaScript bundle (including Popper for positioning dropdowns, poppers, and tooltips) before the closing <code>&lt;/body&gt;</code>. Learn more about our <a href="#cdn-links">CDN links</a>.</p>
+<div class="bd-code-snippet">   <div class="bd-clipboard">      <button type="button" class="btn-clipboard">        <svg class="bi" width="1em" height="1em" fill="currentColor" role="img" aria-label="Copy"><use xlink:href="#clipboard"></use></svg>      </button>   </div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="cp">&lt;!doctype html&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">"en"</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">"utf-8"</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">name</span><span class="o">=</span><span class="s">"viewport"</span> <span class="na">content</span><span class="o">=</span><span class="s">"width=device-width, initial-scale=1"</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Bootstrap demo<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">link</span> <span class="na">href</span><span class="o">=</span><span class="s">"https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css"</span> <span class="na">rel</span><span class="o">=</span><span class="s">"stylesheet"</span> <span class="na">integrity</span><span class="o">=</span><span class="s">"sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor"</span> <span class="na">crossorigin</span><span class="o">=</span><span class="s">"anonymous"</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">h1</span><span class="p">&gt;</span>Hello, world!<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">"https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"</span> <span class="na">integrity</span><span class="o">=</span><span class="s">"sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"</span> <span class="na">crossorigin</span><span class="o">=</span><span class="s">"anonymous"</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</span></span></code></pre></div></div><p>You can also include <a href="https://popper.js.org/">Popper</a> and our JS separately. If you don’t plan to use dropdowns, popovers, or tooltips, save some kilobytes by not including Popper.</p>
+<div class="bd-code-snippet">   <div class="bd-clipboard">      <button type="button" class="btn-clipboard">        <svg class="bi" width="1em" height="1em" fill="currentColor" role="img" aria-label="Copy"><use xlink:href="#clipboard"></use></svg>      </button>   </div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">"https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js"</span> <span class="na">integrity</span><span class="o">=</span><span class="s">"sha384-Xe+8cL9oJa6tN/veChSP7q+mnSPaj5Bcu9mPX5F5xIGE0DVittaqT5lorf0EI7Vk"</span> <span class="na">crossorigin</span><span class="o">=</span><span class="s">"anonymous"</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">"https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.min.js"</span> <span class="na">integrity</span><span class="o">=</span><span class="s">"sha384-kjU+l4N0Yf4ZOJErLsIcvOU2qSb74wXpOhqTvwVx3OElZRweTnQ6d31fXEoRD1Jy"</span> <span class="na">crossorigin</span><span class="o">=</span><span class="s">"anonymous"</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+</span></span></code></pre></div></div></li>
+<li>
+<p><strong>Hello, world!</strong> Open the page in your browser of choice to see your Bootstrapped page. Now you can start building with Bootstrap by creating your own <a href="/docs/5.2/layout/grid/">layout</a>, adding dozens of <a href="/docs/5.2/components/buttons/">components</a>, and utilizing <a href="/docs/5.2/examples/">our official examples</a>.</p>
+</li>
+</ol>
+<h2 id="cdn-links">CDN links <a class="anchor-link" href="#cdn-links" aria-label="Link to this section: CDN links"></a></h2>
+<p>As reference, here are our primary CDN links.</p>
+<div class="table-responsive"><table class="table">
+<thead>
+<tr>
+<th>Description</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CSS</td>
+<td><code>https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css</code></td>
+</tr>
+<tr>
+<td>JS</td>
+<td><code>https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js</code></td>
+</tr>
+</tbody>
+</table></div>
+
+<p>You can also use the CDN to fetch any of our <a href="/docs/5.2/getting-started/contents/">additional builds listed in the Contents page</a>.</p>
+<h2 id="next-steps">Next steps <a class="anchor-link" href="#next-steps" aria-label="Link to this section: Next steps"></a></h2>
+<ul>
+<li>
+<p>Read a bit more about some <a href="#important-globals">important global environment settings</a> that Bootstrap utilizes.</p>
+</li>
+<li>
+<p>Read about what’s included in Bootstrap in our <a href="/docs/5.2/getting-started/contents/#precompiled-bootstrap">contents section</a> and the list of <a href="#js-components">components that require JavaScript</a> below.</p>
+</li>
+<li>
+<p>Need a little more power? Consider building with Bootstrap by <a href="/docs/5.2/getting-started/download/#package-managers">including the source files via package manager</a>.</p>
+</li>
+<li>
+<p>Looking to use Bootstrap as a module with <code>&lt;script type="module"&gt;</code>? Please refer to our <a href="/docs/5.2/getting-started/javascript/#using-bootstrap-as-a-module">using Bootstrap as a module</a> section.</p>
+</li>
+</ul>
+<h2 id="js-components">JS components <a class="anchor-link" href="#js-components" aria-label="Link to this section: JS components"></a></h2>
+<p>Curious which components explicitly require our JavaScript and Popper? Click the show components link below. If you’re at all unsure about the general page structure, keep reading for an example page template.</p>
+<details>
+<summary class="text-primary mb-3">Show components requiring JavaScript</summary>
+<ul>
+<li>Alerts for dismissing</li>
+<li>Buttons for toggling states and checkbox/radio functionality</li>
+<li>Carousel for all slide behaviors, controls, and indicators</li>
+<li>Collapse for toggling visibility of content</li>
+<li>Dropdowns for displaying and positioning (also requires <a href="https://popper.js.org/">Popper</a>)</li>
+<li>Modals for displaying, positioning, and scroll behavior</li>
+<li>Navbar for extending our Collapse and Offcanvas plugins to implement responsive behaviors</li>
+<li>Navs with the Tab plugin for toggling content panes</li>
+<li>Offcanvases for displaying, positioning, and scroll behavior</li>
+<li>Scrollspy for scroll behavior and navigation updates</li>
+<li>Toasts for displaying and dismissing</li>
+<li>Tooltips and popovers for displaying and positioning (also requires <a href="https://popper.js.org/">Popper</a>)</li>
+</ul>
+
+</details>
+<h2 id="important-globals">Important globals <a class="anchor-link" href="#important-globals" aria-label="Link to this section: Important globals"></a></h2>
+<p>Bootstrap employs a handful of important global styles and settings, all of which are almost exclusively geared towards the <em>normalization</em> of cross browser styles. Let’s dive in.</p>
+<h3 id="html5-doctype">HTML5 doctype <a class="anchor-link" href="#html5-doctype" aria-label="Link to this section: HTML5 doctype"></a></h3>
+<p>Bootstrap requires the use of the HTML5 doctype. Without it, you’ll see some funky and incomplete styling.</p>
+<div class="bd-code-snippet">   <div class="bd-clipboard">      <button type="button" class="btn-clipboard">        <svg class="bi" width="1em" height="1em" fill="currentColor" role="img" aria-label="Copy"><use xlink:href="#clipboard"></use></svg>      </button>   </div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="cp">&lt;!doctype html&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">"en"</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  ...
+</span></span><span class="line"><span class="cl"><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</span></span></code></pre></div></div><h3 id="responsive-meta-tag">Responsive meta tag <a class="anchor-link" href="#responsive-meta-tag" aria-label="Link to this section: Responsive meta tag"></a></h3>
+<p>Bootstrap is developed <em>mobile first</em>, a strategy in which we optimize code for mobile devices first and then scale up components as necessary using CSS media queries. To ensure proper rendering and touch zooming for all devices, add the responsive viewport meta tag to your <code>&lt;head&gt;</code>.</p>
+<div class="bd-code-snippet">   <div class="bd-clipboard">      <button type="button" class="btn-clipboard">        <svg class="bi" width="1em" height="1em" fill="currentColor" role="img" aria-label="Copy"><use xlink:href="#clipboard"></use></svg>      </button>   </div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">meta</span> <span class="na">name</span><span class="o">=</span><span class="s">"viewport"</span> <span class="na">content</span><span class="o">=</span><span class="s">"width=device-width, initial-scale=1"</span><span class="p">&gt;</span>
+</span></span></code></pre></div></div><p>You can see an example of this in action in the <a href="#quick-start">quick start</a>.</p>
+<h3 id="box-sizing">Box-sizing <a class="anchor-link" href="#box-sizing" aria-label="Link to this section: Box-sizing"></a></h3>
+<p>For more straightforward sizing in CSS, we switch the global <code>box-sizing</code> value from <code>content-box</code> to <code>border-box</code>. This ensures <code>padding</code> does not affect the final computed width of an element, but it can cause problems with some third-party software like Google Maps and Google Custom Search Engine.</p>
+<p>On the rare occasion you need to override it, use something like the following:</p>
+<div class="bd-code-snippet">   <div class="bd-clipboard">      <button type="button" class="btn-clipboard">        <svg class="bi" width="1em" height="1em" fill="currentColor" role="img" aria-label="Copy"><use xlink:href="#clipboard"></use></svg>      </button>   </div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-css" data-lang="css"><span class="line"><span class="cl"><span class="p">.</span><span class="nc">selector-for-some-widget</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">box-sizing</span><span class="p">:</span> <span class="kc">content-box</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div></div><p>With the above snippet, nested elements—including generated content via <code>::before</code> and <code>::after</code>—will all inherit the specified <code>box-sizing</code> for that <code>.selector-for-some-widget</code>.</p>
+<p>Learn more about <a href="https://css-tricks.com/box-sizing/">box model and sizing at CSS Tricks</a>.</p>
+<h3 id="reboot">Reboot <a class="anchor-link" href="#reboot" aria-label="Link to this section: Reboot"></a></h3>
+<p>For improved cross-browser rendering, we use <a href="/docs/5.2/content/reboot/">Reboot</a> to correct inconsistencies across browsers and devices while providing slightly more opinionated resets to common HTML elements.</p>
+<h2 id="community">Community <a class="anchor-link" href="#community" aria-label="Link to this section: Community"></a></h2>
+<p>Stay up to date on the development of Bootstrap and reach out to the community with these helpful resources.</p>
+<ul>
+<li>Read and subscribe to <a href="https://blog.getbootstrap.com/">The Official Bootstrap Blog</a>.</li>
+<li>Join <a href="https://bootstrap-slack.herokuapp.com/">the official Slack room</a>.</li>
+<li>Chat with fellow Bootstrappers in IRC. On the <code>irc.libera.chat</code> server, in the <code>#bootstrap</code> channel.</li>
+<li>Implementation help may be found at Stack Overflow (tagged <a href="https://stackoverflow.com/questions/tagged/bootstrap-5"><code>bootstrap-5</code></a>).</li>
+<li>Developers should use the keyword <code>bootstrap</code> on packages that modify or add to the functionality of Bootstrap when distributing through <a href="https://www.npmjs.com/search?q=keywords:bootstrap">npm</a> or similar delivery mechanisms for maximum discoverability.</li>
+</ul>
+<p>You can also follow <a href="https://twitter.com/getbootstrap">@getbootstrap on Twitter</a> for the latest gossip and awesome music videos.</p>
+
+      </div>
+    </main>
+  </div>	  
+	  
+ 
+
+
+	  
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+<!--	  <script src="/js/sidebars.js"></script>
+    <link rel="stylesheet" href="/styles/stackoverflow-light.min.css">
+<script src="/js/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>-->
+      
+  </body>
+</html>
