@@ -1,0 +1,67 @@
+MacOS bigsur C++20
+
+brew install asio
+#brew install mysql
+brew install openssl
+brew install zlib
+brew install brotli
+
+[可选安装] brew install gd
+[可选安装] brew install qrencode
+
+https://dev.mysql.com/downloads/mysql/
+
+MySQL Community Server 8
+
+#mysql -u root -p 
+
+>create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
+>use cppcms; 
+>source /root/paozhu/conf/cppcms.sql;
+
+>use mysql;
+
+>create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';
+
+>GRANT ALL PRIVILEGES ON `cppcms`.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ; 
+
+>select host,user,authentication_string from user;
+
+>exit;
+
+Config system
+
+#vim conf/server.conf
+replace /Users/hzq/paozhu to your project path
+ 
+#vim paozhu/conf/orm.conf 
+
+[cms]
+type=main
+host=127.0.0.1
+port=3306
+dbname=cppcms
+user=cppcms
+password=H3fHeRlVbwU@4456
+pretable=
+maxpool=5
+dbtype=mysql
+
+type=second
+host=127.0.0.1
+port=3306
+dbname=cppcms
+user=cppcms
+password=H3fHeRlVbwU@4456
+pretable=
+maxpool=20
+dbtype=mysql
+
+# cd paozhu
+# unzip asio.zip 
+# mkdir build
+
+# cd build
+# cmake ..
+# make 
+

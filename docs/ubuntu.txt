@@ -1,0 +1,98 @@
+Ubuntu install paozhu
+
+sudo apt-get install gcc g++
+sudo apt-get install cmake
+sudo apt-get install -y brotli  libbrotli-dev zlib1g-dev
+sudo apt-get install libgd-dev
+sudo apt-get install qrencode libqrencode-dev
+sudo apt-get install openssl libssl-dev
+sudo apt-get install mysql-server
+
+sudo service mysql status # 查看服务状态
+sudo service mysql start # 启动服务
+sudo service mysql stop # 停止服务
+sudo service mysql restart # 重启服务
+
+
+$ sudo service mysql status
+● mysql.service - MySQL Community Server
+     Loaded: loaded (/lib/systemd/system/mysql.service; enabled; vendor preset: enabled)
+     Active: active (running) since Wed 2022-06-29 19:57:13 CST; 2min 23s ago
+   Main PID: 22401 (mysqld)
+     Status: "Server is operational"
+      Tasks: 37 (limit: 8745)
+     Memory: 359.0M
+     CGroup: /system.slice/mysql.service
+             └─22401 /usr/sbin/mysqld
+
+6月 29 19:57:11 hzq-Default-string systemd[1]: Starting MySQL Community Server...
+6月 29 19:57:13 hzq-Default-string systemd[1]: Started MySQL Community Server.
+
+$ sudo cat /etc/mysql/debian.cnf
+# Automatically generated for Debian scripts. DO NOT TOUCH!
+[client]
+host     = localhost
+user     = debian-sys-maint
+password = 5hiIbvxR2DgC7ekz
+socket   = /var/run/mysqld/mysqld.sock
+[mysql_upgrade]
+host     = localhost
+user     = debian-sys-maint
+password = 5hiIbvxR2DgC7ekz
+socket   = /var/run/mysqld/mysqld.sock
+
+登陆加root密码
+$ mysql -u debian-sys-maint -p
+
+>create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
+>use cppcms; 
+>source /root/paozhu/conf/cppcms.sql;
+
+>use mysql;
+
+>create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';
+
+>GRANT ALL PRIVILEGES ON `cppcms`.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ; 
+
+>select host,user,authentication_string from user;
+
+>exit;
+
+Config system
+
+#vim conf/server.conf
+replace /Users/hzq/paozhu to your project path
+ 
+#vim paozhu/conf/orm.conf 
+
+[cms]
+type=main
+host=127.0.0.1
+port=3306
+dbname=cppcms
+user=cppcms
+password=H3fHeRlVbwU@4456
+pretable=
+maxpool=5
+dbtype=mysql
+
+type=second
+host=127.0.0.1
+port=3306
+dbname=cppcms
+user=cppcms
+password=H3fHeRlVbwU@4456
+pretable=
+maxpool=20
+dbtype=mysql
+
+# cd paozhu
+# unzip asio.zip 
+# mkdir build
+
+# cd build
+# cmake ..
+# make 
+
+
+
