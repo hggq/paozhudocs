@@ -1,13 +1,23 @@
 MacOS bigsur C++20
 
+Open terminal
+
+Using Terminal Command
+# xcode-select --install
+
+# /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+In China see
+https://mirrors.tuna.tsinghua.edu.cn/help/homebrew/
+
 brew install asio
 #brew install mysql
 brew install openssl
 brew install zlib
 brew install brotli
 
-[可选安装] brew install gd
-[可选安装] brew install qrencode
+[option] brew install gd
+[option] brew install qrencode
 
 https://dev.mysql.com/downloads/mysql/
 
@@ -32,7 +42,7 @@ MySQL Community Server 8
 Config system
 
 #vim conf/server.conf
-replace /Users/hzq/paozhu to your project path
+Replace /Users/hzq/paozhu to your project path
  
 #vim paozhu/conf/orm.conf 
 
