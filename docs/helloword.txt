@@ -1,0 +1,90 @@
+框架支持自动注解
+所有handle 都要放在  controller/src 目录下面，这样编译时候会自动处理注解。
+
+//@urlpath(null,plaintext)
+asio::awaitable<std::string> techempowerplaintext(std::shared_ptr<httppeer> peer)
+{
+    peer->type("text/plain; charset=UTF-8");
+    peer->set_header("Date", get_gmttime());
+    peer->output = "Hello, World!";
+    co_return "";
+}
+
+@urlpath(null,hello)
+std::string testhello(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << " Hello world! 🧨 Paozhu c++ web framework ";
+
+    return "";
+}
+
+框架支持协程模式和经典线程模式
+asio::awaitable<std::string> 是协程模式，不会走线程池。
+std::string 是经典线程池模式，就是一个连接对应一个线程处理，这样你可以拥有自己的线程。建议繁重任务使用线程池模式。
+
+还有注意返回值，新手建议返回空字符，因为登录时候如果正确可以返回OK,这样配合注解。
+
+@urlpath(login,hello) login就是验证注册函数 跟hello一样。
+
+std::shared_ptr<httppeer> peer 是http上下文，就是连接对象，可以取得当前域名对应目录和域名，SAAS应用可以取得siteid,groupid
+
+httppeer &client 是引用
+
+peer->output 是输出string 就是一个std::string 变量
+
+
+带ORM注册函数
+
+//@urlpath(null,updates)
+asio::awaitable<std::string> techempowerupdates(std::shared_ptr<httppeer> peer)
+{
+    peer->type("application/json; charset=UTF-8");
+    peer->set_header("Date", get_gmttime());
+    unsigned int get_num = peer->get["queries"].to_int();
+
+    if (get_num == 0)
+    {
+        get_num = 1;
+    }
+    else if (get_num > 500)
+    {
+        get_num = 500;
+    }
+    auto myworld = orm::World();
+    myworld.record.clear();
+    myworld.record.reserve(get_num);
+    for (unsigned int i = 0; i < get_num; i++)
+    {
+        myworld.wheresql.clear();
+        myworld.where("id", rand_range(1, 10000));
+        co_await myworld.async_fetch_append();
+        if (myworld.effect() > 0)
+        {
+            unsigned int j                 = myworld.record.size() - 1;
+            myworld.data.randomnumber      = rand_range(1, 10000);
+            myworld.record[j].randomnumber = myworld.data.randomnumber;
+            co_await myworld.async_update("randomnumber");
+        }
+    }
+    peer->output = myworld.to_json();
+    co_return "";
+}
+
+orm::World(); 是ORM的表模型，默认连接，所以不用defaul
+
+表模型有两个成员变量很重要
+
+data     是单个表数据结构映射
+record   一个std::vector数组
+
+表数据结构
+struct meta{
+ unsigned  int  id = 0; 
+ int  randomnumber = 0;  
+} data;
+
+std::vector<worldbase::meta> record;
+
+更多参考ORM文档
+

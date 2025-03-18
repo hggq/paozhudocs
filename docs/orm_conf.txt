@@ -1,0 +1,90 @@
+文件位置 conf/orm.conf
+
+[default]
+type=main
+host=127.0.0.1
+port=3306
+dbname=hello_world
+user=benchmarkdbuser
+password=benchmarkdbpass
+pretable=
+maxpool=5
+dbtype=mysql
+#ssl=ON
+
+type=second
+host=127.0.0.1
+port=3306
+dbname=hello_world
+user=benchmarkdbuser
+password=benchmarkdbpass
+pretable=
+maxpool=20
+dbtype=mysql
+#ssl=ON
+
+ORM 配置
+type 为类型 就是主从分离，以后可以开发主从同步，目前先主从。host 127.0.0.1 填本地的，MySQL必须大于等于8版本，因为MySQL9不支持旧的认证了，
+pretable 是表前缀，有时候只有一个数据库权限可以一个数据库放多个业务。
+dbtype 目前支持MySQL。
+ssl 可以打开，特别是远程连接时候，启用加密连接。本的不会启用ssl连接。
+
+ORM 使用入门
+
+框架目前支持数据库到文件方式，这样修改数据库可以重新生成ORM文件。
+编译成功后
+
+# ./bin/paozhu_cli 
+
+paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
+  model ｜ view | viewtocpp | control   
+ Welcome to use cli to manage your MVC files。
+(m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:
+
+输入 m 选择生成ORM模型文件
+
+paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
+  model ｜ view | viewtocpp | control   
+ Welcome to use cli to manage your MVC files。
+(m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:m   
+ 🍄 current path: /Users/hzq/paozhu
+ 1 hello_world
+ 3 paozhu_docs
+ 5 cppcms
+select db index:
+
+输入 1 选择 hello_world 数据库生成文件。
+
+paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
+  model ｜ view | viewtocpp | control   
+ Welcome to use cli to manage your MVC files。
+(m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:m
+ 🍄 current path: /Users/hzq/paozhu
+ 1 hello_world
+ 3 paozhu_docs
+ 5 cppcms
+select db index:1
+show tables;
+create fortune table to models 🚗
+ create table metainfo file: /Users/hzq/paozhu/orm/include/fortunebase.h
+create world table to models 🚗
+ create table metainfo file: /Users/hzq/paozhu/orm/include/worldbase.h
+(m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:x
+
+输入 x 退出
+
+可以看到 /Users/hzq/paozhu/orm 目录下生成文件
+orm
+├── include
+│   ├── fortune_mysql.h
+│   ├── fortunebase.h
+│   ├── world_mysql.h
+│   └── worldbase.h
+├── orm.h
+│
+models
+├── Fortune.cpp
+├── World.cpp
+└── include
+    ├── Fortune.h
+    └── World.h
