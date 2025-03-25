@@ -2,6 +2,7 @@ Ubuntu install paozhu
 
 sudo apt-get install gcc g++
 sudo apt-get install cmake
+sudo apt-get install git
 sudo apt-get install -y brotli  libbrotli-dev zlib1g-dev
 sudo apt-get install libgd-dev
 sudo apt-get install qrencode libqrencode-dev
