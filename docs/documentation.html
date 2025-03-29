@@ -425,7 +425,7 @@
         }
         </code></pre>
         <ul>
-        <li><code>orm::World();</code> 是ORM的表模型，默认连接，所以不用defaul</li>
+        <li><code>orm::World();</code> 是ORM的表模型，默认连接，所以不用default</li>
         <li><code>myworld.lock_conn();</code> 就是固定一个连接，因为使用ORM连接池方式,会轮训使用连接。</li>
         <li><code>myworld.record.reserve(get_num);</code> 扩容这个熟悉STL的知道。</li>
         <li><code>myworld.wheresql.clear();</code> 推荐使<code>myworld.clearWhere();</code>方式清除条件。</li>
