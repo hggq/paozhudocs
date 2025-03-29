@@ -100,7 +100,7 @@ auto myworld = orm::World();
 auto users = orm::cms::Sysuser();
 
 orm是命名空间，主要是给ORM用
-cms是orm.conf数据库配置标签，方便隔离和转换数据库，如果是[default]可以省略defaut.
+cms是orm.conf数据库配置标签，也是生成的cms命名空间，方便隔离和转换数据库，如果是[default]可以省略defaut.
 为什么这样设计呢，
 一个是一个数据库可以有多个连接，这样我们不知道使用那个连接。
 一个是数据库名字很长，像云主机可能自动生成一个几十个字符长的数据库名，甚至有下划线的。
