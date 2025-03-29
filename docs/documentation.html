@@ -483,11 +483,11 @@
       <div class="container">
 
         <h3>C++生产环境故障排查</h3>
+        <p>需要安装gdb coredumpctl</p>
         <p>框架会隔1分钟左右检查 <code>log</code> 目录是否有<code>restart_server</code>文件</p>
         <p>如果我们需要取现在线程栈样品，可以 <code>touch log/restart_server</code> 这样可以让进程重启</p>
         <p>可以使用<code>pstree -aup</code> 查看进程情况</p>
         <p>如果已经取样，需要分析进程栈情况</p>
-        <p>需要安装gdb coredumpctl</p>
         <p>核心coredump查看</p>
         <pre><code>coredumpctl list
         coredumpctl info
@@ -506,6 +506,14 @@
         <pre><code>/var/lib/systemd/coredump
         </code></pre>
 
+        <p>如果编译使用-g 那么会看到类似下面样子，一般会显示各种线程目前正在干什么事</p>
+
+        <pre><code>Thread 17 (Thread 0x7fd9f16b9640 (LWP 10658)):
+          #0  http::hash_objkey (key=&quot;data:image/php;base64,PD9waHAgJE8wME9PMD11cmxkZWNvZGUoIiU3OCUzNCU2My&quot;...) at /www/paozhu/vendor/httpserver/src/request.cpp:54
+          #1  0x000000000060032f in http::OBJ_VALUE::operator[] (this=0x7fd9cc01e520, key=&quot;data:image/php;base64,PD9waHAgJE8wME9PMD11cmxkZWNvZGUoIiU3OCUzNCU2MyU2RiUyRiU3MCUzOSU3OSU3MSU2RSU2NCUyRCU2QyU3MiU2QiU2NCU2NyU1RiU&quot;...) at /www/paozhu/vendor/httpserver/src/request.cpp:315
+          #2  0x00000000005a990c in http::httpparse::procssxformurlencoded (this=0x7fd9b400d370) at /www/paozhu/vendor/httpserver/src/http_parse.cpp:389
+          #3  0x00000000005b1bfa in http::httpparse::process (this=0x7fd9b400d370, buffer=0x2e223c0 &quot;POST /public/static/lib/webuploader/0.1.5/server/preview.php HTTP/1.1\r\nHost: www. paozhu.org\r\nUser-Agent: Mozilla/5.0 AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0\r\nAccept-Encoding: gzip, deflate&quot;..., buffersize=964) at /www/paozhu/vendor/httpserver/src/http_parse.cpp:2823
+          </code></pre>
     </div>
 </body>
 
