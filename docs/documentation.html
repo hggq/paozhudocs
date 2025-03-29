@@ -1,182 +1,484 @@
-<!doctype html>
-<html lang="en" data-bs-theme="auto">
-  <head>
+<!DOCTYPE html>
+<html>
+<head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <title>c++ web framework介绍</title>
-<link href="./styles/bootstrap.min.css" rel="stylesheet">
-<link href="./styles/docs.css" rel="stylesheet">
-<link href="./styles/sidebars.css" rel="stylesheet">
-
-    <script src="./js/color-modes.js"></script>
-  </head>
-  <body>
-    
-    <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-      <symbol id="check2" viewBox="0 0 16 16">
-        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-      </symbol>
-      <symbol id="circle-half" viewBox="0 0 16 16">
-        <path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
-      </symbol>
-      <symbol id="moon-stars-fill" viewBox="0 0 16 16">
-        <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
-        <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
-      </symbol>
-      <symbol id="sun-fill" viewBox="0 0 16 16">
-        <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
-      </symbol>
-    </svg>
-
-    <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
-      <button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center"
-              id="bd-theme"
-              type="button"
-              aria-expanded="false"
-              data-bs-toggle="dropdown"
-              aria-label="Toggle theme (auto)">
-        <svg class="bi my-1 theme-icon-active" width="1em" height="1em"><use href="#circle-half"></use></svg>
-        <span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
-        <li>
-          <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
-            <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#sun-fill"></use></svg>
-            Light
-            <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
-          </button>
-        </li>
-        <li>
-          <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
-            <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#moon-stars-fill"></use></svg>
-            Dark
-            <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
-          </button>
-        </li>
-        <li>
-          <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="auto" aria-pressed="true">
-            <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#circle-half"></use></svg>
-            Auto
-            <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
-          </button>
-        </li>
-      </ul>
-    </div>
-
-    
-<svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-  <symbol id="aperture" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-    <circle cx="12" cy="12" r="10"/>
-    <path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83m13.79-4l-5.74 9.94"/>
-  </symbol>
-  <symbol id="cart" viewBox="0 0 16 16">
-    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l.84 4.479 9.144-.459L13.89 4H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-  </symbol>
-  <symbol id="chevron-right" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-  </symbol>
-</svg>
-
-<div class="container-xxl">
-  <header class="pt-3 pb-3">
-<div class="d-flex flex-column flex-md-row align-items-center">
-      <a href="/" class="d-flex align-items-center link-body-emphasis text-decoration-none">
-        <img src="images/headerlogo.svg" />
-        <span class="fs-2">PaoZhu</span>
-      </a>
-
-      <nav class="d-inline-flex mt-2 mt-md-0 ms-md-auto">
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="./">Home</a>
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="#">Download</a>
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="documentation.html">Documentation</a>
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="#">Blog</a>
-        <a class="py-2 link-body-emphasis text-decoration-none" href="about.html">About</a>
-      </nav>
-    </div>
-
-  </header>
-
+    <title>PaoZhu C++ Web Frameworks</title>
+    <style>
+        /* Light mode */
+        prefers-color-scheme:light
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
  
-</div>
-
-<div class="container-xxl bd-gutter mt-3 bd-layout">
-    <main class="bd-main order-1">
-      <div class="bd-intro pt-2 ps-lg-2">
-        <div class="d-md-flex">
-          <h1 class="bd-title mb-0" id="content">Paozhu 使用文档</h1>
-        </div>
-        <p class="bd-body">介绍，Paozhu是C++ 编写的Web框架，内置HTTP1、HTTP2、ORM、HttpClient支持，可以快速开发Web应用。</p>
-        <p class="bd-body">框架依赖第三方 OpenSSL Zlib Brotli</p>
-        <p class="bd-body">C++ 标准需求 C++20 标准</p>
-
-      </div>
-
-
-        <div class="bd-toc mt-3 mb-5 my-lg-0 ps-xl-3 mb-lg-5 text-muted">
-          <button class="btn btn-link link-dark p-md-0 mb-2 mb-md-0 text-decoration-none bd-toc-toggle d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#tocContents" aria-expanded="false" aria-controls="tocContents">
-            本页导航
-            <svg class="bi d-md-none ms-2" aria-hidden="true"><use xlink:href="#chevron-expand"></use></svg>
-          </button>
-          <strong class="d-none d-md-block h6 my-2">本页导航</strong>
-          <hr class="d-none d-md-block my-2">
-          <div class="collapse bd-toc-collapse" id="tocContents">
-            <nav id="TableOfContents">
-  <ul>
-    <li><a href="#quick-start">快速开始</a></li>
-    <li><a href="#cdn-links">编译环境</a></li>
-    <ul>
-      <li><a href="#macos">Mac OS 编译</a></li>
-      <li><a href="#linux">Linux 编译</a></li>
-      <li><a href="#box-sizing">Windows 编译</a></li>
-    </ul>
-    <li><a href="#serverconf">配置</a></li>
-    <li><a href="#helloword">Hello Word</a></li>
-    
-    <li><a href="#orm">ORM</a>
-      <ul>
-        <li><a href="#ormbegin">产生ORM文件</a></li>
-        <li><a href="#responsive-meta-tag">协程模式</a></li>
-        <li><a href="#box-sizing">同步模型</a></li>
-      </ul>
-    </li>
-    <li><a href="#community">HTML模板</a></li>
-  </ul>
-</nav>
-          </div>
-        </div>
-
-
-      <div class="bd-content ps-lg-2">
-        <h2 id="quick-start">快速开始 <a class="anchor-link" href="#quick-start" aria-label="Link to this section: Quick start"></a></h2>
-<p>下载源码 https://github.com/hggq/paozhu 然后编译</p>
-<br>
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            font-size: 100%;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
  
-<h2 id="macos">Mac OS 编译 <a class="anchor-link" href="#macos" aria-label="Link to this section: Quick start"></a></h2>
-<p><a href="macos.txt" target="_blank">Mac OS</a></p>
-<br>
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
 
-<h2 id="linux">Linux 编译 <a class="anchor-link" href="#linux" aria-label="Link to this section: Quick start"></a></h2>
-<p><a href="ubuntu.txt" target="_blank">Ubuntu</a></p>
-<p><a href="linux.txt" target="_blank">RockyLinux AlmaLinux</a></p>
-<br>
+        }
 
-<h2 id="helloword">Hello Word <a class="anchor-link" href="#helloword" aria-label="Link to this section: Quick start"></a></h2>
-<p><a href="helloword.txt" target="_blank">Hello Word</a></p>
-<br>
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
 
-<h2 id="orm">ORM <a class="anchor-link" href="#orm" aria-label="Link to this section: Quick start"></a></h2>
-<p><a href="orm_conf.txt" target="_blank">ORM配置文件说明</a></p>
-<br>
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            font-size: 100%;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
 
-      </div>
-    </main>
-  </div>	  
-	  
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
 
-    <script src="./js/bootstrap.bundle.min.js"></script>
-<script src="./js/highlight.min.js"></script>
-<script>hljs.highlightAll();</script> 
-      
-  </body>
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+        <h3><strong>简介</strong></h3>
+        <p>paozhu是一款C++ Web开发框架，内置HTTP/1 HTTP/2 ORM,可以轻松优雅写Web程序，打破以往C++写Web程序不方便问题。</p>
+        <p>paozhu编写了Web开发底层设施，比如多域名绑定、SSL证书管理、Cookie、Session、HTML表单管理 、URL处理、文件上传下载、HttpClient客户端、数据库连接ORM、WebSocket、日志，涵盖Web开发基础。</p>
+        <p>框架基于C++20为基础，一个是使用新标准，编译器支持完整，一个是让代码更加现代化，框架开启了ASAN和所有错误提示，方便开发阶段发现问题，也可以运行时候结合coredumpctl工具，查看各个线程内存栈。配合智能指针基本杜绝内存泄露和越界问题，框架目前基本没有碰到内存泄露或崩溃情况。</p>
+        <p>paozhu使用C++，主要是考虑接入大模型（CUDA、文件存储、网络、内存操作）、对比下GO JAVA RUST，都不是很完美，C++也不完美，RUST语法不好看、GO简单但是到模型等没有很深厚文化。目前经验是ASAN和coredumpctl两个工具也能保证C++质量，新编译器也能提示一部分。</p>
+        <h3>paozhu特色</h3>
+        <ol>
+        <li>支持HTTP2。</li>
+        <li>内置ORM（自研MySQL协议），支持协程模式。</li>
+        <li>多域名管理、SAAS模式支持。</li>
+        <li>IO线程和业务线程分开。</li>
+        <li>内置微型对象，JSON导入导出，类似脚本语言中变量。</li>
+        <li>内置FastCGI 支持PHP</li>
+        </ol>
+        </div>
+        <div class="container">
+        <h3>paozhu需求环境</h3>
+        <p>paozhu支持<code>MacOS</code>、<code>Linux</code>、<code>Windows</code>系统。</p>
+        <p>依赖第三方开发包</p>
+        <p><code>OpenSSL</code> <code>Zlib</code> <code>Brotli</code> <code>ASIO</code></p>
+        <p>可选第三方包</p>
+        <p><code>GD</code> <code>qrencode</code></p>
+        <p>框架基于C++20以上，确保你的系统支持的编译器支持C++20。</p>
+        <ul>
+        <li><code>MacOS</code> 必须<code>MacOS 11 BigSur</code>以上，最好是 <code>MacOS 14 Sonoma</code></li>
+        <li><code>Ubuntu</code> 必须是22.04以上</li>
+        <li><code>RockyLinux</code> <code>AlmaLinux</code> 必须是9.1以上</li>
+        <li><code>Windows</code> 必须是Win10 编译器最好19.25以上。</li>
+        </ul>
+    </div>
+    <div class="container">
+        <h3>paozhu安装</h3>
+        <ul>
+        <li><a href="macos.html" target="_blank">MacOS安装</a> 参考</li>
+        <li><a href="ubuntu.html">Ubuntu安装</a> 参考</li>
+        <li><a href="linux.html" target="_blank">RockyLinux AlmaLinux</a> 安装 参考</li>
+        <li>Windows 安装 参考</li>
+        </ul>
+    </div>
+    <div class="container">
+        <h3>paozhu入门</h3>
+        <h4>Hello, World 例子</h4>
+        <pre><code class="language-C++">
+        //@urlpath(null,plaintext)
+        asio::awaitable&lt;std::string&gt; techempowerplaintext(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            peer-&gt;type(&quot;text/plain; charset=UTF-8&quot;);
+            peer-&gt;set_header(&quot;Date&quot;, get_gmttime());
+            peer-&gt;output = &quot;Hello, World!&quot;;
+            co_return &quot;&quot;;
+        }
+        
+        </code></pre>
+    </div>
+    <div class="container">
+        <h3>注解原理</h3>
+        <p>所有注解函数必须放在 <code>controller/src</code> 目录下</p>
+        <p>编译时候使用CMake Hook，先编译一个可以使用的注解处理程序，然后执行这个程序处理  <code>controller/src</code>
+        目录下所有文件，提取<code>//@urlpath(null,plaintext)</code>格式的函数，然后创建相应的头文件，然后生成
+        注解函数，保存映射函数到 <code>common/autocontrolmethod.hpp</code> 文件。</p>
+        <p>是不是很有Java Sprint Boot味道，这样我们可以毕竟优雅写URL和函数映射关系。</p>
+    </div>
+    <div class="container">     
+        <h3>注解介绍</h3>
+        <p><code>//@urlpath(null,plaintext)</code> 为注解函数，与url映射，比如 http://localhost/plaintext 会访问到<code>plaintext</code> 的注解函数。</p>
+        <p>null表示访问plaintext之前必须先执行的注解函数，例如：带权限的后台，需要验证是否登录</p>
+        <p><code>//@urlpath(islogin,plaintext)</code> 这样必须先执行<code>islogin</code>的注解，返回<code>OK</code>表示成功。</p>
+        <pre><code class="language-C++">//@urlpath(null, islogin)
+        asio::awaitable&lt;std::string&gt; checklogin(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+        
+            if(peer-&gt;session[&quot;userid&quot;].to_int()&gt;0)
+            {
+                 co_return &quot;ok&quot;;
+            } 
+        
+            client &lt;&lt; &quot;You must login&quot;;
+        
+            co_return &quot;&quot;;
+        }
+        </code></pre>
+        <p><code>asio::awaitable&lt;std::string&gt;</code> 协程注解函数表示里面代码不走业务线程，
+        如果繁重计算最好使用普通函数，这样走业务线程处理，不会卡IO线程。</p>
+        <p><code>peer-&gt;session[&quot;userid&quot;]</code> 表示取得<code>session</code>内容，可以在登录成功后保存进去。</p>
+        <p><code>client &lt;&lt; &quot;You must login&quot;;</code> 是重载了<code>&lt;&lt;</code>运算符,真实内容是保存在<code>peer-&gt;output</code>。</p>
+        <p><code>co_return &quot;&quot;;</code> 是协程返回结果，请注意和普通函数区别，不知道最好返回空字符串。</p>
+        <p>下面是普通注册函数,注意返回值，表示走业务线程池，就是一个连接分配一个线程，经典应用。</p>
+        <p>建议有负载计算最好使用这种普通函数，不然大量计算可能影响并发量，是有可能，如果只是CRUD业务
+        用那种方式应该问题不大，用协程就不要使用 <code>std::this_thread::sleep_for(std::chrono::microseconds(1000));</code>
+        这种代码。</p>
+        <pre><code class="language-C++">//@urlpath(null,hello)
+        std::string testhello(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            client &lt;&lt; &quot; Hello world! 🧨 Paozhu c++ web framework &quot;;
+        
+            return &quot;&quot;;
+        }
+        
+        </code></pre>
+        <p>更多代码使用案例请参考 <code>controller/src</code> 目录下的例子</p>
+    </div>
+    <div class="container">
+        <h3>内置微型对象介绍</h3>
+        <pre><code class="language-C++">http::obj_val hval;
+        hval[&quot;aaa&quot;]=3344;
+        hval[&quot;bbb&quot;]=&quot;1234567890&quot;;
+        
+        std::cout&lt;&lt;&quot;ll:&quot;&lt;&lt;hval[&quot;aaa&quot;].to_int()&lt;&lt;std::endl;
+        std::cout&lt;&lt;&quot;vv:|&quot;&lt;&lt;static_cast&lt;int&gt;(hval[&quot;bbb&quot;].get_type())&lt;&lt;&quot;|&quot;&lt;&lt;std::endl;
+        if(hval[&quot;bbb&quot;].is_string())
+        {
+            std::cout&lt;&lt;&quot;str:&quot;&lt;&lt;hval[&quot;bbb&quot;].to_string()&lt;&lt;std::endl;
+            std::cout&lt;&lt;&quot;str:&quot;&lt;&lt;hval[&quot;bbb&quot;].str_view()&lt;&lt;std::endl;
+            std::cout&lt;&lt;&quot;str:&quot;&lt;&lt;hval[&quot;bbb&quot;].str_view(2,5)&lt;&lt;std::endl;
+        }
+        
+        http::obj_val nval;
+        nval.from_json(&quot;{\&quot;bba\&quot;:[[[111,222],[333,444],[555,666]],[[777,888],[999,1111],[2222,3333]],[[4444,5555],[6666,7777],[8888,9999]]]}&quot;);
+        
+        std::cout&lt;&lt;&quot;json out:&quot;&lt;&lt;nval.to_json()&lt;&lt;std::endl;
+        
+        std::string bbb=nval.to_json();
+        http::obj_val pval;
+        pval.from_json(bbb);
+        </code></pre>
+        <p><code>http::obj_val</code> 是框架内置一个微型对象，可以导入<code>from_json</code>和导出<code>to_json</code> <code>JSON</code>对象转换。</p>
+        <p>是不是有脚本语言味道，可以保存数值和字符串，而且可以保存树形结构。</p>
+        <p>一个<code>http::obj_val</code>是16个字节大小，如果是<code>KV</code>对象要64大小。</p>
+        <p><code>hval[&quot;aaa&quot;]</code> 就是<code>KV</code>对象。</p>
+        <p><code>http::obj_val</code> 对象内置方法</p>
+        <ul>
+        <li><code>set_array()</code> 设置为数组 可以使用push(v)</li>
+        <li><code>set_obj()</code> 设置为对象KV 可以使用push(k,v)或obj[key]=value方式</li>
+        <li><code>set_object()</code> 设置为对象KV 可以使用push(k,v)或obj[key]=value方式</li>
+        </ul>
+        <h4>判断对象属性</h4>
+        <ul>
+        <li><code>is_array()</code> 是否是数组</li>
+        <li><code>is_obj()</code>	是否是对象</li>
+        <li><code>is_object()</code> 是否是对象</li>
+        <li><code>is_string()</code> 是否是字符串</li>
+        <li><code>is_number()</code> 是否数字</li>
+        </ul>
+        <h4>典型使用方式和HTML模板使用</h4>
+        <pre><code class="language-C++">        client.val[&quot;list&quot;].set_array();
+                obj_val temp;
+        
+                for (unsigned int i = 0; i &lt; topicm.record.size(); i++)
+                {
+                    temp[&quot;id&quot;]       = topicm.record[i].topicid;
+                    temp[&quot;parentid&quot;] = topicm.record[i].parentid;
+                    temp[&quot;value&quot;]    = topicm.record[i].title;
+                    client.val[&quot;list&quot;].push(temp);
+                }
+        </code></pre>
+    </div>
+    <div class="container">
+        <h4>在HTML模板中使用</h4>
+        <pre><code class="language-HTML">&lt;%c for(auto &amp;a:obj[&quot;infos&quot;].as_array()){ %&gt;
+        &lt;tr&gt;
+          &lt;td&gt;&lt;%c echo&lt;&lt;a[&quot;userid&quot;].to_string(); %&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;%c echo&lt;&lt;a[&quot;nickname&quot;].to_string(); %&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;%c echo&lt;&lt;a[&quot;name&quot;].to_string(); %&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;%c if(a[&quot;isopen&quot;].to_int()==1){ %&gt;启用&lt;%c }else{ %&gt;关闭&lt;%c } %&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;a href=&quot;/superadmin/edituser?userid=&lt;%c echo&lt;&lt;a[&quot;userid&quot;].to_string(); %&gt;&quot;&gt;编辑&lt;/a&gt; | &lt;a href=&quot;/superadmin/deleteuser?userid=&lt;%c echo&lt;&lt;a[&quot;userid&quot;].to_string(); %&gt;&quot; onclick=&quot;return confirm('确定删除？');&quot;&gt;删除&lt;/a&gt;&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;%c } %&gt;
+        </code></pre>
+        <p>主要应用在复杂对象交换程序，如果不是可以使用C++ 内置对象或STL库方式。</p>
+        <h3>ORM介绍</h3>
+        <p>paozhu框架内置ORM对象，目前自己分析MySQL协议，方便和ORM整合，而且支持协程模式，这个官方没有支持。</p>
+        <p>配置文件位置 <code>conf/orm.conf</code></p>
+        <pre><code>[default]
+        type=main
+        host=127.0.0.1
+        port=3306
+        dbname=hello_world
+        user=benchmarkdbuser
+        password=benchmarkdbpass
+        pretable=
+        maxpool=5
+        dbtype=mysql
+        #ssl=ON
+        
+        type=second
+        host=127.0.0.1
+        port=3306
+        dbname=hello_world
+        user=benchmarkdbuser
+        password=benchmarkdbpass
+        pretable=
+        maxpool=20
+        dbtype=mysql
+        #ssl=ON
+        </code></pre>
+    </div>
+    <div class="container">
+        <h3>ORM 配置</h3>
+        <p><code>type</code> 为类型 就是主从分离，以后可以开发缓存同步，目前先主从。host <code>127.0.0.1</code> 填本地的地址，MySQL必须大于等于8版本，因为MySQL9不支持旧的认证了，
+        <code>pretable</code> 是表前缀，有时候只有一个数据库权限可以一个数据库放多个业务。
+        <code>dbtype</code> 目前支持MySQL。
+        <code>ssl</code> 可以打开，特别是远程连接时候，启用加密连接。本地的不会启用ssl连接。</p>
+    </div>
+    <div class="container">
+        <h3>ORM 使用入门</h3>
+        <p>框架目前支持数据库到文件方式，这样修改数据库可以重新生成ORM文件。
+        编译成功后</p>
+        <pre><code># ./bin/paozhu_cli 
+        
+        paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
+          model ｜ view | viewtocpp | control   
+         Welcome to use cli to manage your MVC files。
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:
+        </code></pre>
+        <p>输入 m 选择生成ORM模型文件</p>
+        <pre><code>
+        paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
+          model ｜ view | viewtocpp | control   
+         Welcome to use cli to manage your MVC files。
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:m   
+         🍄 current path: /Users/hzq/paozhu
+         1 hello_world
+         3 paozhu_docs
+         5 cppcms
+        select db index:
+        </code></pre>
+        <p>输入 1 选择 hello_world 数据库生成文件。</p>
+        <pre><code>paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
+          model ｜ view | viewtocpp | control   
+         Welcome to use cli to manage your MVC files。
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:m
+         🍄 current path: /Users/hzq/paozhu
+         1 hello_world
+         3 paozhu_docs
+         5 cppcms
+        select db index:1
+        show tables;
+        create fortune table to models 🚗
+         create table metainfo file: /Users/hzq/paozhu/orm/include/fortunebase.h
+        create world table to models 🚗
+         create table metainfo file: /Users/hzq/paozhu/orm/include/worldbase.h
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:x
+        </code></pre>
+        <p>输入 x 退出</p>
+        <pre><code>可以看到 /Users/hzq/paozhu/orm 目录下生成文件
+        orm
+        ├── include
+        │   ├── fortune_mysql.h
+        │   ├── fortunebase.h
+        │   ├── world_mysql.h
+        │   └── worldbase.h
+        ├── orm.h
+        │
+        models
+        ├── Fortune.cpp
+        ├── World.cpp
+        └── include
+            ├── Fortune.h
+            └── World.h
+        </code></pre>
+        <p>ORM目录是实体文件，两个文件一个是mysql连接层mysql结尾，一个是数据表实体映射base.h结尾。
+        我们其实是操作models目录下ORM文件，这两个文件一个cpp一个h文件，自动生成，
+        但是只生成一次，有了不会覆盖，因为真正业务系统可以自己加业务代码在里面。</p>
+        <p>比如
+        auto myworld = orm::World();
+        就是 models 目录下 World.h
+        这个是默认数据库，比如自带cms演示
+        auto users = orm::cms::Sysuser();</p>
+        <p>orm是命名空间，主要是给ORM用
+        cms是orm.conf数据库配置标签，也是生成的cms命名空间，方便隔离和转换数据库，如果是[default]可以省略defaut.</p>
+        <h3>ORM设计原理</h3>
+        <p>为什么这样设计呢，其实也是paozhu框架目前比其它框架非常有特色的设计。</p>
+        <ol>
+        <li>一个数据库可以有多个连接，这样我们不知道使用那个连接。</li>
+        <li>数据库名字可能很长，像云主机可能自动生成一个几十个字符长的数据库名，甚至有下划线的。</li>
+        <li>可以个性标签，这样数据库是什么名不重要了。</li>
+        <li>我们用来做命名空间隔离表对象，这样很多数据库生成的C++类不会冲突。</li>
+        </ol>
+        <p>所以<code>orm::cms::Sysuser();</code>使用cms隔离了<code>sysuser</code>表实体C++类，不会与其它数据库同名表有冲突。
+        比如<code>orm::erp::Sysuser();</code> erp是erp数据库标签，他的数据库是什么名不重要，
+        就是同样有<code>sysuser</code>表也没有关系。</p>
+        <p>之所以这样设计，就是一个业务系统，一个单体服务器程序，可以有很多数据库，而且他们表名可以有重名。
+        以后可以有不同数据库，比如MySQL PG等，他们可以分布在其它机器上。
+        他们可以混合集群，单体服务器程序也可以集群，因为内置了读写分离，写服务器可以同一个，
+        查询可以固定或动态分配数据库服务器,框架可以适合大业务系统。
+        目前看一个服务器集成数据库和业务程序为主。</p>
+    </div>
+    <div class="container">
+        <h3>ORM使用例子</h3>
+        <h4>协程方式使用ORM</h4>
+        <pre><code class="language-C++">//@urlpath(null,queries)
+        asio::awaitable&lt;std::string&gt; techempowerqueries(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            peer-&gt;type(&quot;application/json; charset=UTF-8&quot;);
+            peer-&gt;set_header(&quot;Date&quot;, get_gmttime());
+        
+            unsigned int get_num = peer-&gt;get[&quot;queries&quot;].to_int();
+            if (get_num == 0)
+            {
+                get_num = 1;
+            }
+            else if (get_num &gt; 500)
+            {
+                get_num = 500;
+            }
+            auto myworld = orm::World();
+            myworld.record.reserve(get_num);
+            myworld.lock_conn();
+            for (unsigned int i = 0; i &lt; get_num; i++)
+            {
+                myworld.wheresql.clear();
+                unsigned int rd_num = rand_range(1, 10000);
+                myworld.where(&quot;id&quot;, rd_num);
+                co_await myworld.async_fetch_append();
+            }
+            myworld.unlock_conn();
+            peer-&gt;output = myworld.to_json();
+            co_return &quot;&quot;;
+        }
+        </code></pre>
+        <ul>
+        <li><code>orm::World();</code> 是ORM的表模型，默认连接，所以不用defaul</li>
+        <li><code>myworld.lock_conn();</code> 就是固定一个连接，因为使用ORM连接池方式,会轮训使用连接。</li>
+        <li><code>myworld.record.reserve(get_num);</code> 扩容这个熟悉STL的知道。</li>
+        <li><code>myworld.wheresql.clear();</code> 推荐使<code>myworld.clearWhere();</code>方式清除条件。</li>
+        <li><code>myworld.where(&quot;id&quot;, rd_num);</code> 加一个条件。</li>
+        <li><code>co_await myworld.async_fetch_append();</code> 是高级用法，会附加数据到record对象上。一般使用<code>co_await myworld.async_fetch();</code> 会清除record对象，然后重新赋值。</li>
+        </ul>
+        <p><code>peer-&gt;output = myworld.to_json();</code> 直接输出JSON到浏览器。</p>
+        <p>表模型有两个成员变量很重要</p>
+        <ul>
+        <li>data     是单个表数据结构映射</li>
+        <li>record   一个std::vector数组</li>
+        </ul>
+        <p>表数据结构</p>
+        <pre><code class="language-C++">struct meta{
+         unsigned  int  id = 0; 
+         int  randomnumber = 0;  
+        } data;
+        
+        std::vector&lt;worldbase::meta&gt; record;
+        </code></pre>
+    </div>
+    <div class="container">
+        <h4>同步使用ORM</h4>
+        <p>正常业务代码在一个线程中运行，就是一个连接一个线程，这个很经典方式。</p>
+        <pre><code class="language-C++">//@urlpath(admin_islogin,admin/addtopic)
+        std::string admin_addtopic(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            try
+            {
+                auto topicm = orm::cms::Topic();
+                topicm.where(&quot;userid&quot;, client.session[&quot;userid&quot;].to_int()).asc(&quot;parentid&quot;).fetch();
+        
+                client.val[&quot;list&quot;].set_array();
+                obj_val temp;
+        
+                for (unsigned int i = 0; i &lt; topicm.record.size(); i++)
+                {
+                    temp[&quot;id&quot;]       = topicm.record[i].topicid;
+                    temp[&quot;parentid&quot;] = topicm.record[i].parentid;
+                    temp[&quot;value&quot;]    = topicm.record[i].title;
+                    client.val[&quot;list&quot;].push(temp);
+                }
+            }
+            catch (std::exception &amp;e)
+            {
+                client.val[&quot;code&quot;] = 1;
+            }
+        
+            peer-&gt;view(&quot;admin/addtopic&quot;);
+            return &quot;&quot;;
+        }
+        </code></pre>
+    </div>
+</body>
+
 </html>

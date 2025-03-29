@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>PaoZhu C++ Web Frameworks</title>
+    <style>
+        /* Light mode */
+        prefers-color-scheme:light
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            font-size: 100%;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            font-size: 100%;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+        <h3>RockyLinux AlmaLinux</h3>
+        <pre><code>sudo dnf -y upgrade
+        
+        sudo dnf install gcc g++
+        sudo dnf install libasan
+        sudo dnf install cmake
+        sudo dnf install brotli brotli-devel
+        sudo dnf install gd gd-devel
+        
+        sudo dnf -y install openssl openssl-devel
+        </code></pre>
+        <pre><code># wget https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/Packages/q/qrencode-devel-4.1.1-1.el9.x86_64.rpm
+        # wget https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/Packages/q/qrencode-libs-4.1.1-1.el9.x86_64.rpm
+        # rpm -Uvh qrencode-*
+        </code></pre>
+        <p>https://dev.mysql.com/downloads/</p>
+        <p>MySQL Yum Repository</p>
+        <p>https://dev.mysql.com/downloads/repo/yum/</p>
+        <p>No thanks, just start my download.</p>
+        <pre><code>sudo yum install https://dev.mysql.com/get/mysql80-community-release-el9-5.noarch.rpm
+        sudo dnf install mysql-devel mysql-community-server
+        
+        sudo systemctl start mysqld.service
+        
+        sudo systemctl status mysqld
+        </code></pre>
+        <pre><code># sudo systemctl enable mysqld
+        Created symlink /etc/systemd/system/multi-user.target.wants/mysqld.service → /usr/lib/systemd/system/mysqld.service.
+        
+        mysql --version
+        
+        cat /var/log/mysqld.log
+        </code></pre>
+        <pre><code>[Server] A temporary password is generated for root@localhost: brH0urP223dHp
+        </code></pre>
+        <pre><code># sudo mysql_secure_installation
+        
+        Securing the MySQL server deployment.
+        
+        Enter password for user root: 
+        
+        The existing password for the user account root has expired. Please set a new password.
+        
+        New password: 
+        
+        Re-enter new password: 
+        The 'validate_password' component is installed on the server.
+        The subsequent steps will run with the existing configuration
+        of the component.
+        Using existing password for root.
+        
+        Estimated strength of the password: 100 
+        Change the password for root ? ((Press y|Y for Yes, any other key for No) : y
+        
+        By default, a MySQL installation has an anonymous user,
+        allowing anyone to log into MySQL without having to have
+        a user account created for them. This is intended only for
+        testing, and to make the installation go a bit smoother.
+        You should remove them before moving into a production
+        environment.
+        
+        Remove anonymous users? (Press y|Y for Yes, any other key for No) :y
+        
+        Success.
+        
+        
+        Normally, root should only be allowed to connect from
+        'localhost'. This ensures that someone cannot guess at
+        the root password from the network.
+        
+        Disallow root login remotely? (Press y|Y for Yes, any other key for No) : y
+        Success.
+        
+        By default, MySQL comes with a database named 'test' that
+        anyone can access. This is also intended only for testing,
+        and should be removed before moving into a production
+        environment.
+        
+        
+        Remove test database and access to it? (Press y|Y for Yes, any other key for No) : y
+         - Dropping test database...
+        Success.
+        
+         - Removing privileges on test database...
+        Success.
+        
+        Reloading the privilege tables will ensure that all changes
+        made so far will take effect immediately.
+        
+        Reload privilege tables now? (Press y|Y for Yes, any other key for No) : y
+        Success.
+        
+        All done! 
+        </code></pre>
+        <pre><code>
+        #wget https://github.com/hggq/paozhu/archive/refs/heads/main.zip
+        #unzip main.zip
+        # mv paozhu-main paozhu
+        # vim paozhu/conf/server.conf
+        
+        # mysql -u root -p
+        </code></pre>
+        <pre><code>&gt;create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
+        &gt;use cppcms; 
+        &gt;source /root/paozhu/conf/cppcms.sql;
+        
+        &gt;use mysql;
+        
+        &gt;create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';
+        
+        &gt;GRANT ALL PRIVILEGES ON `cppcms`.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ; 
+        
+        &gt;select host,user,authentication_string from user;
+        
+        &gt;exit;
+        </code></pre>
+        <p>Config system</p>
+        <pre><code>#vim conf/server.conf
+        </code></pre>
+        <p>replace /Users/hzq/paozhu to your project path</p>
+        <pre><code>#vim paozhu/conf/orm.conf 
+        </code></pre>
+        <pre><code>
+        [cms]
+        type=main
+        host=127.0.0.1
+        port=3306
+        dbname=cppcms
+        user=cppcms
+        password=H3fHeRlVbwU@4456
+        pretable=
+        maxpool=5
+        dbtype=mysql
+        
+        type=second
+        host=127.0.0.1
+        port=3306
+        dbname=cppcms
+        user=cppcms
+        password=H3fHeRlVbwU@4456
+        pretable=
+        maxpool=20
+        dbtype=mysql
+        </code></pre>
+        <pre><code># cd paozhu
+        # unzip asio.zip 
+        # mkdir build
+        
+        # cd build
+        # cmake ..
+        # make 
+        </code></pre>
+        
+</div>
+</body>
+
+</html>

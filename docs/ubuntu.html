@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>PaoZhu C++ Web Frameworks</title>
+    <style>
+        /* Light mode */
+        prefers-color-scheme:light
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            font-size: 100%;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            font-size: 100%;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+        <h3>Ubuntu install paozhu</h3>
+        <pre><code>sudo apt-get install gcc g++
+        sudo apt-get install cmake
+        sudo apt-get install git
+        sudo apt-get install -y brotli  libbrotli-dev zlib1g-dev
+        sudo apt-get install libgd-dev
+        sudo apt-get install qrencode libqrencode-dev
+        sudo apt-get install openssl libssl-dev
+        sudo apt-get install mysql-server
+        
+        sudo service mysql status # 查看服务状态
+        sudo service mysql start # 启动服务
+        sudo service mysql stop # 停止服务
+        sudo service mysql restart # 重启服务
+        </code></pre>
+        <pre><code>$ sudo service mysql status
+        ● mysql.service - MySQL Community Server
+             Loaded: loaded (/lib/systemd/system/mysql.service; enabled; vendor preset: enabled)
+             Active: active (running) since Wed 2022-06-29 19:57:13 CST; 2min 23s ago
+           Main PID: 22401 (mysqld)
+             Status: &quot;Server is operational&quot;
+              Tasks: 37 (limit: 8745)
+             Memory: 359.0M
+             CGroup: /system.slice/mysql.service
+                     └─22401 /usr/sbin/mysqld
+        
+        6月 29 19:57:11 hzq-Default-string systemd[1]: Starting MySQL Community Server...
+        6月 29 19:57:13 hzq-Default-string systemd[1]: Started MySQL Community Server.
+        </code></pre>
+        <pre><code>$ sudo cat /etc/mysql/debian.cnf
+        # Automatically generated for Debian scripts. DO NOT TOUCH!
+        [client]
+        host     = localhost
+        user     = debian-sys-maint
+        password = 5hiIbvxR2DgC7ekz
+        socket   = /var/run/mysqld/mysqld.sock
+        [mysql_upgrade]
+        host     = localhost
+        user     = debian-sys-maint
+        password = 5hiIbvxR2DgC7ekz
+        socket   = /var/run/mysqld/mysqld.sock
+        </code></pre>
+        <p>登陆加root密码</p>
+        <pre><code>$ mysql -u debian-sys-maint -p
+        
+        &gt;create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
+        &gt;use cppcms; 
+        &gt;source /root/paozhu/conf/cppcms.sql;
+        
+        &gt;use mysql;
+        
+        &gt;create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';
+        
+        &gt;GRANT ALL PRIVILEGES ON `cppcms`.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ; 
+        
+        &gt;select host,user,authentication_string from user;
+        
+        &gt;exit;
+        </code></pre>
+        <p>Config system</p>
+        <pre><code>#vim conf/server.conf
+        </code></pre>
+        <p>replace /Users/hzq/paozhu to your project path</p>
+        <pre><code>#vim paozhu/conf/orm.conf 
+        </code></pre>
+        <pre><code>[cms]
+        type=main
+        host=127.0.0.1
+        port=3306
+        dbname=cppcms
+        user=cppcms
+        password=H3fHeRlVbwU@4456
+        pretable=
+        maxpool=5
+        dbtype=mysql
+        
+        type=second
+        host=127.0.0.1
+        port=3306
+        dbname=cppcms
+        user=cppcms
+        password=H3fHeRlVbwU@4456
+        pretable=
+        maxpool=20
+        dbtype=mysql
+        </code></pre>
+        <pre><code># cd paozhu
+        # unzip asio.zip 
+        # mkdir build
+        
+        # cd build
+        # cmake ..
+        # make 
+        </code></pre>
+            
+        
+</div>
+</body>
+
+</html>

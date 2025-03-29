@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>PaoZhu C++ Web Frameworks</title>
+    <style>
+        /* Light mode */
+        prefers-color-scheme:light
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            font-size: 100%;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            font-size: 85%;
+            line-height: 1.45;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            font-size: 100%;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+<h3>MacOS bigsur C++20</h3>
+<p>Open terminal</p>
+<p>Using Terminal Command</p>
+<pre><code># xcode-select --install
+
+# /bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
+</code></pre>
+<p><strong>In China see</strong></p>
+<p><code>https://mirrors.tuna.tsinghua.edu.cn/help/homebrew/</code></p>
+<pre><code>brew install asio
+brew install mysql
+brew install openssl
+brew install zlib
+brew install brotli
+
+[option] brew install gd
+[option] brew install qrencode
+</code></pre>
+<p>https://dev.mysql.com/downloads/mysql/</p>
+<p>MySQL Community Server 8</p>
+<p>#mysql -u root -p</p>
+<blockquote>
+<p>create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
+use cppcms;
+source /root/paozhu/conf/cppcms.sql;</p>
+</blockquote>
+<blockquote>
+<p>use mysql;</p>
+</blockquote>
+<blockquote>
+<p>create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';</p>
+</blockquote>
+<blockquote>
+<p>GRANT ALL PRIVILEGES ON <code>cppcms</code>.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ;</p>
+</blockquote>
+<blockquote>
+<p>select host,user,authentication_string from user;</p>
+</blockquote>
+<blockquote>
+<p>exit;</p>
+</blockquote>
+<p>Config system</p>
+<pre><code>#vim conf/server.conf
+Replace /Users/hzq/paozhu to your project path
+ 
+#vim paozhu/conf/orm.conf 
+</code></pre>
+<pre><code>[cms]
+type=main
+host=127.0.0.1
+port=3306
+dbname=cppcms
+user=cppcms
+password=H3fHeRlVbwU@4456
+pretable=
+maxpool=5
+dbtype=mysql
+
+type=second
+host=127.0.0.1
+port=3306
+dbname=cppcms
+user=cppcms
+password=H3fHeRlVbwU@4456
+pretable=
+maxpool=20
+dbtype=mysql
+</code></pre>
+<pre><code>
+# cd paozhu
+# unzip asio.zip 
+# mkdir build
+
+# cd build
+# cmake ..
+# make 
+</code></pre>
+</div>
+</body>
+
+</html>
