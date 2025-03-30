@@ -613,363 +613,302 @@
       </div>
 
       <div class="container">
-      <h3>paozhu 框架view 视图入门</h3>
-      <p>paozhu 做为 c++ web framework 框架 就是MVC 模式，现在就是说v 这个视图功能</p>
-      <h4>1、视图说明</h4>
-      <p>就是给浏览器显示的内容，其实就是html内容，脚本语言就是操作这个，那我们c++怎么操作呢，也是在html里面放c++ 代码，但是我们是把html代码编译成c++代码。常驻内存，这样速度也很快，几百个视图文件只要几M内存，一个公司项目也就是1000左右页面。估计不到10M内存，如果用脚本语言还要大量io读取文件。 paozhu  c++ web framework 直接编译为程序，不用io读取了，速度极快。</p>
-      <h4>2、创建视图</h4>
-      <p>我们在view目录</p>
-      <p>创建 login 目录 然后再创建一个login.html文件在login目录里面</p>
-      <p>view</p>
-      <ul>
-      <li>login
-      <ul>
-      <li>login.html</li>
-      </ul>
-      </li>
-      </ul>
-      <p>大概这样子</p>
-      <h4>login.html 文件内容</h4>
-      <pre><code class="language-html">&lt;!doctype html&gt;
-      &lt;html lang=&quot;en&quot;&gt;
-        &lt;head&gt;
-          &lt;meta charset=&quot;utf-8&quot;&gt;
-          &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
-          &lt;meta name=&quot;description&quot; content=&quot;&quot;&gt;
-          &lt;meta name=&quot;author&quot; content=&quot;Mark Otto, Jacob Thornton, and Bootstrap contributors&quot;&gt;
-          &lt;meta name=&quot;generator&quot; content=&quot;Hugo 0.101.0&quot;&gt;
-          &lt;title&gt;Content Management System&lt;/title&gt;
-      
-          &lt;link href=&quot;/assets/dist/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot;&gt;
-        &lt;/head&gt;
-        &lt;body class=&quot;text-center&quot;&gt;
-          &lt;%c include_sub(&quot;home/header&quot;,obj); %&gt;
-          &lt;div class=&quot;container text-center&quot;&gt;
-            &lt;div class=&quot;row&quot;&gt;
-              &lt;div class=&quot;col-3&quot;&gt;&lt;/div&gt;  
-              &lt;div class=&quot;col-6&quot;&gt;
-                &lt;h2 id=&quot;horizontal-form&quot;&gt;CMS Admin &lt;/h2&gt;
-                &lt;form action=&quot;/cms/loginpost&quot; method=&quot;post&quot;&gt;
-                  &lt;div class=&quot;row mb-3&quot;&gt;
-                    &lt;label for=&quot;username&quot; class=&quot;col-sm-2 col-form-label&quot;&gt;Username&lt;/label&gt;
-                    &lt;div class=&quot;col-sm-10&quot;&gt;
-                      &lt;input type=&quot;text&quot; class=&quot;form-control&quot; id=&quot;username&quot; name=&quot;username&quot; value=&quot;admin&quot;&gt;
+        <h3>paozhu 框架view 视图入门</h3>
+        <p>paozhu 做为 c++ web framework 框架 就是MVC 模式，现在就是说v 这个视图功能</p>
+        <h4>1、视图说明</h4>
+        <p>就是给浏览器显示的内容，其实就是html内容，脚本语言就是操作这个，那我们c++怎么操作呢，也是在html里面放c++ 代码，但是我们是把html代码编译成c++代码。常驻内存，这样速度也很快，几百个视图文件只要几M内存，一个公司项目也就是1000左右页面。估计不到10M内存，如果用脚本语言还要大量io读取文件。 paozhu  c++ web framework 直接编译为程序，不用io读取了，速度极快。</p>
+        <h4>2、创建视图</h4>
+        <p>我们在view目录</p>
+        <p>创建 login 目录 然后再创建一个login.html文件在login目录里面</p>
+        <p>view</p>
+        <ul>
+        <li>login
+        <ul>
+        <li>login.html</li>
+        </ul>
+        </li>
+        </ul>
+        <p>大概这样子</p>
+        <h4>login.html 文件内容</h4>
+        <pre><code class="language-html">&lt;!doctype html&gt;
+        &lt;html lang=&quot;en&quot;&gt;
+          &lt;head&gt;
+            &lt;meta charset=&quot;utf-8&quot;&gt;
+            &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+            &lt;meta name=&quot;description&quot; content=&quot;&quot;&gt;
+            &lt;meta name=&quot;author&quot; content=&quot;Mark Otto, Jacob Thornton, and Bootstrap contributors&quot;&gt;
+            &lt;meta name=&quot;generator&quot; content=&quot;Hugo 0.101.0&quot;&gt;
+            &lt;title&gt;Content Management System&lt;/title&gt;
+        
+            &lt;link href=&quot;/assets/dist/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot;&gt;
+          &lt;/head&gt;
+          &lt;body class=&quot;text-center&quot;&gt;
+            &lt;%c include_sub(&quot;home/header&quot;,obj); %&gt;
+            &lt;div class=&quot;container text-center&quot;&gt;
+              &lt;div class=&quot;row&quot;&gt;
+                &lt;div class=&quot;col-3&quot;&gt;&lt;/div&gt;  
+                &lt;div class=&quot;col-6&quot;&gt;
+                  &lt;h2 id=&quot;horizontal-form&quot;&gt;CMS Admin &lt;/h2&gt;
+                  &lt;form action=&quot;/cms/loginpost&quot; method=&quot;post&quot;&gt;
+                    &lt;div class=&quot;row mb-3&quot;&gt;
+                      &lt;label for=&quot;username&quot; class=&quot;col-sm-2 col-form-label&quot;&gt;Username&lt;/label&gt;
+                      &lt;div class=&quot;col-sm-10&quot;&gt;
+                        &lt;input type=&quot;text&quot; class=&quot;form-control&quot; id=&quot;username&quot; name=&quot;username&quot; value=&quot;admin&quot;&gt;
+                      &lt;/div&gt;
                     &lt;/div&gt;
-                  &lt;/div&gt;
-                  &lt;div class=&quot;row mb-3&quot;&gt;
-                    &lt;label for=&quot;password&quot; class=&quot;col-sm-2 col-form-label&quot;&gt;Password&lt;/label&gt;
-                    &lt;div class=&quot;col-sm-10&quot;&gt;
-                      &lt;input type=&quot;password&quot; class=&quot;form-control&quot; id=&quot;password&quot; name=&quot;password&quot; value=&quot;123456&quot;&gt;
+                    &lt;div class=&quot;row mb-3&quot;&gt;
+                      &lt;label for=&quot;password&quot; class=&quot;col-sm-2 col-form-label&quot;&gt;Password&lt;/label&gt;
+                      &lt;div class=&quot;col-sm-10&quot;&gt;
+                        &lt;input type=&quot;password&quot; class=&quot;form-control&quot; id=&quot;password&quot; name=&quot;password&quot; value=&quot;123456&quot;&gt;
+                      &lt;/div&gt;
                     &lt;/div&gt;
-                  &lt;/div&gt;
-      
-                  &lt;button type=&quot;submit&quot; class=&quot;btn btn-primary&quot;&gt;Sign in&lt;/button&gt;
-                &lt;/form&gt;
-            
+        
+                    &lt;button type=&quot;submit&quot; class=&quot;btn btn-primary&quot;&gt;Sign in&lt;/button&gt;
+                  &lt;/form&gt;
+              
+                &lt;/div&gt;
+         
               &lt;/div&gt;
-       
             &lt;/div&gt;
-          &lt;/div&gt;
-      
-        &lt;/body&gt;
-        &lt;/html&gt;
-      
-      
-      </code></pre>
-      <p>include_sub(&quot;home/header&quot;,obj);</p>
-      <p>说明还包括一个子页面，我们再在view创建一个子页面目录home</p>
-      <p>view</p>
-      <ul>
-      <li>home
-      <ul>
-      <li>header.html</li>
-      </ul>
-      </li>
-      <li>login
-      <ul>
-      <li>login.html</li>
-      </ul>
-      </li>
-      </ul>
-      <p>大概这样子</p>
-      <h4>header.html 内容其实就是网页头部信息</h4>
-      <pre><code class="language-html">
-      &lt;style&gt;
-        ul {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #333;
+        
+          &lt;/body&gt;
+          &lt;/html&gt;
+        
+        
+        </code></pre>
+        <p>include_sub(&quot;home/header&quot;,obj);</p>
+        <p>说明还包括一个子页面，我们再在view创建一个子页面目录home</p>
+        <p>view</p>
+        <ul>
+        <li>home
+        <ul>
+        <li>header.html</li>
+        </ul>
+        </li>
+        <li>login
+        <ul>
+        <li>login.html</li>
+        </ul>
+        </li>
+        </ul>
+        <p>大概这样子</p>
+        <h4>header.html 内容其实就是网页头部信息</h4>
+        <pre><code class="language-html">
+        &lt;style&gt;
+          ul {
+              list-style-type: none;
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+              background-color: #333;
+          }
+          
+          li {
+              float: left;
+              border-right:1px solid #bbb;
+          }
+          
+          li:last-child {
+              border-right: none;
+          }
+          
+          li a {
+              display: block;
+              color: white;
+              text-align: center;
+              padding: 14px 16px;
+              text-decoration: none;
+          }
+          
+          li a:hover:not(.active) {
+              background-color: #111;
+          }
+          
+          .active {
+              background-color: #4CAF50;
+          }
+          &lt;/style&gt;
+        &lt;ul&gt;
+          &lt;li&gt;&lt;a class=&quot;active&quot; href=&quot;/&quot;&gt;主页&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#news&quot;&gt;新闻&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#contact&quot;&gt;联系&lt;/a&gt;&lt;/li&gt;
+          &lt;li style=&quot;float:right&quot;&gt;&lt;a href=&quot;#about&quot;&gt;关于&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        
+        &lt;h3&gt;子页面页面include_sub(&quot;home/header&quot;)导航测试 |&lt;%c echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string(); %&gt;| &lt;/h3&gt;
+             
+         
+        </code></pre>
+        <p>echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string();</p>
+        <p>这个就是 视图标签 c++ 代码用&lt;%c包括起来</p>
+        <p>echo 是缓冲区，就是跟外面html一起拼起来</p>
+        <p>变成c++代码</p>
+        <p>是这样子</p>
+        <p>echo&lt;&lt;&quot;导航测试 |&quot;;</p>
+        <p>echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string();</p>
+        <p>echo&lt;&lt;&quot;| &lt; /h3 &gt;&quot;;</p>
+        <p>具体可以看viewsrc/view/home/header.cpp代码。</p>
+        <h4>3、 编译视图到cpp文件</h4>
+        <p>在网站根目录下运行</p>
+        <p>./bin/paozhu_cli</p>
+        <p>选择f 生成文件</p>
+        <pre><code class="language-c++">
+        ./bin/paozhu_cli
+        ./bin/paozhu_cli  model ｜ view | viewtocpp | control   
+         🎉 Welcome to use cli to manage your MVC files。
+        (m)model (v)view (f)viewtocpp or (c)control,x or q to exit[input m|v|f|c|]:f
+         🍄 current path: /Users/hzq/paozhu
+        1 [+] view/home/header.html 	 time: 2022-12-12 13:1:41
+        2 [+] view/login/login.html 	 time: 2022-12-12 13:1:26
+         please input number to parse to cpp file.
+         a update all , example: 1 3 4 5 enter key, q or x to exit,r reload 
+         input number:a
+        
+        </code></pre>
+        <p>我们先用f,直接跟框架一起编译的方法。</p>
+        <p>然后选择a,所有修改或新建的视图文件都转化为cpp文件</p>
+        <p>文件保存在 viewsrc目录</p>
+        <p>viewsrc</p>
+        <ul>
+        <li>
+        <p>view</p>
+        <ul>
+        <li>login
+        <ul>
+        <li>login.cpp</li>
+        </ul>
+        </li>
+        <li>home
+        <ul>
+        <li>header.cpp</li>
+        </ul>
+        </li>
+        </ul>
+        </li>
+        <li>
+        <p>include</p>
+        <ul>
+        <li>viewsrc.h</li>
+        <li>regviewmethod.hpp</li>
+        </ul>
+        </li>
+        </ul>
+        <p>大概这样</p>
+        <p>我们两个 login.html header.html已经转为cpp文件</p>
+        <p>include 目录里面两个文件</p>
+        <p>viewsrc.h 是所有视图文件函数的定义，以后可能会分开，一个视图文件对一个头文件。</p>
+        <p>regviewmethod.hpp 是视图注册函数，框架调用这个注册到框架</p>
+        <h4>viewsrc.h 文件内容</h4>
+        <pre><code class="language-c++">
+        #ifndef __HTTP_VIEWSRC_ALL_METHOD_H
+        #define __HTTP_VIEWSRC_ALL_METHOD_H
+        
+        #if defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
+        #pragma once
+        #endif // defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
+        
+        #include&lt;string&gt;
+        #include&lt;map&gt;
+        #include&lt;functional&gt;
+        #include &quot;request.h&quot;
+        #include &quot;viewso_param.h&quot;
+        
+        namespace http { 
+        namespace view { 
+        
+        namespace home{ 
+        
+            std::string header(const struct view_param &amp;vinfo,http::OBJ_VALUE &amp;obj);
         }
         
-        li {
-            float: left;
-            border-right:1px solid #bbb;
+        namespace login{ 
+        
+            std::string login(const struct view_param &amp;vinfo,http::OBJ_VALUE &amp;obj);
         }
         
-        li:last-child {
-            border-right: none;
+        
         }
         
-        li a {
-            display: block;
-            color: white;
-            text-align: center;
-            padding: 14px 16px;
-            text-decoration: none;
         }
+        #endif
         
-        li a:hover:not(.active) {
-            background-color: #111;
-        }
+        </code></pre>
+        <p>可以看到视图都放在命名空间里面，这样，一个目录里面和其它目录里面视图文件重名也没有冲突。</p>
+        <h4>regviewmethod.hpp 注册函数文件</h4>
+        <pre><code class="language-c++">
+        #ifndef __HTTP_REG_VIEW_METHOD_HPP
+        #define __HTTP_REG_VIEW_METHOD_HPP
         
-        .active {
-            background-color: #4CAF50;
-        }
-        &lt;/style&gt;
-      &lt;ul&gt;
-        &lt;li&gt;&lt;a class=&quot;active&quot; href=&quot;/&quot;&gt;主页&lt;/a&gt;&lt;/li&gt;
-        &lt;li&gt;&lt;a href=&quot;#news&quot;&gt;新闻&lt;/a&gt;&lt;/li&gt;
-        &lt;li&gt;&lt;a href=&quot;#contact&quot;&gt;联系&lt;/a&gt;&lt;/li&gt;
-        &lt;li style=&quot;float:right&quot;&gt;&lt;a href=&quot;#about&quot;&gt;关于&lt;/a&gt;&lt;/li&gt;
-      &lt;/ul&gt;
-      
-      &lt;h3&gt;子页面页面include_sub(&quot;home/header&quot;)导航测试 |&lt;%c echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string(); %&gt;| &lt;/h3&gt;
-           
-       
-      </code></pre>
-      <p>echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string();</p>
-      <p>这个就是 视图标签 c++ 代码用&lt;%c包括起来</p>
-      <p>echo 是缓冲区，就是跟外面html一起拼起来</p>
-      <p>变成c++代码</p>
-      <p>是这样子</p>
-      <p>echo&lt;&lt;&quot;导航测试 |&quot;;</p>
-      <p>echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string();</p>
-      <p>echo&lt;&lt;&quot;| &lt; /h3 &gt;&quot;;</p>
-      <p>具体可以看viewsrc/view/home/header.cpp代码。</p>
-      <h4>3、 编译视图到cpp文件</h4>
-      <p>在网站根目录下运行</p>
-      <p>./bin/paozhu_cli</p>
-      <p>选择f 生成文件</p>
-      <pre><code class="language-c++">
-      ./bin/paozhu_cli
-      ./bin/paozhu_cli  model ｜ view | viewtocpp | control   
-       🎉 Welcome to use cli to manage your MVC files。
-      (m)model (v)view (f)viewtocpp or (c)control,x or q to exit[input m|v|f|c|]:f
-       🍄 current path: /Users/hzq/paozhu
-      1 [+] view/home/header.html 	 time: 2022-12-12 13:1:41
-      2 [+] view/login/login.html 	 time: 2022-12-12 13:1:26
-       please input number to parse to cpp file.
-       a update all , example: 1 3 4 5 enter key, q or x to exit,r reload 
-       input number:a
-      
-      </code></pre>
-      <p>我们先用f,直接跟框架一起编译的方法。</p>
-      <p>然后选择a,所有修改或新建的视图文件都转化为cpp文件</p>
-      <p>文件保存在 viewsrc目录</p>
-      <p>viewsrc</p>
-      <ul>
-      <li>
-      <p>view</p>
-      <ul>
-      <li>login
-      <ul>
-      <li>login.cpp</li>
-      </ul>
-      </li>
-      <li>home
-      <ul>
-      <li>header.cpp</li>
-      </ul>
-      </li>
-      </ul>
-      </li>
-      <li>
-      <p>include</p>
-      <ul>
-      <li>viewsrc.h</li>
-      <li>regviewmethod.hpp</li>
-      </ul>
-      </li>
-      </ul>
-      <p>大概这样</p>
-      <p>我们两个 login.html header.html已经转为cpp文件</p>
-      <p>include 目录里面两个文件</p>
-      <p>viewsrc.h 是所有视图文件函数的定义，以后可能会分开，一个视图文件对一个头文件。</p>
-      <p>regviewmethod.hpp 是视图注册函数，框架调用这个注册到框架</p>
-      <h4>viewsrc.h 文件内容</h4>
-      <pre><code class="language-c++">
-      #ifndef __HTTP_VIEWSRC_ALL_METHOD_H
-      #define __HTTP_VIEWSRC_ALL_METHOD_H
-      
-      #if defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
-      #pragma once
-      #endif // defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
-      
-      #include&lt;string&gt;
-      #include&lt;map&gt;
-      #include&lt;functional&gt;
-      #include &quot;request.h&quot;
-      #include &quot;viewso_param.h&quot;
-      
-      namespace http { 
-      namespace view { 
-      
-      namespace home{ 
-      
-          std::string header(const struct view_param &amp;vinfo,http::OBJ_VALUE &amp;obj);
-      }
-      
-      namespace login{ 
-      
-          std::string login(const struct view_param &amp;vinfo,http::OBJ_VALUE &amp;obj);
-      }
-      
-      
-      }
-      
-      }
-      #endif
-      
-      </code></pre>
-      <p>可以看到视图都放在命名空间里面，这样，一个目录里面和其它目录里面视图文件重名也没有冲突。</p>
-      <h4>regviewmethod.hpp 注册函数文件</h4>
-      <pre><code class="language-c++">
-      #ifndef __HTTP_REG_VIEW_METHOD_HPP
-      #define __HTTP_REG_VIEW_METHOD_HPP
-      
-      #if defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
-      #pragma once
-      #endif // defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
-      
-      #include&lt;string&gt;
-      #include&lt;map&gt;
-      #include&lt;functional&gt;
-      #include &quot;request.h&quot;
-      #include &quot;viewso_param.h&quot;
-      #include &quot;viewmethold_reg.h&quot;
-      #include &quot;viewsrc.h&quot;
-      
-      namespace http
-      {
-        void _initview_method_regto(VIEW_REG  &amp;_viewmetholdreg)
+        #if defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
+        #pragma once
+        #endif // defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
+        
+        #include&lt;string&gt;
+        #include&lt;map&gt;
+        #include&lt;functional&gt;
+        #include &quot;request.h&quot;
+        #include &quot;viewso_param.h&quot;
+        #include &quot;viewmethold_reg.h&quot;
+        #include &quot;viewsrc.h&quot;
+        
+        namespace http
         {
-                       //create time: Mon, 12 Dec 2022 05:01:53 GMT
-      
-          _viewmetholdreg.emplace(&quot;home/header&quot;,http::view::home::header);
-          _viewmetholdreg.emplace(&quot;login/login&quot;,http::view::login::login);
-      
-          } 
-      }
-      #endif
-      
-      </code></pre>
-      <p>两个函数注册到回调函数上，就是一个视图文件是一个函数</p>
-      <p>目录名和文件名 组成一个注册点</p>
-      <p>login/login 是一个注册点</p>
-      <p>控制器 peer-&gt;view(&quot;login/login&quot;); 调用方法</p>
-      <h4>4、 视图测试</h4>
-      <p>我们创建完视图，现在测试一下</p>
-      <p>我安照hello world入门那章</p>
-      <p>controller 目录创建include src文件 就是.h .cpp文件</p>
-      <p>controller</p>
-      <ul>
-      <li>src
-      <ul>
-      <li>testview.cpp</li>
-      </ul>
-      </li>
-      <li>include
-      <ul>
-      <li>testview.h</li>
-      </ul>
-      </li>
-      </ul>
-      <p>大概这样子</p>
-      <h4>testview.h</h4>
-      <pre><code class="language-c++">#pragma once
-      #include &lt;chrono&gt;
-      #include &lt;thread&gt;
-      #include &quot;httppeer.h&quot;
-      
-      namespace http
-      {
-      
-            std::string testloginview(std::shared_ptr&lt;httppeer&gt; peer);
-      }
-      </code></pre>
-      <h4>testview.cpp</h4>
-      <pre><code class="language-c++">#include &lt;chrono&gt;
-      #include &lt;thread&gt;
-      #include &quot;httppeer.h&quot;
-      #include &quot;testview.h&quot;
-      namespace http
-      {
-      
-            std::string testloginview(std::shared_ptr&lt;httppeer&gt; peer)
-            {
-                  httppeer &amp;client = peer-&gt;getpeer();
-                  client &lt;&lt; &quot; 视图测试 &quot;;
-                  // client &lt;&lt; client.gethosturl();
-                  // client&lt;&lt;&quot;&lt;p&gt;&lt;a href=\&quot;&quot;&lt;&lt;client.gethosturl()&lt;&lt;&quot;/showcookie\&quot;&gt;show&lt;/a&gt;&lt;/p&gt;&quot;;
-      
-                  peer-&gt;view(&quot;login/login&quot;);
-                  return &quot;&quot;;
-            }
-      
-      }
-      
-      </code></pre>
-      <p>内容也是比较简单
-      就是一个 peer-&gt;view(&quot;login/login&quot;); 调用视图</p>
-      <p>别忘了，我们要做一个urlpath映射挂载</p>
-      <p>我们编辑挂载文件</p>
-      <h4>common/reghttpmethod.hpp</h4>
-      <pre><code class="language-c++">
-      #ifndef __HTTP_REGHTTPMETHOD_HPP
-      #define __HTTP_REGHTTPMETHOD_HPP
-      
-      #if defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
-      #pragma once
-      #endif // defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
-      
-      #include &quot;httppeer.h&quot;
-      
-      #include &quot;testview.h&quot;
-      
-      namespace http
-      {
-        void _inithttpmethodregto(std::map&lt;std::string, regmethold_t&gt; &amp;methodcallback)
-        {
-          struct regmethold_t temp;
-          temp.pre = nullptr;
-      
-          temp.regfun = testloginview;
-          methodcallback.emplace(&quot;testview&quot;, temp); 
-      
-      
+          void _initview_method_regto(VIEW_REG  &amp;_viewmetholdreg)
+          {
+                         //create time: Mon, 12 Dec 2022 05:01:53 GMT
+        
+            _viewmetholdreg.emplace(&quot;home/header&quot;,http::view::home::header);
+            _viewmetholdreg.emplace(&quot;login/login&quot;,http::view::login::login);
+        
+            } 
         }
-      
-      }
-      #endif
-      
-      </code></pre>
-      <p>记得包含文件
-      #include &quot;testview.h&quot;</p>
-      <p>把 testview 映射到 testloginview 上，两个名字可以不一样。</p>
-      <p>就是http://localhost/testview 可以访问我们的testloginview函数</p>
-      <h4>5、编译</h4>
-      <p>一切准备就绪了，我们开始编译</p>
-      <p>回到项目根目录进入build目录</p>
-      <p>cmake ..</p>
-      <p>make</p>
-      <p>然后在回到根目录，或打开新的命令窗口</p>
-      <p>执行</p>
-      <p>./bin/paozhu</p>
-      <p>用浏览器打开</p>
-      <p>http://localhost/testview</p>
-      <p>可以看到视图内容了</p>
+        #endif
+        
+        </code></pre>
+        <p>两个函数注册到回调函数上，就是一个视图文件是一个函数</p>
+        <p>目录名和文件名 组成一个注册点</p>
+        <p>login/login 是一个注册点</p>
+        <p>控制器 peer-&gt;view(&quot;login/login&quot;); 调用方法</p>
+        <h4>4、 视图测试</h4>
+        <p>我们创建完视图，现在测试一下</p>
+        <p>我安照hello world入门那章</p>
+        <p><code>controller/src</code>目录 创建 <code>testview.cpp</code> 文件</p>
+        <p>大概这样子</p>
+        <h4>testview.cpp</h4>
+        <pre><code class="language-c++">#include &lt;chrono&gt;
+        #include &lt;thread&gt;
+        #include &quot;httppeer.h&quot;
+        #include &quot;testview.h&quot;
+        namespace http
+        {
+               //@urlpath(null,testview)
+              std::string testloginview(std::shared_ptr&lt;httppeer&gt; peer)
+              {
+                    httppeer &amp;client = peer-&gt;getpeer();
+                    client &lt;&lt; &quot; 视图测试 &quot;;
+                    // client &lt;&lt; client.gethosturl();
+                    // client&lt;&lt;&quot;&lt;p&gt;&lt;a href=\&quot;&quot;&lt;&lt;client.gethosturl()&lt;&lt;&quot;/showcookie\&quot;&gt;show&lt;/a&gt;&lt;/p&gt;&quot;;
+        
+                    peer-&gt;view(&quot;login/login&quot;);
+                    return &quot;&quot;;
+              }
+        
+        }
+        
+        </code></pre>
+        <p>把 testview 映射到 testloginview 上，两个名字可以不一样。</p>
+        <p>就是http://localhost/testview 可以访问我们的testloginview函数</p>
+        <h4>5、编译</h4>
+        <p>一切准备就绪了，我们开始编译</p>
+        <p>回到项目根目录进入build目录</p>
+        <p>cmake ..</p>
+        <p>make</p>
+        <p>然后在回到根目录，或打开新的命令窗口</p>
+        <p>执行</p>
+        <p>./bin/paozhu</p>
+        <p>用浏览器打开</p>
+        <p>http://localhost/testview</p>
+        <p>可以看到视图内容了</p>
 
       </div>   
       <div class="container">
