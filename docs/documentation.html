@@ -394,6 +394,19 @@
     </div>
     <div class="container">
         <h3>ORM使用例子</h3>
+        <p>表模型有两个成员变量很重要</p>
+        <ul>
+        <li>data     是单个表数据结构映射</li>
+        <li>record   一个std::vector数组</li>
+        </ul>
+        <p>表数据结构</p>
+        <pre><code class="language-C++">struct meta{
+         unsigned  int  id = 0; 
+         int  randomnumber = 0;  
+        } data;
+        
+        std::vector&lt;worldbase::meta&gt; record;
+        </code></pre>
         <h4>协程方式使用ORM</h4>
         <pre><code class="language-C++">//@urlpath(null,queries)
         asio::awaitable&lt;std::string&gt; techempowerqueries(std::shared_ptr&lt;httppeer&gt; peer)
@@ -434,19 +447,7 @@
         <li><code>co_await myworld.async_fetch_append();</code> 是高级用法，会附加数据到record对象上。一般使用<code>co_await myworld.async_fetch();</code> 会清除record对象，然后重新赋值。</li>
         </ul>
         <p><code>peer-&gt;output = myworld.to_json();</code> 直接输出JSON到浏览器。</p>
-        <p>表模型有两个成员变量很重要</p>
-        <ul>
-        <li>data     是单个表数据结构映射</li>
-        <li>record   一个std::vector数组</li>
-        </ul>
-        <p>表数据结构</p>
-        <pre><code class="language-C++">struct meta{
-         unsigned  int  id = 0; 
-         int  randomnumber = 0;  
-        } data;
-        
-        std::vector&lt;worldbase::meta&gt; record;
-        </code></pre>
+
     </div>
     <div class="container">
         <h4>同步使用ORM</h4>
@@ -480,7 +481,25 @@
             return &quot;&quot;;
         }
         </code></pre>
+
+
+        <p><code>httppeer &amp;client = peer-&gt;get_peer();</code> 引用连接对象</p>
+        <p><code>auto topicm = orm::cms::Topic();</code>  产生一个ORM模型，这个模型源文件在models目录下面,Topic就是数据库表名，如果设置前缀那么框架会自动去除，<code>topicm.where</code> 添加查询条件，<code>asc(&quot;parentid&quot;).fetch()</code> 按升序<code>parentid</code>查询，<code>.fetch()</code>发出查询命令。</p>
+        <h4>分页使用</h4>
+        <p>如果不想要那么多数据可以分页取出，特别是网络业务，需要占用带宽或cpu资源，平时最好按需使用<code>.select(&quot;fieldname1,fieldname2&quot;)</code> 取出字段数据，使用<code>.limit(pos,offset)</code>限定范围。</p>
+        <p>使用<code>.page(page, 10, 5)</code>已经自动添加了<code>.limit(pos,offset)</code>限定范围，只要传入<code>page</code>页码。</p>
+        <pre><code class="language-C++">auto [bar_min, bar_max, current_page, total_page] = artmodel.page(page, 10, 5);
+
+        client.val[&quot;pageinfo&quot;].set_object();
+        client.val[&quot;pageinfo&quot;][&quot;min&quot;]     = bar_min;
+        client.val[&quot;pageinfo&quot;][&quot;max&quot;]     = bar_max;
+        client.val[&quot;pageinfo&quot;][&quot;current&quot;] = current_page;
+        client.val[&quot;pageinfo&quot;][&quot;total&quot;]   = total_page;
+        </code></pre>
+        <p><code>.page(page, 10, 5)</code> 返回四个数值，<code>bar_min</code> <code>bar_max</code>由传入5决定范围，
+        就是前后2页窗口，每页10个，</p>
       </div>
+
       <div class="container">
 
         <h3>C++生产环境故障排查</h3>
