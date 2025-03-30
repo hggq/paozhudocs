@@ -142,6 +142,109 @@
         </ul>
     </div>
     <div class="container">
+        <h3>paozhu配置</h3>
+        <p>paozhu配置文件在<code>conf/server.conf</code></p>
+        <p>可以先了解几个变量让项目运行起来。</p>
+        <pre><code>[default]
+        threadmax=1024
+        threadmin=5
+        httpport=80
+        httpsport=443
+        cothreadnum=8 ;Coroutines run on thread num
+        
+        http2_enable=1
+        debug_enable=1
+        deamon_enable=0
+        mainhost=www.869869.com
+        certificate_chain_file=www.869869.com.pem
+        private_key_file=www.869869.com.key
+        tmp_dh_file=dh4096.pem
+        reboot_password=e10adc3949ba59abbe56e057f20f883e ;md5(md5(&quot;123456&quot;)+&quot;rand_char&quot;+md5(&quot;123456&quot;))
+        reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
+        clean_cron  =m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+        links_restart_process =n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+        session_type=1 ;session save type 0.file 1.memory 2.redis 3.memcache 4.reserve
+        static_file_compress_cache=1 ;1 enable, Cache static file compress(gzip,br) content to cache directory 
+        modelspath=/Users/hzq/paozhu/models
+        serverpath=/Users/hzq/paozhu
+        viewpath=/Users/hzq/paozhu/view
+        viewsopath=/Users/hzq/paozhu/module/view
+        
+        controlpath=/Users/hzq/paozhu/controller
+        controlsopath=/Users/hzq/paozhu/module/controller
+        
+        temppath=/Users/hzq/paozhu/temp
+        logpath=/Users/hzq/paozhu/log
+        wwwpath=/Users/hzq/paozhu/www/default
+        pluginspath=/Users/hzq/paozhu/plugins
+        libspath=/Users/hzq/paozhu/libs
+        directorylist=1
+        index=index.html
+        ;usehtmlcache=1
+        ;usehtmlcachetime=3600
+        staticfile_cache_num=0 ;0 not cache, min 10 begin  
+        rewrite_404=0   ;1 file 2 action url path
+        rewrite_404_action=index.html
+        method_pre=
+        method_after=
+        show_visitinfo=0
+        upload_max_size=16777216
+        siteid=1
+        groupid=0
+        alias_domain=
+        init_func=
+        [www.869869.com]
+        wwwpath=/Users/hzq/paozhu/www/default
+        http2_enable=1
+        ;rewrite_404=1
+        ;rewrite_404_action=index.html|psy/index.html|exam/index.html
+        ;controlsopath=/Users/hzq/paozhu/docs/controller
+        static_pre=downloadfileauth|upload
+        method_pre= ;api/dev/hostcors
+        method_after=
+        isuse_php=0
+        rewrite_php=/Users/hzq/www/mpdftest|index.php
+        fastcgi_host=127.0.0.1 ;/run/php/php8.1-fpm.sock
+        fastcgi_port=9000
+        upload_max_size=16777216
+        siteid=1
+        groupid=0
+        alias_domain=
+        init_func=
+        </code></pre>
+        <pre><code>threadmax=1024  最大业务线程数
+        threadmin=5		最小业务线程数
+        httpport=80	    服务器倾听端口 
+        httpsport=443   ssl服务器倾听端口 
+        cothreadnum=8 ;Coroutines run on thread num IO协程使用线程池数量
+        </code></pre>
+        <p><code>http2_enable=1</code> 是否启用http2，可以每个域名有自己的设置</p>
+        <p>ssl证书文件，申请成功后放在conf目录，生产环境需要在<code>/var/local/etc/paozhu</code>放一份</p>
+        <pre><code>mainhost=www.869869.com
+        certificate_chain_file=www.869869.com.pem
+        private_key_file=www.869869.com.key
+        </code></pre>
+        <p><code>reboot_cron</code> 自动重启进程周期天D 周W 月M 季节S  h时间小时 180天凌晨5点重启进程
+        <code>links_restart_process</code> 如果达到连接数也可以重启n后面连接数，
+        ts 开始时段 te结束时段，如果这段时间空闲就会重启。</p>
+        <pre><code>reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
+        clean_cron  =m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+        links_restart_process =n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+        </code></pre>
+        <p><code>directorylist=1</code> 显示目录，如果请求静态文件是目录名，目录下也没有index.html文件会显示目录列表。
+        生产环境建议设置为0.</p>
+        <p><code>wwwpath=/Users/hzq/paozhu/www/default</code> <code>/Users/hzq/paozhu</code>建议换成你的当前目录名称,
+        项目下<code>www/default</code>，是静态文件目录，如果是多域名建议创建<code>www/domain.com</code>这个设置是为SAAS服务的。</p>
+        <p><code>upload_max_size=16777216</code> 上传文件大小，默认是16M</p>
+        <p>下面几个是SAAS设置可以先不管</p>
+        <pre><code>siteid=1
+        groupid=0
+        alias_domain=
+        init_func=
+        </code></pre>
+        <p>初学者只要关注 <code>httpport</code> <code>httpsport</code> <code>wwwpath</code>设置是否正确。</p>
+    </div>
+    <div class="container">
         <h3>paozhu入门</h3>
         <h4>Hello, World 例子</h4>
         <pre><code class="language-C++">

@@ -45,6 +45,132 @@ paozhu支持`MacOS`、`Linux`、`Windows`系统。
 - RockyLinux AlmaLinux 安装 参考  
 - Windows 安装 参考  
 
+### paozhu配置 ###
+
+paozhu配置文件在`conf/server.conf`
+
+可以先了解几个变量让项目运行起来。
+
+
+```
+[default]
+threadmax=1024
+threadmin=5
+httpport=80
+httpsport=443
+cothreadnum=8 ;Coroutines run on thread num
+
+http2_enable=1
+debug_enable=1
+deamon_enable=0
+mainhost=www.869869.com
+certificate_chain_file=www.869869.com.pem
+private_key_file=www.869869.com.key
+tmp_dh_file=dh4096.pem
+reboot_password=e10adc3949ba59abbe56e057f20f883e ;md5(md5("123456")+"rand_char"+md5("123456"))
+reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
+clean_cron  =m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+links_restart_process =n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+session_type=1 ;session save type 0.file 1.memory 2.redis 3.memcache 4.reserve
+static_file_compress_cache=1 ;1 enable, Cache static file compress(gzip,br) content to cache directory 
+modelspath=/Users/hzq/paozhu/models
+serverpath=/Users/hzq/paozhu
+viewpath=/Users/hzq/paozhu/view
+viewsopath=/Users/hzq/paozhu/module/view
+
+controlpath=/Users/hzq/paozhu/controller
+controlsopath=/Users/hzq/paozhu/module/controller
+
+temppath=/Users/hzq/paozhu/temp
+logpath=/Users/hzq/paozhu/log
+wwwpath=/Users/hzq/paozhu/www/default
+pluginspath=/Users/hzq/paozhu/plugins
+libspath=/Users/hzq/paozhu/libs
+directorylist=1
+index=index.html
+;usehtmlcache=1
+;usehtmlcachetime=3600
+staticfile_cache_num=0 ;0 not cache, min 10 begin  
+rewrite_404=0   ;1 file 2 action url path
+rewrite_404_action=index.html
+method_pre=
+method_after=
+show_visitinfo=0
+upload_max_size=16777216
+siteid=1
+groupid=0
+alias_domain=
+init_func=
+[www.869869.com]
+wwwpath=/Users/hzq/paozhu/www/default
+http2_enable=1
+;rewrite_404=1
+;rewrite_404_action=index.html|psy/index.html|exam/index.html
+;controlsopath=/Users/hzq/paozhu/docs/controller
+static_pre=downloadfileauth|upload
+method_pre= ;api/dev/hostcors
+method_after=
+isuse_php=0
+rewrite_php=/Users/hzq/www/mpdftest|index.php
+fastcgi_host=127.0.0.1 ;/run/php/php8.1-fpm.sock
+fastcgi_port=9000
+upload_max_size=16777216
+siteid=1
+groupid=0
+alias_domain=
+init_func=
+```
+
+```
+threadmax=1024  最大业务线程数
+threadmin=5		最小业务线程数
+httpport=80	    服务器倾听端口 
+httpsport=443   ssl服务器倾听端口 
+cothreadnum=8 ;Coroutines run on thread num IO协程使用线程池数量
+```
+
+`http2_enable=1` 是否启用http2，可以每个域名有自己的设置
+
+ssl证书文件，申请成功后放在conf目录，生产环境需要在`/var/local/etc/paozhu`放一份
+
+```
+mainhost=www.869869.com
+certificate_chain_file=www.869869.com.pem
+private_key_file=www.869869.com.key
+```
+
+`reboot_cron` 自动重启进程周期天D 周W 月M 季节S  h时间小时 180天凌晨5点重启进程
+`links_restart_process` 如果达到连接数也可以重启n后面连接数，
+ts 开始时段 te结束时段，如果这段时间空闲就会重启。
+
+
+```
+reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
+clean_cron  =m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+links_restart_process =n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+```
+
+`directorylist=1` 显示目录，如果请求静态文件是目录名，目录下也没有index.html文件会显示目录列表。
+生产环境建议设置为0.
+
+`wwwpath=/Users/hzq/paozhu/www/default` `/Users/hzq/paozhu`建议换成你的当前目录名称,
+项目下`www/default`，是静态文件目录，如果是多域名建议创建`www/domain.com`这个设置是为SAAS服务的。
+
+
+`upload_max_size=16777216` 上传文件大小，默认是16M
+
+下面几个是SAAS设置可以先不管
+
+```
+siteid=1
+groupid=0
+alias_domain=
+init_func=
+```
+
+初学者只要关注 `httpport` `httpsport` `wwwpath`设置是否正确。
+
+
 ### paozhu入门 ###
 
 #### Hello, World 例子
