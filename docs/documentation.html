@@ -385,6 +385,7 @@
         </code></pre>
         <p>主要应用在复杂对象交换程序，如果不是可以使用C++ 内置对象或STL库方式。</p>
         <h3>ORM介绍</h3>
+        <p>先在按照安装环境教程导入的数据。</p>
         <p>paozhu框架内置ORM对象，目前自己分析MySQL协议，方便和ORM整合，而且支持协程模式，这个官方没有支持。</p>
         <p>配置文件位置 <code>conf/orm.conf</code></p>
         <pre><code>[default]
@@ -420,7 +421,6 @@
     </div>
     <div class="container">
         <h3>ORM 使用入门</h3>
-        <p>现在安装环境部分导入的数据。</p>
         <p>框架目前支持数据库到文件方式，这样修改数据库可以重新生成ORM文件。
         编译成功后</p>
         <pre><code># ./bin/paozhu_cli 
