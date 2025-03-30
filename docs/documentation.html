@@ -972,6 +972,14 @@
       <div class="container">
 
         <h3>C++生产环境故障排查</h3>
+        <p>框架开启了ASAN，如果在调试时候被ASAN检测到会指出哪一行有问题。</p>
+        <p>生产环境因为没有输出原因，难以看到。</p>
+        <p>生产环境编译参数是</p>
+        <pre><code class="language-shell">mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j8
+        </code></pre>
         <p>需要安装gdb coredumpctl</p>
         <p>框架会隔1分钟左右检查 <code>log</code> 目录是否有<code>restart_server</code>文件</p>
         <p>如果我们需要取现在线程栈样品，可以 <code>touch log/restart_server</code> 这样可以让进程重启</p>

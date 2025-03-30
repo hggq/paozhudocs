@@ -1050,6 +1050,21 @@ http://localhost/testview
 
 ### C++生产环境故障排查
 
+框架开启了ASAN，如果在调试时候被ASAN检测到会指出哪一行有问题。
+
+生产环境因为没有输出原因，难以看到。
+
+生产环境编译参数是
+
+```shell
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j8
+```
+
+需要安装gdb coredumpctl
+
 框架会隔1分钟左右检查 `log` 目录是否有`restart_server`文件
 
 如果我们需要取现在线程栈样品，可以 `touch log/restart_server` 这样可以让进程重启
@@ -1058,7 +1073,6 @@ http://localhost/testview
 
 如果已经取样，我命需要分析进程栈情况
 
-需要安装gdb coredumpctl
 
 核心coredump查看
 
