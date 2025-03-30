@@ -610,6 +610,10 @@
         </code></pre>
         <p><code>.page(page, 10, 5)</code> 返回四个数值，<code>bar_min</code> <code>bar_max</code>由传入5决定范围，
         就是前后2页窗口，每页10个，</p>
+        <p>ORM where其它方法</p>
+        <p><code>whereLike(fieldname,searchword)</code> 其实就是 and fieldname '%searchword%'设置<br />
+        <code>whereAnd</code> 其实就是 and fieldname = val 设置<br />
+        <code>whereIn</code> 其实就是 and fieldname IN(val) 设置</p>
       </div>
 
       <div class="container">
