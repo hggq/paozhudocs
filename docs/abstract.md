@@ -354,6 +354,8 @@ pval.from_json(bbb);
 
 ### ORM介绍
 
+现在安装环境部分导入的数据。
+
 paozhu框架内置ORM对象，目前自己分析MySQL协议，方便和ORM整合，而且支持协程模式，这个官方没有支持。
 
 
@@ -617,7 +619,11 @@ client.val["pageinfo"]["total"]   = total_page;
 `.page(page, 10, 5)` 返回四个数值，`bar_min` `bar_max`由传入5决定范围，
 就是前后2页窗口，每页10个，
 
+ORM where其它方法
 
+`whereLike(fieldname,searchword)` 其实就是 and fieldname '%searchword%'设置  
+`whereAnd` 其实就是 and fieldname = val 设置  
+`whereIn` 其实就是 and fieldname IN(val) 设置  
 
 ### paozhu 框架view 视图入门
 
@@ -921,37 +927,15 @@ login/login 是一个注册点
 
 我安照hello world入门那章 
 
-controller 目录创建include src文件 就是.h .cpp文件
-
-controller
-
-- src
-  - testview.cpp
-- include
-  - testview.h
+`controller/src`目录 创建 `testview.cpp` 文件
 
 
 大概这样子
 
-#### testview.h
-
-
-```c++
-#pragma once
-#include <chrono>
-#include <thread>
-#include "httppeer.h"
-
-namespace http
-{
-
-      std::string testloginview(std::shared_ptr<httppeer> peer);
-}
-```
+ 
 
 #### testview.cpp
  
-
 ```c++
 #include <chrono>
 #include <thread>
@@ -959,7 +943,7 @@ namespace http
 #include "testview.h"
 namespace http
 {
-
+	   //@urlpath(null,testview)
       std::string testloginview(std::shared_ptr<httppeer> peer)
       {
             httppeer &client = peer->getpeer();
@@ -974,50 +958,6 @@ namespace http
 }
 
 ```
-
-内容也是比较简单
-就是一个 peer->view("login/login"); 调用视图
-
-别忘了，我们要做一个urlpath映射挂载
-
-我们编辑挂载文件
-
-#### common/reghttpmethod.hpp
-
-
-```c++
-
-#ifndef __HTTP_REGHTTPMETHOD_HPP
-#define __HTTP_REGHTTPMETHOD_HPP
-
-#if defined(_MSC_VER) && (_MSC_VER >= 1200)
-#pragma once
-#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
-
-#include "httppeer.h"
-
-#include "testview.h"
-
-namespace http
-{
-  void _inithttpmethodregto(std::map<std::string, regmethold_t> &methodcallback)
-  {
-    struct regmethold_t temp;
-    temp.pre = nullptr;
-
-    temp.regfun = testloginview;
-    methodcallback.emplace("testview", temp); 
-
-
-  }
-
-}
-#endif
-
-````
-
-记得包含文件
-#include "testview.h"
 
 把 testview 映射到 testloginview 上，两个名字可以不一样。
 

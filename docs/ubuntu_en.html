@@ -103,48 +103,66 @@
 
 <body>
     <div class="container">
-        <h3>MacOS bigsur C++20</h3>
-        <p>Open terminal</p>
-        <p>Using Terminal Command</p>
-        <pre><code># xcode-select --install
+        <h3>Ubuntu install paozhu</h3>
+        <pre><code>sudo apt-get install gcc g++
+        sudo apt-get install cmake
+        sudo apt-get install git
+        sudo apt-get install -y brotli  libbrotli-dev zlib1g-dev
+        sudo apt-get install libgd-dev
+        sudo apt-get install qrencode libqrencode-dev
+        sudo apt-get install openssl libssl-dev
+        sudo apt-get install mysql-server
         
-        # /bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
+        sudo service mysql status # 
+        sudo service mysql start #  
+        sudo service mysql stop #  
+        sudo service mysql restart # 
         </code></pre>
-        <p><strong>In China see</strong></p>
-        <p><code>https://mirrors.tuna.tsinghua.edu.cn/help/homebrew/</code></p>
-        <pre><code>brew install asio
-        brew install mysql
-        brew install openssl
-        brew install zlib
-        brew install brotli
+        <pre><code>$ sudo service mysql status
+        ● mysql.service - MySQL Community Server
+             Loaded: loaded (/lib/systemd/system/mysql.service; enabled; vendor preset: enabled)
+             Active: active (running) since Wed 2022-06-29 19:57:13 CST; 2min 23s ago
+           Main PID: 22401 (mysqld)
+             Status: &quot;Server is operational&quot;
+              Tasks: 37 (limit: 8745)
+             Memory: 359.0M
+             CGroup: /system.slice/mysql.service
+                     └─22401 /usr/sbin/mysqld
         
-        [option] brew install gd
-        [option] brew install qrencode
+        6 June 29 19:57:11 hzq-Default-string systemd[1]: Starting MySQL Community Server...
+        6 June 29 19:57:13 hzq-Default-string systemd[1]: Started MySQL Community Server.
         </code></pre>
-        <p>https://dev.mysql.com/downloads/mysql/</p>
-        <p>MySQL Community Server 8</p>
-        <p>#mysql -u root -p</p>
-        <blockquote>
-        <p>create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
-        use cppcms;
-        source /root/paozhu/conf/cppcms.sql;</p>
-        </blockquote>
-        <blockquote>
-        <p>use mysql;</p>
-        </blockquote>
-        <blockquote>
-        <p>create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';</p>
-        </blockquote>
-        <blockquote>
-        <p>GRANT ALL PRIVILEGES ON <code>cppcms</code>.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ;</p>
-        </blockquote>
-        <blockquote>
-        <p>select host,user,authentication_string from user;</p>
-        </blockquote>
-        <blockquote>
-        <p>exit;</p>
-        </blockquote>
-        <p>Config system</p>
+        <pre><code>$ sudo cat /etc/mysql/debian.cnf
+        # Automatically generated for Debian scripts. DO NOT TOUCH!
+        [client]
+        host     = localhost
+        user     = debian-sys-maint
+        password = 5hiIbvxR2DgC7ekz
+        socket   = /var/run/mysqld/mysqld.sock
+        [mysql_upgrade]
+        host     = localhost
+        user     = debian-sys-maint
+        password = 5hiIbvxR2DgC7ekz
+        socket   = /var/run/mysqld/mysqld.sock
+        </code></pre>
+        <p>Login with root and input password</p>
+        <pre><code>$ mysql -u debian-sys-maint -p
+        
+        &gt;create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
+        &gt;use cppcms; 
+        &gt;source /root/paozhu/conf/cppcms.sql;
+        
+        &gt;use mysql;
+        
+        &gt;create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';
+        
+        &gt;GRANT ALL PRIVILEGES ON `cppcms`.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ; 
+        
+        &gt;select host,user,authentication_string from user;
+        
+        &gt;exit;
+        </code></pre>
+        <p>Config server system</p>
         <pre><code>#vim conf/server.conf
         </code></pre>
         <p>Replace <code>/Users/hzq/paozhu</code> to your project path</p>
@@ -179,7 +197,8 @@
         # cmake ..
         # make 
         </code></pre>        
-<p><a href="documentation.html">Docs</a></p>
+        <p><a href="documentation.html">Docs</a></p>    
+        
 </div>
 </body>
 
