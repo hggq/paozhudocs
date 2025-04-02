@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PaoZhu C++ Web Frameworks</title>
+    <style>
+        /* Light mode */
+        body {
+            font-family:'PingFang SC','Helvetica Neue','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC',Sathu,EucrosiaUPC,Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:1.45em;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+        <h3><strong>Abstract</strong></h3>
+        <p>Paozhu is a C++ Web development framework with built-in HTTP/1/HTTP/2 ORM, making it easy and elegant to write web programs, breaking the previous inconvenience of writing web programs in C++.</p>
+        <p>Paozhu has developed the underlying infrastructure for web development, such as multi domain binding, SSL certificate management, cookies, sessions, HTML form management, URL processing, file upload and download, HttpClient, ORM, WebSocket, Logs, covering the basics of web development.</p>
+        <p>The framework is based on C++20, using new standards with complete compiler support, and modernizing the code. The framework has enabled ASAN and all error prompts(-Wall), making it easy to identify problems during the development phase. It can also be combined with the coredumpctl tool at runtime to view the memory stacks of various programs. Combined with intelligent pointers, the framework has basically eliminated memory leaks and out of bounds issues, and has not encountered any memory leaks or crashes so far.</p>
+        <p>Paozhu uses C++ mainly to consider the integration of large models (CUDA, file storage, network, memory operations), compared to GO JAVA RUST, which are not very perfect. C++ is also not perfect, RUST syntax is not good-looking, GO is simple but lacks AI culture in Big models, etc. At present, the experience is that ASAN and coredumpctl tools can also ensure the quality of C++, and the new compiler can also provide some hints.</p>
+        <h3>paozhu Feature</h3>
+        <ol>
+        <li>Supports HTTP2.</li>
+        <li>Built in ORM (self-developed MySQL protocol), supporting coroutine mode.</li>
+        <li>Multi domain management and SAAS mode support.</li>
+        <li>Separate IO threads from business threads.</li>
+        <li>Built in micro objects, JSON import and export, similar to variables in scripting languages.</li>
+        <li>Built in FastCGI supports PHP</li>
+        </ol>
+        <h3>paozhu Framework technology architecture principle</h3>
+        <p>The Paozhu framework uses ASIO's thread pool, which is specifically designed for IO usage, such as network sending and receiving. The framework also has a built-in business thread pool, which is dedicated to running business code.</p>
+        <p>At present, the frameworks mainly use HTTP and HTTPS, with two threads constantly listening for connections to arrive. When a user accesses using a browser or client, a connection is generated, and after handshake, the server waits for the client to send HTTP header information. Then, the server processes the HTTP protocol. If the URL matches, it registers a function and checks whether the function is a coroutine or a regular function. The coroutine runs directly. If it is a regular function, it is thrown directly into the business thread pool. If the URL is a static file, it is sent directly without going through the business thread.</p>
+        <p>Because C++coroutines are contagious, when running business code in coroutine registration functions, you need to use ORM coroutine methods. If you cannot initiate coroutine functions in regular functions, you can only use ORM regular functions.</p>
+        <p>It is generally recommended to use one connection to one thread, and business threads also have queues, so business code should not use the sleep function to sleep casually.</p>
+        <h3>paozhu Environment</h3>
+        <p>Paozhu supports <code>MacOS</code> <code>Linux</code> and <code>Windows</code> systems.</p>
+        <p>Uses third-party dependencies</p>
+        <p><code>OpenSSL</code> <code>Zlib</code> <code>Brotli</code> <code>ASIO</code></p>
+        <p>Optional third-party dependencies</p>
+        <p><code>GD</code> <code>qrencode</code></p>
+        <p>The framework is based on C++20 or above, ensuring that your system supports compilers that support C++20.</p>
+        <ul>
+        <li><code>MacOS</code> <code>MacOS 11 BigSur</code> above,suggestion <code>MacOS 14 Sonoma</code></li>
+        <li><code>Ubuntu</code> 22.04 above</li>
+        <li><code>RockyLinux</code> <code>AlmaLinux</code> 9.1 above</li>
+        <li><code>Windows</code> Win10 Compiler 19.25 or above。</li>
+        </ul>
+        <h3>paozhu Install</h3>
+        <ul>
+        <li><a href="https://hggq.github.io/paozhudocs/macos_en.html">MacOS install</a></li>
+        <li><a href="https://hggq.github.io/paozhudocs/ubuntu_en.html">Ubuntu install</a></li>
+        <li><a href="https://hggq.github.io/paozhudocs/linux_en.html">RockyLinux AlmaLinux install</a></li>
+        <li>[Windows install]</li>
+        </ul>
+        <h3>paozhu Config</h3>
+        <p>paozhu Config file at <code>conf/server.conf</code></p>
+        <p>You can first understand a few variables to get the project running.</p>
+        <pre><code>[default]
+        threadmax=1024
+        threadmin=5
+        httpport=80
+        httpsport=443
+        cothreadnum=8 ;Coroutines run on thread num
+        
+        http2_enable=1
+        debug_enable=1
+        deamon_enable=0
+        mainhost=www.869869.com
+        certificate_chain_file=www.869869.com.pem
+        private_key_file=www.869869.com.key
+        tmp_dh_file=dh4096.pem
+        reboot_password=e10adc3949ba59abbe56e057f20f883e ;md5(md5(&quot;123456&quot;)+&quot;rand_char&quot;+md5(&quot;123456&quot;))
+        reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
+        clean_cron  =m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+        links_restart_process =n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+        session_type=1 ;session save type 0.file 1.memory 2.redis 3.memcache 4.reserve
+        static_file_compress_cache=1 ;1 enable, Cache static file compress(gzip,br) content to cache directory 
+        modelspath=/Users/hzq/paozhu/models
+        serverpath=/Users/hzq/paozhu
+        viewpath=/Users/hzq/paozhu/view
+        viewsopath=/Users/hzq/paozhu/module/view
+        
+        controlpath=/Users/hzq/paozhu/controller
+        controlsopath=/Users/hzq/paozhu/module/controller
+        
+        temppath=/Users/hzq/paozhu/temp
+        logpath=/Users/hzq/paozhu/log
+        wwwpath=/Users/hzq/paozhu/www/default
+        pluginspath=/Users/hzq/paozhu/plugins
+        libspath=/Users/hzq/paozhu/libs
+        directorylist=1
+        index=index.html
+        ;usehtmlcache=1
+        ;usehtmlcachetime=3600
+        staticfile_cache_num=0 ;0 not cache, min 10 begin  
+        rewrite_404=0   ;1 file 2 action url path
+        rewrite_404_action=index.html
+        method_pre=
+        method_after=
+        show_visitinfo=0
+        upload_max_size=16777216
+        siteid=1
+        groupid=0
+        alias_domain=
+        init_func=
+        [www.869869.com]
+        wwwpath=/Users/hzq/paozhu/www/default
+        http2_enable=1
+        ;rewrite_404=1
+        ;rewrite_404_action=index.html|psy/index.html|exam/index.html
+        ;controlsopath=/Users/hzq/paozhu/docs/controller
+        static_pre=downloadfileauth|upload
+        method_pre= ;api/dev/hostcors
+        method_after=
+        isuse_php=0
+        rewrite_php=/Users/hzq/www/mpdftest|index.php
+        fastcgi_host=127.0.0.1 ;/run/php/php8.1-fpm.sock
+        fastcgi_port=9000
+        upload_max_size=16777216
+        siteid=1
+        groupid=0
+        alias_domain=
+        init_func=
+        </code></pre>
+        <pre><code>threadmax=1024  Maximum number of business threads
+        threadmin=5		 Minimum number of business threads
+        httpport=80	    Server listening port
+        httpsport=443   SSL server listening port
+        cothreadnum=8 ;Coroutines run on thread num 
+        </code></pre>
+        <p><code>http2_enable=1</code> Whether to enable HTTP/2, each domain can have its own settings</p>
+        <p>SSL certificate file, after successful application, it should be placed in the conf directory. For production environments, a copy should be placed in <code>/var/local/etc/paozhu</code>.</p>
+        <pre><code>mainhost=www.869869.com
+        certificate_chain_file=www.869869.com.pem
+        private_key_file=www.869869.com.key
+        </code></pre>
+        <p><code>reboot_cron</code> Automatic restart process cycle day D week W month M season S h time hour 180 days 5 am restart process
+        <code>links_restart_process</code> If the number of connections is reached, you can also restart the number of connections after n, The ts start period and te end period will restart if they are idle during this period.</p>
+        <pre><code>reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
+        clean_cron  =m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+        links_restart_process =n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+        </code></pre>
+        <p><code>directorylist=1</code> Display directory. If the requested static file is a directory name and there is no index.html file in the directory, a directory list will be displayed.
+        It is recommended to set the production environment to 0</p>
+        <p><code>wwwpath=/Users/hzq/paozhu/www/default</code> <code>/Users/hzq/paozhu</code> Suggest changing to your current directory name, Under the project, 'www/default' is a static file directory. If it is a multi domain, it is recommended to create a 'www/domain.com' setting for SAAS services.</p>
+        <p><code>upload_max_size=16777216</code> Upload file size, default is 16M</p>
+        <p>The following are SAAS settings that can be ignored for now</p>
+        <pre><code>siteid=1
+        groupid=0
+        alias_domain=
+        init_func=
+        </code></pre>
+        <p>Beginners only need to understand <code>httpport</code> <code>httpsport</code> <code>wwwpath</code> <code>logpath</code> Ensure that the settings are correct, Replace all '/Users/hzq/paozhu' with your directory.</p>
+        <h3>paozhu Introduction</h3>
+        <h4>Hello, World Example</h4>
+        <pre><code class="language-C++">
+        //@urlpath(null,plaintext)
+        asio::awaitable&lt;std::string&gt; techempowerplaintext(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            peer-&gt;type(&quot;text/plain; charset=UTF-8&quot;);
+            peer-&gt;set_header(&quot;Date&quot;, get_gmttime());
+            peer-&gt;output = &quot;Hello, World!&quot;;
+            co_return &quot;&quot;;
+        }
+        
+        </code></pre>
+        <h3>Annotation Fundamentals</h3>
+        <p>All annotation functions must be placed in the 'controller/src' directory</p>
+        <p>When compiling, use the CMake Hook to first compile an annotation handler that can be used, and then execute this program to handle <code>controller/src</code> Extract functions in the format of '//@ urlpath(null, plaintext)' from all files in the directory, create corresponding header files, and then generate Annotate the function and save the mapping function to the 'common/autocontrolmethod.hpp' file.</p>
+        <p>Doesn't it have a strong Java Sprint Boot flavor, so that we can elegantly write URL and function mapping relationships after all.</p>
+        <h3>Annotation Example</h3>
+        <p><code>//@urlpath(null,plaintext)</code> annotate functions，Mapping with URL，Example http://localhost/plaintext Will access the annotation function of 'plaintext'.</p>
+        <p>null represents the annotation function that must be executed before accessing plaintext, for example: a backend with permissions that requires verification of login status</p>
+        <p><code>//@urlpath(islogin,plaintext)</code> This requires first executing the 'islogin' annotation and returning 'OK' to indicate success.</p>
+        <pre><code class="language-C++">//@urlpath(null, islogin)
+        asio::awaitable&lt;std::string&gt; checklogin(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+        
+            if(peer-&gt;session[&quot;userid&quot;].to_int()&gt;0)
+            {
+                 co_return &quot;ok&quot;;
+            } 
+        
+            client &lt;&lt; &quot;You must login&quot;;
+        
+            co_return &quot;&quot;;
+        }
+        </code></pre>
+        <p><code>asio::awaitable&lt;std::string&gt;</code> The coroutine annotation function indicates that the code inside does not go through business threads, If heavy calculations are required, it is best to use regular functions so that business threads can handle them without blocking IO threads.</p>
+        <p><code>peer-&gt;session[&quot;userid&quot;]</code> get <code>session</code> content, The content saved after successful login before。</p>
+        <p><code>client &lt;&lt; &quot;You must login&quot;;</code> It is overloaded with the&lt;&lt;operator, and the actual content is saved in peer-&gt;output.</p>
+        <p><code>co_return &quot;&quot;;</code> It is a coroutine that returns the result. Please note that it is different from a regular function, and it is best to return an empty string if you are unsure.</p>
+        <p>The following is a regular registration function, pay attention to the return value, indicating that it goes through the business thread pool, which assigns one thread to each connection. This is a classic application.</p>
+        <p>It is recommended to use this ordinary function for load computing, otherwise a large amount of computation may affect concurrency, which is possible if it is only for CRUD business
+        It shouldn't be a problem to use that method. When using coroutines, don't use std:: this_thread::sleep_for(std::chrono::microseconds(1000));`
+        This type of code.</p>
+        <pre><code class="language-C++">//@urlpath(null,hello)
+        std::string testhello(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            client &lt;&lt; &quot; Hello world! 🧨 Paozhu c++ web framework &quot;;
+        
+            return &quot;&quot;;
+        }
+        
+        </code></pre>
+        <p>For more code usage cases, please refer to the examples in the 'controller/src' directory</p>
+    </div>
+    <div class="container"> 
+        <h3>Introduction to Built in Micro Objects</h3>
+        <pre><code class="language-C++">http::obj_val hval;
+        hval[&quot;aaa&quot;]=3344;
+        hval[&quot;bbb&quot;]=&quot;1234567890&quot;;
+        
+        std::cout&lt;&lt;&quot;ll:&quot;&lt;&lt;hval[&quot;aaa&quot;].to_int()&lt;&lt;std::endl;
+        std::cout&lt;&lt;&quot;vv:|&quot;&lt;&lt;static_cast&lt;int&gt;(hval[&quot;bbb&quot;].get_type())&lt;&lt;&quot;|&quot;&lt;&lt;std::endl;
+        if(hval[&quot;bbb&quot;].is_string())
+        {
+            std::cout&lt;&lt;&quot;str:&quot;&lt;&lt;hval[&quot;bbb&quot;].to_string()&lt;&lt;std::endl;
+            std::cout&lt;&lt;&quot;str:&quot;&lt;&lt;hval[&quot;bbb&quot;].str_view()&lt;&lt;std::endl;
+            std::cout&lt;&lt;&quot;str:&quot;&lt;&lt;hval[&quot;bbb&quot;].str_view(2,5)&lt;&lt;std::endl;
+        }
+        
+        http::obj_val nval;
+        nval.from_json(&quot;{\&quot;bba\&quot;:[[[111,222],[333,444],[555,666]],[[777,888],[999,1111],[2222,3333]],[[4444,5555],[6666,7777],[8888,9999]]]}&quot;);
+        
+        std::cout&lt;&lt;&quot;json out:&quot;&lt;&lt;nval.to_json()&lt;&lt;std::endl;
+        
+        std::string bbb=nval.to_json();
+        http::obj_val pval;
+        pval.from_json(bbb);
+        </code></pre>
+        <p><code>http::obj_val</code> is a built-in micro object in the framework that can be used to import and export from_json and to_json object conversions.</p>
+        <p>Does it have a scripting language flavor? It can save values and strings, and can also save tree structures.</p>
+        <p><code>http::obj_val</code> is 16bytes size，one <code>KV</code> Object 64bytes size。</p>
+        <p><code>hval[&quot;aaa&quot;]</code> is <code>KV</code> Object。</p>
+        <p><code>http::obj_val</code> Built in methods for objects</p>
+        <ul>
+        <li><code>set_array()</code> set is array and push(v)</li>
+        <li><code>set_obj()</code> set is KV and usempush(k,v) or obj[key]=value</li>
+        <li><code>set_object()</code> set is KV and usempush(k,v) or obj[key]=value</li>
+        </ul>
+        <h4>More methods</h4>
+        <ul>
+        <li><code>is_array()</code> it is an array or not</li>
+        <li><code>is_obj()</code>   it is an object or not</li>
+        <li><code>is_object()</code> it is an object or not</li>
+        <li><code>is_string()</code> it is an string or not</li>
+        <li><code>is_number()</code> it is an number or not</li>
+        </ul>
+        <h4>Typical usage and HTML template usage</h4>
+        <pre><code class="language-C++">        client.val[&quot;list&quot;].set_array();
+                obj_val temp;
+        
+                for (unsigned int i = 0; i &lt; topicm.record.size(); i++)
+                {
+                    temp[&quot;id&quot;]       = topicm.record[i].topicid;
+                    temp[&quot;parentid&quot;] = topicm.record[i].parentid;
+                    temp[&quot;value&quot;]    = topicm.record[i].title;
+                    client.val[&quot;list&quot;].push(temp);
+                }
+        </code></pre>
+        <h4>Using in HTML templates</h4>
+        <pre><code class="language-HTML">&lt;%c for(auto &amp;a:obj[&quot;infos&quot;].as_array()){ %&gt;
+        &lt;tr&gt;
+          &lt;td&gt;&lt;%c echo&lt;&lt;a[&quot;userid&quot;].to_string(); %&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;%c echo&lt;&lt;a[&quot;nickname&quot;].to_string(); %&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;%c echo&lt;&lt;a[&quot;name&quot;].to_string(); %&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;%c if(a[&quot;isopen&quot;].to_int()==1){ %&gt;Open&lt;%c }else{ %&gt;Close&lt;%c } %&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;a href=&quot;/superadmin/edituser?userid=&lt;%c echo&lt;&lt;a[&quot;userid&quot;].to_string(); %&gt;&quot;&gt;Edit&lt;/a&gt; | &lt;a href=&quot;/superadmin/deleteuser?userid=&lt;%c echo&lt;&lt;a[&quot;userid&quot;].to_string(); %&gt;&quot; onclick=&quot;return confirm('Are you sure delete？');&quot;&gt;Delete&lt;/a&gt;&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;%c } %&gt;
+        </code></pre>
+        <p>Mainly used in complex object swapping programs, if it is not possible to use C++built-in objects or STL library methods.</p>
+        <h3>ORM Introduction</h3>
+        <p>The data imported in the installation environment section.</p>
+        <p>The paozhu framework has built-in ORM objects and currently analyzes the MySQL protocol to facilitate integration with ORM. It also supports coroutine mode, which is not officially supported by MySQL.</p>
+        <p>Config file at <code>conf/orm.conf</code></p>
+        <pre><code>[default]
+        type=main
+        host=127.0.0.1
+        port=3306
+        dbname=hello_world
+        user=benchmarkdbuser
+        password=benchmarkdbpass
+        pretable=
+        maxpool=5
+        dbtype=mysql
+        #ssl=ON
+        
+        type=second
+        host=127.0.0.1
+        port=3306
+        dbname=hello_world
+        user=benchmarkdbuser
+        password=benchmarkdbpass
+        pretable=
+        maxpool=20
+        dbtype=mysql
+        #ssl=ON
+        </code></pre>
+        <h3>ORM Config</h3>
+        <p><code>type</code> The type is master-slave separation, and cache synchronization can be developed in the future. Currently, master-slave is preferred. Host '127.0.0.1' fills in the local address, MySQL must be greater than or equal to version 8 because MySQL 9 does not support old authentication，</p>
+        <p><code>pretable</code> It is a table prefix, sometimes only one database permission can store multiple businesses in one database.</p>
+        <p><code>dbtype</code> Currently supports MySQL.</p>
+        <p><code>SSL</code> can be opened, especially when connecting remotely, enabling encrypted connections. Local SSL connections will not be enabled.</p>
+        <h3>ORM Usage</h3>
+        <p>The framework currently supports database to create cpp file conversion, so modifying the database can regenerate ORM files.</p>
+        <p>After successful compilation</p>
+        <pre><code># ./bin/paozhu_cli 
+        
+        paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
+          model ｜ view | viewtocpp | control   
+         Welcome to use cli to manage your MVC files。
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:
+        </code></pre>
+        <p>Enter m to select and generate ORM model file</p>
+        <pre><code>
+        paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
+          model ｜ view | viewtocpp | control   
+         Welcome to use cli to manage your MVC files。
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:m   
+         🍄 current path: /Users/hzq/paozhu
+         1 hello_world
+         3 paozhu_docs
+         5 cppcms
+        select db index:
+        </code></pre>
+        <p>Enter 1 to select the hello-world database to generate the file.</p>
+        <pre><code>paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
+          model ｜ view | viewtocpp | control   
+         Welcome to use cli to manage your MVC files。
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:m
+         🍄 current path: /Users/hzq/paozhu
+         1 hello_world
+         3 paozhu_docs
+         5 cppcms
+        select db index:1
+        show tables;
+        create fortune table to models 🚗
+         create table metainfo file: /Users/hzq/paozhu/orm/include/fortunebase.h
+        create world table to models 🚗
+         create table metainfo file: /Users/hzq/paozhu/orm/include/worldbase.h
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:x
+        </code></pre>
+        <p>Enter x to exit</p>
+        <p>You can see the generated files in the/Users/hzq/paozhu/orm directory.</p>
+        <pre><code>orm
+        ├── include
+        │   ├── fortune_mysql.h
+        │   ├── fortunebase.h
+        │   ├── world_mysql.h
+        │   └── worldbase.h
+        ├── orm.h
+        │
+        models
+        ├── Fortune.cpp
+        ├── World.cpp
+        └── include
+            ├── Fortune.h
+            └── World.h
+        </code></pre>
+        <p>The ORM directory is an entity file, consisting of two files: one is a MySQL connection layer file with a name ending in mysql.h, and the other is a data table entity mapping file with a name ending in base.h.</p>
+        <p>We are actually manipulating ORM files in the models directory, one cpp and one h file, which are automatically generated,
+        But it is only generated once and will not be overwritten, because the real business system can add its own business code inside.</p>
+        <p>For example</p>
+        <p>auto myworld = orm::World();
+        models directory  World.h</p>
+        <p>This is the default database, such as the built-in CMS demo
+        auto users = orm::cms::Sysuser();</p>
+        <p>orm is namespae, Mainly used for ORM business
+        CMS is the orm.conf file database configuration tag and also the generated CMS namespace, which facilitates database isolation and transformation. If it is [default], defaut can be omitted</p>
+        <h3>ORM design philosophy</h3>
+        <p>Why is it designed in this way? Actually, it is also a unique design of the Paozhu framework compared to other frameworks.</p>
+        <ol>
+        <li>A database can have multiple connections, so we don't have to know which connection to use.</li>
+        <li>The database name may be very long, for example, a cloud host may automatically generate a database name that is tens of characters long, even with underscores.</li>
+        <li>Personalized tags can be used, so that the name of the database is not important anymore.</li>
+        <li>We use it to create namespace isolation table objects, so that many C++classes generated by databases do not conflict.</li>
+        <li>ORM designs powerful and elegant chain writing, while Go and Rust have design flaws that prevent the use of chain writing.</li>
+        </ol>
+        <p>So <code>orm::cms::Sysuser();</code> Using CMS to isolate the 'sysuser' table entity C++ class will not conflict with tables with the same name in other databases.
+        For example, <code>orm::erp::Sysuser();</code>  ERP is an ERP database tag, and the name of its database is not important,
+        It doesn't matter if there is also a <code>sysuser</code> table.</p>
+        <p>The reason for this design is that it is a business system, a single server program that can have many databases, and their table names can have duplicate names.
+        In the future, there can be different databases, such as MySQL PG, which can be distributed on other machines.
+        They can mix clusters, and individual server programs can also be clustered, because they have built-in read-write separation, and the write servers can be the same,
+        Querying can allocate database servers in a fixed or dynamic manner, and the framework can be suitable for large business systems.
+        Currently, the focus is on integrating a server with a database and business programs.</p>
+        <h3>ORM usage example</h3>
+        <p>The table model has two important member variables</p>
+        <ul>
+        <li>data     is a mapping of a single table data structure</li>
+        <li>record   is a std::vector array</li>
+        </ul>
+        <p>Table Data Structure</p>
+        <pre><code class="language-C++">struct meta{
+         unsigned  int  id = 0; 
+         int  randomnumber = 0;  
+        } data;
+        
+        std::vector&lt;worldbase::meta&gt; record;
+        </code></pre>
+        <h4>ORM use for Coroutine</h4>
+        <pre><code class="language-C++">//@urlpath(null,queries)
+        asio::awaitable&lt;std::string&gt; techempowerqueries(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            peer-&gt;type(&quot;application/json; charset=UTF-8&quot;);
+            peer-&gt;set_header(&quot;Date&quot;, get_gmttime());
+        
+            unsigned int get_num = peer-&gt;get[&quot;queries&quot;].to_int();
+            if (get_num == 0)
+            {
+                get_num = 1;
+            }
+            else if (get_num &gt; 500)
+            {
+                get_num = 500;
+            }
+            auto myworld = orm::World();
+            myworld.record.reserve(get_num);
+            myworld.lock_conn();
+            for (unsigned int i = 0; i &lt; get_num; i++)
+            {
+                myworld.wheresql.clear();
+                unsigned int rd_num = rand_range(1, 10000);
+                myworld.where(&quot;id&quot;, rd_num);
+                co_await myworld.async_fetch_append();
+            }
+            myworld.unlock_conn();
+            peer-&gt;output = myworld.to_json();
+            co_return &quot;&quot;;
+        }
+        </code></pre>
+        <ul>
+        <li><code>orm::World();</code> It is an ORM table model with default connections, so there is no need for default</li>
+        <li><code>myworld.lock_conn();</code> It's about fixing a connection, because using ORM connection pool method will rotate the use of connections.</li>
+        <li><code>myworld.record.reserve(get_num);</code> The std::vector reserve。</li>
+        <li><code>myworld.wheresql.clear();</code> Recommend using <code>myworld.clearWhere()</code> Method to clear conditions。</li>
+        <li><code>myworld.where(&quot;id&quot;, rd_num);</code> Add where。</li>
+        <li><code>co_await myworld.async_fetch_append();</code> It is an advanced usage that will attach data to the record object. Generally, <code>co_await myworld.async_fetch();</code> is used` It will clear the record object and then reassign it.</li>
+        </ul>
+        <p><code>peer-&gt;output = myworld.to_json();</code> Directly output JSON to the browser.</p>
+        <h4>Synchronize the use of ORM</h4>
+        <p>Normal business code runs in a thread, one thread by one connect at a time, which is a classic way.</p>
+        <pre><code class="language-C++">//@urlpath(admin_islogin,admin/addtopic)
+        std::string admin_addtopic(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            try
+            {
+                auto topicm = orm::cms::Topic();
+                topicm.where(&quot;userid&quot;, client.session[&quot;userid&quot;].to_int()).asc(&quot;parentid&quot;).fetch();
+        
+                client.val[&quot;list&quot;].set_array();
+                obj_val temp;
+        
+                for (unsigned int i = 0; i &lt; topicm.record.size(); i++)
+                {
+                    temp[&quot;id&quot;]       = topicm.record[i].topicid;
+                    temp[&quot;parentid&quot;] = topicm.record[i].parentid;
+                    temp[&quot;value&quot;]    = topicm.record[i].title;
+                    client.val[&quot;list&quot;].push(temp);
+                }
+            }
+            catch (std::exception &amp;e)
+            {
+                client.val[&quot;code&quot;] = 1;
+            }
+        
+            peer-&gt;view(&quot;admin/addtopic&quot;);
+            return &quot;&quot;;
+        }
+        </code></pre>
+        <p><code>httppeer &amp;client = peer-&gt;get_peer();</code> Reference connection object</p>
+        <p><code>auto topicm = orm::cms::Topic();</code>  Create an ORM model object, with the model source file located in the models directory,Topic is the database table name，If a prefix is set, the framework will automatically remove it,<code>topicm.where</code> add sql where，<code>asc(&quot;parentid&quot;).fetch()</code> order <code>parentid</code> asc query ，<code>.fetch()</code> send query command。</p>
+        <h4>Page usage</h4>
+        <p>If you don't want so much data to be paginated and retrieved, especially for network services that require bandwidth or CPU resources，It is best to use it as needed <code>.select(&quot;fieldname1,fieldname2&quot;)</code> Retrieve field data, use <code>.limit(pos,offset)</code> for range.</p>
+        <p>Use <code>.page(page, 10, 5)</code> It has been automatically added <code>.limit(pos,offset)</code> to sql string,now only input <code>page</code> number.</p>
+        <pre><code class="language-C++">auto [bar_min, bar_max, current_page, total_page] = artmodel.page(page, 10, 5);
+        
+        client.val[&quot;pageinfo&quot;].set_object();
+        client.val[&quot;pageinfo&quot;][&quot;min&quot;]     = bar_min;
+        client.val[&quot;pageinfo&quot;][&quot;max&quot;]     = bar_max;
+        client.val[&quot;pageinfo&quot;][&quot;current&quot;] = current_page;
+        client.val[&quot;pageinfo&quot;][&quot;total&quot;]   = total_page;
+        </code></pre>
+        <p><code>.page(page, 10, 5)</code> Return four numerical values,<code>bar_min</code> <code>bar_max</code> The range is determined by the input of 5, It consists of two pages of windows, with 10 per page,</p>
+        <p>ORM where Other Methods</p>
+        <p><code>whereLike(fieldname,searchword)</code> it's just &quot; and fieldname '%searchword%'&quot; alias
+        ﻿
+        <code>whereAnd</code> it's just &quot; and fieldname = val &quot; alias<br />
+        <code>whereIn</code> it's just &quot; and fieldname IN(val) &quot; alias</p>
+    </div>
+    <div class="container"> 
+        <h3>Paozhu Framework View Beginner's Guide</h3>
+        <p>paozhu 做为 c++ web framework 框架 就是MVC 模式，现在就是说v 这个视图功能</p>
+        <h4>1、视图说明</h4>
+        <p>就是给浏览器显示的内容，其实就是html内容，脚本语言就是操作这个，那我们c++怎么操作呢，也是在html里面放c++ 代码，但是我们是把html代码编译成c++代码。常驻内存，这样速度也很快，几百个视图文件只要几M内存，一个公司项目也就是1000左右页面。估计不到10M内存，如果用脚本语言还要大量io读取文件。 paozhu  c++ web framework 直接编译为程序，不用io读取了，速度极快。</p>
+        <h4>2、创建视图</h4>
+        <p>我们在view目录</p>
+        <p>创建 login 目录 然后再创建一个login.html文件在login目录里面</p>
+        <p>view</p>
+        <ul>
+        <li>login
+        <ul>
+        <li>login.html</li>
+        </ul>
+        </li>
+        </ul>
+        <p>大概这样子</p>
+        <h4>login.html 文件内容</h4>
+        <pre><code class="language-html">&lt;!doctype html&gt;
+        &lt;html lang=&quot;en&quot;&gt;
+          &lt;head&gt;
+            &lt;meta charset=&quot;utf-8&quot;&gt;
+            &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+            &lt;meta name=&quot;description&quot; content=&quot;&quot;&gt;
+            &lt;meta name=&quot;author&quot; content=&quot;Mark Otto, Jacob Thornton, and Bootstrap contributors&quot;&gt;
+            &lt;meta name=&quot;generator&quot; content=&quot;Hugo 0.101.0&quot;&gt;
+            &lt;title&gt;Content Management System&lt;/title&gt;
+        
+            &lt;link href=&quot;/assets/dist/css/bootstrap.min.css&quot; rel=&quot;stylesheet&quot;&gt;
+          &lt;/head&gt;
+          &lt;body class=&quot;text-center&quot;&gt;
+            &lt;%c include_sub(&quot;home/header&quot;,obj); %&gt;
+            &lt;div class=&quot;container text-center&quot;&gt;
+              &lt;div class=&quot;row&quot;&gt;
+                &lt;div class=&quot;col-3&quot;&gt;&lt;/div&gt;  
+                &lt;div class=&quot;col-6&quot;&gt;
+                  &lt;h2 id=&quot;horizontal-form&quot;&gt;CMS Admin &lt;/h2&gt;
+                  &lt;form action=&quot;/cms/loginpost&quot; method=&quot;post&quot;&gt;
+                    &lt;div class=&quot;row mb-3&quot;&gt;
+                      &lt;label for=&quot;username&quot; class=&quot;col-sm-2 col-form-label&quot;&gt;Username&lt;/label&gt;
+                      &lt;div class=&quot;col-sm-10&quot;&gt;
+                        &lt;input type=&quot;text&quot; class=&quot;form-control&quot; id=&quot;username&quot; name=&quot;username&quot; value=&quot;admin&quot;&gt;
+                      &lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;row mb-3&quot;&gt;
+                      &lt;label for=&quot;password&quot; class=&quot;col-sm-2 col-form-label&quot;&gt;Password&lt;/label&gt;
+                      &lt;div class=&quot;col-sm-10&quot;&gt;
+                        &lt;input type=&quot;password&quot; class=&quot;form-control&quot; id=&quot;password&quot; name=&quot;password&quot; value=&quot;123456&quot;&gt;
+                      &lt;/div&gt;
+                    &lt;/div&gt;
+        
+                    &lt;button type=&quot;submit&quot; class=&quot;btn btn-primary&quot;&gt;Sign in&lt;/button&gt;
+                  &lt;/form&gt;
+              
+                &lt;/div&gt;
+         
+              &lt;/div&gt;
+            &lt;/div&gt;
+        
+          &lt;/body&gt;
+          &lt;/html&gt;
+        
+        
+        </code></pre>
+        <p>include_sub(&quot;home/header&quot;,obj);</p>
+        <p>说明还包括一个子页面，我们再在view创建一个子页面目录home</p>
+        <p>view</p>
+        <ul>
+        <li>home
+        <ul>
+        <li>header.html</li>
+        </ul>
+        </li>
+        <li>login
+        <ul>
+        <li>login.html</li>
+        </ul>
+        </li>
+        </ul>
+        <p>大概这样子</p>
+        <h4>header.html 内容其实就是网页头部信息</h4>
+        <pre><code class="language-html">
+        &lt;style&gt;
+          ul {
+              list-style-type: none;
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+              background-color: #333;
+          }
+          
+          li {
+              float: left;
+              border-right:1px solid #bbb;
+          }
+          
+          li:last-child {
+              border-right: none;
+          }
+          
+          li a {
+              display: block;
+              color: white;
+              text-align: center;
+              padding: 14px 16px;
+              text-decoration: none;
+          }
+          
+          li a:hover:not(.active) {
+              background-color: #111;
+          }
+          
+          .active {
+              background-color: #4CAF50;
+          }
+          &lt;/style&gt;
+        &lt;ul&gt;
+          &lt;li&gt;&lt;a class=&quot;active&quot; href=&quot;/&quot;&gt;主页&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#news&quot;&gt;新闻&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#contact&quot;&gt;联系&lt;/a&gt;&lt;/li&gt;
+          &lt;li style=&quot;float:right&quot;&gt;&lt;a href=&quot;#about&quot;&gt;关于&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        
+        &lt;h3&gt;子页面页面include_sub(&quot;home/header&quot;)导航测试 |&lt;%c echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string(); %&gt;| &lt;/h3&gt;
+             
+         
+        </code></pre>
+        <p>echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string();</p>
+        <p>这个就是 视图标签 c++ 代码用&lt;%c包括起来</p>
+        <p>echo 是缓冲区，就是跟外面html一起拼起来</p>
+        <p>变成c++代码</p>
+        <p>是这样子</p>
+        <p>echo&lt;&lt;&quot;导航测试 |&quot;;</p>
+        <p>echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string();</p>
+        <p>echo&lt;&lt;&quot;| &lt; /h3 &gt;&quot;;</p>
+        <p>具体可以看viewsrc/view/home/header.cpp代码。</p>
+        <h4>3、 编译视图到cpp文件</h4>
+        <p>在网站根目录下运行</p>
+        <p>./bin/paozhu_cli</p>
+        <p>选择f 生成文件</p>
+        <pre><code class="language-c++">
+        ./bin/paozhu_cli
+        ./bin/paozhu_cli  model ｜ view | viewtocpp | control   
+         🎉 Welcome to use cli to manage your MVC files。
+        (m)model (v)view (f)viewtocpp or (c)control,x or q to exit[input m|v|f|c|]:f
+         🍄 current path: /Users/hzq/paozhu
+        1 [+] view/home/header.html 	 time: 2022-12-12 13:1:41
+        2 [+] view/login/login.html 	 time: 2022-12-12 13:1:26
+         please input number to parse to cpp file.
+         a update all , example: 1 3 4 5 enter key, q or x to exit,r reload 
+         input number:a
+        
+        </code></pre>
+        <p>我们先用f,直接跟框架一起编译的方法。</p>
+        <p>然后选择a,所有修改或新建的视图文件都转化为cpp文件</p>
+        <p>文件保存在 viewsrc目录</p>
+        <p>viewsrc</p>
+        <ul>
+        <li>
+        <p>view</p>
+        <ul>
+        <li>login
+        <ul>
+        <li>login.cpp</li>
+        </ul>
+        </li>
+        <li>home
+        <ul>
+        <li>header.cpp</li>
+        </ul>
+        </li>
+        </ul>
+        </li>
+        <li>
+        <p>include</p>
+        <ul>
+        <li>viewsrc.h</li>
+        <li>regviewmethod.hpp</li>
+        </ul>
+        </li>
+        </ul>
+        <p>大概这样</p>
+        <p>我们两个 login.html header.html已经转为cpp文件</p>
+        <p>include 目录里面两个文件</p>
+        <p>viewsrc.h 是所有视图文件函数的定义，以后可能会分开，一个视图文件对一个头文件。</p>
+        <p>regviewmethod.hpp 是视图注册函数，框架调用这个注册到框架</p>
+        <h4>viewsrc.h 文件内容</h4>
+        <pre><code class="language-c++">
+        #ifndef __HTTP_VIEWSRC_ALL_METHOD_H
+        #define __HTTP_VIEWSRC_ALL_METHOD_H
+        
+        #if defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
+        #pragma once
+        #endif // defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
+        
+        #include&lt;string&gt;
+        #include&lt;map&gt;
+        #include&lt;functional&gt;
+        #include &quot;request.h&quot;
+        #include &quot;viewso_param.h&quot;
+        
+        namespace http { 
+        namespace view { 
+        
+        namespace home{ 
+        
+            std::string header(const struct view_param &amp;vinfo,http::OBJ_VALUE &amp;obj);
+        }
+        
+        namespace login{ 
+        
+            std::string login(const struct view_param &amp;vinfo,http::OBJ_VALUE &amp;obj);
+        }
+        
+        
+        }
+        
+        }
+        #endif
+        
+        </code></pre>
+        <p>可以看到视图都放在命名空间里面，这样，一个目录里面和其它目录里面视图文件重名也没有冲突。</p>
+        <h4>regviewmethod.hpp 注册函数文件</h4>
+        <pre><code class="language-c++">
+        #ifndef __HTTP_REG_VIEW_METHOD_HPP
+        #define __HTTP_REG_VIEW_METHOD_HPP
+        
+        #if defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
+        #pragma once
+        #endif // defined(_MSC_VER) &amp;&amp; (_MSC_VER &gt;= 1200)
+        
+        #include&lt;string&gt;
+        #include&lt;map&gt;
+        #include&lt;functional&gt;
+        #include &quot;request.h&quot;
+        #include &quot;viewso_param.h&quot;
+        #include &quot;viewmethold_reg.h&quot;
+        #include &quot;viewsrc.h&quot;
+        
+        namespace http
+        {
+          void _initview_method_regto(VIEW_REG  &amp;_viewmetholdreg)
+          {
+                         //create time: Mon, 12 Dec 2022 05:01:53 GMT
+        
+            _viewmetholdreg.emplace(&quot;home/header&quot;,http::view::home::header);
+            _viewmetholdreg.emplace(&quot;login/login&quot;,http::view::login::login);
+        
+            } 
+        }
+        #endif
+        
+        </code></pre>
+        <p>两个函数注册到回调函数上，就是一个视图文件是一个函数</p>
+        <p>目录名和文件名 组成一个注册点</p>
+        <p>login/login 是一个注册点</p>
+        <p>控制器 peer-&gt;view(&quot;login/login&quot;); 调用方法</p>
+        <h4>4、 视图测试</h4>
+        <p>我们创建完视图，现在测试一下</p>
+        <p>我安照hello world入门那章</p>
+        <p><code>controller/src</code>目录 创建 <code>testview.cpp</code> 文件</p>
+        <p>大概这样子</p>
+        <h4>testview.cpp</h4>
+        <pre><code class="language-c++">#include &lt;chrono&gt;
+        #include &lt;thread&gt;
+        #include &quot;httppeer.h&quot;
+        #include &quot;testview.h&quot;
+        namespace http
+        {
+               //@urlpath(null,testview)
+              std::string testloginview(std::shared_ptr&lt;httppeer&gt; peer)
+              {
+                    httppeer &amp;client = peer-&gt;getpeer();
+                    client &lt;&lt; &quot; 视图测试 &quot;;
+                    // client &lt;&lt; client.gethosturl();
+                    // client&lt;&lt;&quot;&lt;p&gt;&lt;a href=\&quot;&quot;&lt;&lt;client.gethosturl()&lt;&lt;&quot;/showcookie\&quot;&gt;show&lt;/a&gt;&lt;/p&gt;&quot;;
+        
+                    peer-&gt;view(&quot;login/login&quot;);
+                    return &quot;&quot;;
+              }
+        
+        }
+        
+        </code></pre>
+        <p>把 testview 映射到 testloginview 上，两个名字可以不一样。</p>
+        <p>就是http://localhost/testview 可以访问我们的testloginview函数</p>
+        <h4>5、编译</h4>
+        <p>一切准备就绪了，我们开始编译</p>
+        <p>回到项目根目录进入build目录</p>
+        <p>cmake ..</p>
+        <p>make</p>
+        <p>然后在回到根目录，或打开新的命令窗口</p>
+        <p>执行</p>
+        <p>./bin/paozhu</p>
+        <p>用浏览器打开</p>
+        <p>http://localhost/testview</p>
+        <p>可以看到视图内容了</p>
+        <h3>C++生产环境故障排查</h3>
+        <p>框架开启了ASAN，如果在调试时候被ASAN检测到会指出哪一行有问题。</p>
+        <p>生产环境因为没有输出原因，难以看到。</p>
+        <p>生产环境编译参数是</p>
+        <pre><code class="language-shell">mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j8
+        </code></pre>
+        <p>需要安装gdb coredumpctl</p>
+        <p>框架会隔1分钟左右检查 <code>log</code> 目录是否有<code>restart_server</code>文件</p>
+        <p>如果我们需要取现在线程栈样品，可以 <code>touch log/restart_server</code> 这样可以让进程重启</p>
+        <p>可以使用<code>pstree -aup</code> 查看进程情况</p>
+        <p>如果已经取样，我命需要分析进程栈情况</p>
+        <p>核心coredump查看</p>
+        <pre><code>coredumpctl list
+        coredumpctl info
+        </code></pre>
+        <p>直接在线看,1524是 info 显示的进程号，也就是之前<code>pstree -aup</code> 看的</p>
+        <pre><code>coredumpctl gdb 1524
+        </code></pre>
+        <p>bt可以查看</p>
+        <p>进去后我们可以保存出来看，保存在当前目前 <code>thread_info.txt</code>文件。</p>
+        <pre><code>set logging file thread_info.txt
+        set logging enabled on
+        thread apply all bt
+        set logging enabled off
+        </code></pre>
+        <p>核心coredump一般在</p>
+        <pre><code>/var/lib/systemd/coredump
+        </code></pre>
+        <p>如果编译使用-g 那么会看到类似下面样子，一般会显示各种线程目前正在干什么事</p>
+        <pre><code>Thread 17 (Thread 0x7fd9f16b9640 (LWP 10658)):
+                  #0  http::hash_objkey (key=&amp;quot;data:image/php;base64,PD9waHAgJE8wME9PMD11cmxkZWNvZGUoIiU3OCUzNCU2My&amp;quot;...) at /www/paozhu/vendor/httpserver/src/request.cpp:54
+                  #1  0x000000000060032f in http::OBJ_VALUE::operator[] (this=0x7fd9cc01e520, key=&amp;quot;data:image/php;base64,PD9waHAgJE8wME9PMD11cmxkZWNvZGUoIiU3OCUzNCU2MyU2RiUyRiU3MCUzOSU3OSU3MSU2RSU2NCUyRCU2QyU3MiU2QiU2NCU2NyU1RiU&amp;quot;...) at /www/paozhu/vendor/httpserver/src/request.cpp:315
+                  #2  0x00000000005a990c in http::httpparse::procssxformurlencoded (this=0x7fd9b400d370) at /www/paozhu/vendor/httpserver/src/http_parse.cpp:389
+                  #3  0x00000000005b1bfa in http::httpparse::process (this=0x7fd9b400d370, buffer=0x2e223c0 &amp;quot;POST /public/static/lib/webuploader/0.1.5/server/preview.php HTTP/1.1\r\nHost: www. paozhu.org\r\nUser-Agent: Mozilla/5.0 AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0\r\nAccept-Encoding: gzip, deflate&amp;quot;..., buffersize=964) at /www/paozhu/vendor/httpserver/src/http_parse.cpp:2823
+                  
+        </code></pre>
+        
+</div>
+</body>
+
+</html>
