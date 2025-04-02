@@ -362,6 +362,63 @@
         &lt;/tr&gt;
         &lt;%c } %&gt;
         </code></pre>
+        <h4>Micro Objects advanced methods</h4>
+        <ul>
+        <li><code>obj_val multi_sort(std::string_view key,unsigned char order);</code> 2D array key name sorting, order is SORT_ASC or SORT_DESC.</li>
+        <li><code>obj_val multi_sort(std::string_view key,unsigned char order,std::string_view key2,unsigned char order2);</code>	2D array key name sorting, order is SORT_ASC or SORT_DESC, If there is the same secondary sorting,need key2 and order2.</li>
+        </ul>
+        <h4>Micro Objects advanced methods example</h4>
+        <pre><code class="language-c++">    http::obj_val zval4;
+            zval4.set_array();
+            float s[6]={83.3,77.75,60.45,83.3,77.75,45.6};
+            for(unsigned int jjj=0;jjj&lt;6;jjj++)
+            {
+                http::obj_val z4;
+                z4.set_object();
+                z4[&quot;name&quot;]=&quot;sss&quot;+std::to_string(jjj);
+                z4[&quot;score&quot;]=s[jjj];
+                z4[&quot;id&quot;]=jjj+10;
+                zval4.push(z4);
+            }
+            http::obj_val zval5=zval4.multi_sort(&quot;score&quot;,SORT_ASC);
+
+            std::cout&lt;&lt;&quot;------&quot;&lt;&lt;std::endl;
+            if(zval5.is_array())
+            {
+                std::cout&lt;&lt;&quot;multi_sort score result: &quot;&lt;&lt;zval5.size()&lt;&lt;std::endl;
+                for(auto &amp;a:zval5.as_array())
+                {
+                    if(a.is_object())
+                    {
+                        for(auto &amp;[aa,bb]:a.as_object())
+                        {
+                            std::cout&lt;&lt;&quot;zval5[&quot;&lt;&lt;aa&lt;&lt;&quot;]=&quot;&lt;&lt; bb.to_string()&lt;&lt;std::endl;
+                        }
+                    }
+                    std::cout&lt;&lt;std::endl;
+                }
+            }
+
+            http::obj_val zval6=zval4.multi_sort(&quot;score&quot;,SORT_ASC,&quot;id&quot;,SORT_DESC);
+            std::cout&lt;&lt;&quot;------&quot;&lt;&lt;std::endl;
+            if(zval6.is_array())
+            {
+                std::cout&lt;&lt;&quot;multi_sort score id result: &quot;&lt;&lt;zval6.size()&lt;&lt;std::endl;
+                for(auto &amp;a:zval6.as_array())
+                {
+                    if(a.is_object())
+                    {
+                        for(auto &amp;[aa,bb]:a.as_object())
+                        {
+                            std::cout&lt;&lt;&quot;zval6[&quot;&lt;&lt;aa&lt;&lt;&quot;]=&quot;&lt;&lt; bb.to_string()&lt;&lt;std::endl;
+                        }
+                    }
+                    std::cout&lt;&lt;std::endl;
+                }
+            }
+            std::cout&lt;&lt;&quot;------&quot;&lt;&lt;std::endl;
+        </code></pre>
+
         <p>Mainly used in complex object swapping programs, if it is not possible to use C++built-in objects or STL library methods.</p>
         <h3>ORM Introduction</h3>
         <p>The data imported in the installation environment section.</p>
