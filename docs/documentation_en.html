@@ -246,6 +246,7 @@
         <h3>paozhu Introduction</h3>
         <h4>Hello, World Example</h4>
         <pre><code class="language-C++">
+        #include "techempower.h"       
         //@urlpath(null,plaintext)
         asio::awaitable&lt;std::string&gt; techempowerplaintext(std::shared_ptr&lt;httppeer&gt; peer)
         {
@@ -258,6 +259,7 @@
         </code></pre>
         <h3>Annotation Fundamentals</h3>
         <p>All annotation functions must be placed in the 'controller/src' directory</p>
+        <p>This <code>techempower.cpp</code> file must contain its own file name <code>#include "techempower.h"</code>, The <code>techempower.h</code> file will be automatically generated.</p>
         <p>When compiling, use the CMake Hook to first compile an annotation handler that can be used, and then execute this program to handle <code>controller/src</code> Extract functions in the format of '//@ urlpath(null, plaintext)' from all files in the directory, create corresponding header files, and then generate Annotate the function and save the mapping function to the 'common/autocontrolmethod.hpp' file.</p>
         <p>Doesn't it have a strong Java Sprint Boot flavor, so that we can elegantly write URL and function mapping relationships after all.</p>
         <h3>Annotation Example</h3>

@@ -257,6 +257,7 @@
         <h3>paozhu入门</h3>
         <h4>Hello, World 例子</h4>
         <pre><code class="language-C++">
+        #include "techempower.h"    
         //@urlpath(null,plaintext)
         asio::awaitable&lt;std::string&gt; techempowerplaintext(std::shared_ptr&lt;httppeer&gt; peer)
         {
@@ -271,6 +272,7 @@
     <div class="container">
         <h3>注解原理</h3>
         <p>所有注解函数必须放在 <code>controller/src</code> 目录下</p>
+        <p><code>techempower.cpp</code>文件必须包含自身文件名的头文件 <code>#include "techempower.h"</code> ，<code>techempower.h</code>这个文件会自动生成。</p>
         <p>编译时候使用CMake Hook，先编译一个可以使用的注解处理程序，然后执行这个程序处理  <code>controller/src</code>
         目录下所有文件，提取<code>//@urlpath(null,plaintext)</code>格式的函数，然后创建相应的头文件，然后生成
         注解函数，保存映射函数到 <code>common/autocontrolmethod.hpp</code> 文件。</p>
