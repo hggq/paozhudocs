@@ -103,10 +103,11 @@
 
 <body>
     <div class="container">
-        <h3>MacOS bigsur C++20</h3>
+        <h3>&gt; MacOS bigsur, 必须使用 C++20</h3>
         <p>Open terminal</p>
         <p>Using Terminal Command</p>
-        <pre><code># xcode-select --install
+        <pre><code>
+        # xcode-select --install
         
         # /bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
         </code></pre>
@@ -150,7 +151,8 @@
         <p>Replace <code>/Users/hzq/paozhu</code> to your project path</p>
         <pre><code>#vim paozhu/conf/orm.conf 
         </code></pre>
-        <pre><code>[cms]
+        <pre><code>
+        [cms]
         type=main
         host=127.0.0.1
         port=3306
@@ -171,14 +173,21 @@
         maxpool=20
         dbtype=mysql
         </code></pre>
-        <pre><code># cd paozhu
+        <p>编译项目</p>
+        <pre><code>
+        # cd paozhu
         # unzip asio.zip 
         # mkdir build
         
         # cd build
         # cmake ..
         # make 
-        </code></pre>        
+        # cd ..
+        # ./bin/paozhu
+        </code></pre>     
+        <p>Open Browser</p>
+        <p>http://localhost</p>
+        <p>http port see <code>conf/server.conf</code> file</p>      
 <p><a href="documentation.html">Docs</a></p>
 </div>
 </body>
