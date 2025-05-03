@@ -966,7 +966,8 @@
         <pre><code>coredumpctl gdb 1524</code></pre>
         <p><code>bt</code> can be view it</p>
         <p>After entering, we can save it and view it in the current<code>thread_info.txt</code>file.</p>
-        <pre><code>set logging file thread_info.txt
+        <pre><code>
+        set logging file thread_info.txt
         set logging enabled on
         thread apply all bt
         set logging enabled off

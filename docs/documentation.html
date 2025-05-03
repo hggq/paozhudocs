@@ -999,11 +999,11 @@
         coredumpctl info
         </code></pre>
         <p>直接在线看,1524是 info 显示的进程号，也就是之前<code>pstree -aup</code> 看的</p>
-        <pre><code>coredumpctl gdb 1524
-        </code></pre>
-        <p>bt可以查看</p>
+        <pre><code>coredumpctl gdb 1524</code></pre>
+        <p><code>bt</code>可以查看</p>
         <p>进去后我们可以保存出来看，保存在当前目前 <code>thread_info.txt</code>文件。</p>
-        <pre><code>set logging file thread_info.txt
+        <pre><code>
+        set logging file thread_info.txt
         set logging enabled on
         thread apply all bt
         set logging enabled off
