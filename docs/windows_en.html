@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PaoZhu C++ Web Frameworks</title>
+    <style>
+        /* Light mode */
+        body {
+            font-family:'PingFang SC','Helvetica Neue','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC',Sathu,EucrosiaUPC,Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:1.45em;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+        <h3>Greater than Windows 10, C++20 must be used</h3>
+        <p>Open powershell</p>
+        <p>By XMake install</p>
+        <pre><code>
+        Invoke-Expression (Invoke-Webrequest 'https://xmake.io/psget.text' -UseBasicParsing).Content
+        </code></pre>
+        <p>Config <code>conf/server.conf</code> replace /Users/hzq/paozhu path to your project path</p>
+        <pre><code>
+        paozhu-main> xmake
+        paozhu-main> .\build\windows\x64\release\paozhu.exe
+        </code></pre>
+        <p>By vcpkg install</p>
+        <p>Install Cmake <a href="https://cmake.org/download/" target="_blank">https://cmake.org/download/</a></p>
+        <pre><code>
+            powershell Invoke-WebRequest -OutFile vcpkg2024.zip https://github.com/microsoft/vcpkg/archive/refs/tags/2024.09.30.zip
+            unzip vcpkg2024.zip
+            mv vcpkg-2024.09.30 vcpkg
+            cd vcpkg
+            bootstrap-vcpkg.bat
+            vcpkg integrate install
+            vcpkg integrate project
+            vcpkg install
+        </code></pre>
+        <p>Install ninja <a href="https://github.com/ninja-build/ninja/releases" target="_blank">https://github.com/ninja-build/ninja/releases</a> </p>
+        <p>Compile project CMAKE_TOOLCHAIN_FILE is vcpkg install localtion path</p>
+        <pre><code>
+            unzip asio.zip
+            cmake . -B ${{github.workspace}} -DENABLE_WIN_VCPKG=ON -DENABLE_VCPKG=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_BUILD_TYPE=Debug -G Ninja
+            cmake --build . --config Debug    
+        </code></pre>
+
+        <p>Open Browser</p>
+        <p>http://localhost</p>
+        <p>http port see <code>conf/server.conf</code> file</p>      
+<p><a href="documentation.html">Docs</a></p>
+</div>
+</body>
+
+</html>
