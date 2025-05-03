@@ -646,12 +646,12 @@
     </div>
     <div class="container"> 
         <h3>Paozhu Framework View Beginner's Guide</h3>
-        <p>paozhu 做为 c++ web framework 框架 就是MVC 模式，现在就是说v 这个视图功能</p>
-        <h4>1、视图说明</h4>
-        <p>就是给浏览器显示的内容，其实就是html内容，脚本语言就是操作这个，那我们c++怎么操作呢，也是在html里面放c++ 代码，但是我们是把html代码编译成c++代码。常驻内存，这样速度也很快，几百个视图文件只要几M内存，一个公司项目也就是1000左右页面。估计不到10M内存，如果用脚本语言还要大量io读取文件。 paozhu  c++ web framework 直接编译为程序，不用io读取了，速度极快。</p>
-        <h4>2、创建视图</h4>
-        <p>我们在view目录</p>
-        <p>创建 login 目录 然后再创建一个login.html文件在login目录里面</p>
+        <p>Paozhu, as a C++web framework framework, is the MVC pattern, which now refers to the view function of V</p>
+        <h4>1、View Description</h4>
+        <p>It is the content displayed to the browser, which is actually HTML content, similar to PHP scripting language output. So how do we operate C++? We put C++code in HTML and compile it into a C++. cpp file, which is resident in memory. This is also very fast. Hundreds of view files only require a few MB of memory, and one company project is about 1000 pages. It is estimated to have less than 10MB of memory, and if running in a scripting language, it will require a large amount of IO to read files. The framework compiles it directly into a program without the need for IO reading, which is extremely fast.</p>
+        <h4>2、Create View File</h4>
+        <p>We are in the view directory</p>
+        <p>Create a login directory and then create a login.html file in the login directory</p>
         <p>view</p>
         <ul>
         <li>login
@@ -660,8 +660,8 @@
         </ul>
         </li>
         </ul>
-        <p>大概这样子</p>
-        <h4>login.html 文件内容</h4>
+        <p>Probably like this</p>
+        <h4>login.html file content</h4>
         <pre><code class="language-html">&lt;!doctype html&gt;
         &lt;html lang=&quot;en&quot;&gt;
           &lt;head&gt;
@@ -709,7 +709,7 @@
         
         </code></pre>
         <p>include_sub(&quot;home/header&quot;,obj);</p>
-        <p>说明还包括一个子页面，我们再在view创建一个子页面目录home</p>
+        <p>The description also includes a subpage, and we will create a subpage directory called home in the view</p>
         <p>view</p>
         <ul>
         <li>home
@@ -723,8 +723,8 @@
         </ul>
         </li>
         </ul>
-        <p>大概这样子</p>
-        <h4>header.html 内容其实就是网页头部信息</h4>
+        <p>Probably like this</p>
+        <h4>The content of header.html is actually the header information of the webpage</h4>
         <pre><code class="language-html">
         &lt;style&gt;
           ul {
@@ -772,18 +772,18 @@
          
         </code></pre>
         <p>echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string();</p>
-        <p>这个就是 视图标签 c++ 代码用&lt;%c包括起来</p>
-        <p>echo 是缓冲区，就是跟外面html一起拼起来</p>
-        <p>变成c++代码</p>
-        <p>是这样子</p>
+        <p>This is the view tag C++code included in &lt;%c %&gt;</p>
+        <p>echo is a buffer, which is assembled together with the external HTML</p>
+        <p>Convert to C++code</p>
+        <p>It's like this</p>
         <p>echo&lt;&lt;&quot;导航测试 |&quot;;</p>
         <p>echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string();</p>
         <p>echo&lt;&lt;&quot;| &lt; /h3 &gt;&quot;;</p>
-        <p>具体可以看viewsrc/view/home/header.cpp代码。</p>
-        <h4>3、 编译视图到cpp文件</h4>
-        <p>在网站根目录下运行</p>
+        <p>You can refer to the viewsrc/view/home/head.cpp code for details.</p>
+        <h4>3、 Compile view to cpp file</h4>
+        <p>Run in the root directory of the website</p>
         <p>./bin/paozhu_cli</p>
-        <p>选择f 生成文件</p>
+        <p>Select 'f' to generate files</p>
         <pre><code class="language-c++">
         ./bin/paozhu_cli
         ./bin/paozhu_cli  model ｜ view | viewtocpp | control   
@@ -797,9 +797,9 @@
          input number:a
         
         </code></pre>
-        <p>我们先用f,直接跟框架一起编译的方法。</p>
-        <p>然后选择a,所有修改或新建的视图文件都转化为cpp文件</p>
-        <p>文件保存在 viewsrc目录</p>
+        <p>We input f and compile it directly with the framework.</p>
+        <p>Then enter a, and all modified or newly created view files will be converted to cpp files</p>
+        <p>The file is saved in the viewsrc directory</p>
         <p>viewsrc</p>
         <ul>
         <li>
@@ -825,12 +825,12 @@
         </ul>
         </li>
         </ul>
-        <p>大概这样</p>
-        <p>我们两个 login.html header.html已经转为cpp文件</p>
-        <p>include 目录里面两个文件</p>
-        <p>viewsrc.h 是所有视图文件函数的定义，以后可能会分开，一个视图文件对一个头文件。</p>
-        <p>regviewmethod.hpp 是视图注册函数，框架调用这个注册到框架</p>
-        <h4>viewsrc.h 文件内容</h4>
+        <p>Probably like this</p>
+        <p>The login.html header.html files have been converted to cpp files</p>
+        <p>Two files in the include directory</p>
+        <p>Viewsrc.h is the definition of all view file functions</p>
+        <p>regviewmethod.hpp is a view registration function that the framework calls to register with the framework</p>
+        <h4>Content of viewsrc.h file</h4>
         <pre><code class="language-c++">
         #ifndef __HTTP_VIEWSRC_ALL_METHOD_H
         #define __HTTP_VIEWSRC_ALL_METHOD_H
@@ -865,8 +865,8 @@
         #endif
         
         </code></pre>
-        <p>可以看到视图都放在命名空间里面，这样，一个目录里面和其它目录里面视图文件重名也没有冲突。</p>
-        <h4>regviewmethod.hpp 注册函数文件</h4>
+        <p>You can see that the views are all placed in the namespace, so there is no conflict between the view files in one directory and those in other directories with the same name.</p>
+        <h4>regviewmethod.hpp registration function file content</h4>
         <pre><code class="language-c++">
         #ifndef __HTTP_REG_VIEW_METHOD_HPP
         #define __HTTP_REG_VIEW_METHOD_HPP
@@ -897,8 +897,8 @@
         #endif
         
         </code></pre>
-        <p>两个函数注册到回调函数上，就是一个视图文件是一个函数</p>
-        <p>目录名和文件名 组成一个注册点</p>
+        <p>Two functions are registered on the callback function, which means a view file is a function</p>
+        <p>Directory name and file name form a registration point</p>
         <p>login/login 是一个注册点</p>
         <p>控制器 peer-&gt;view(&quot;login/login&quot;); 调用方法</p>
         <h4>4、 视图测试</h4>
