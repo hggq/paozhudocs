@@ -497,7 +497,8 @@
         </code></pre>
         <p>Enter x to exit</p>
         <p>You can see the generated files in the/Users/hzq/paozhu/orm directory.</p>
-        <pre><code>orm
+        <pre><code>
+        orm
         ├── include
         │   ├── fortune_mysql.h
         │   ├── fortunebase.h
@@ -512,9 +513,8 @@
             ├── Fortune.h
             └── World.h
         </code></pre>
-        <p>The ORM directory is an entity file, consisting of two files: one is a MySQL connection layer file with a name ending in mysql.h, and the other is a data table entity mapping file with a name ending in base.h.</p>
-        <p>We are actually manipulating ORM files in the models directory, one cpp and one h file, which are automatically generated,
-        But it is only generated once and will not be overwritten, because the real business system can add its own business code inside.</p>
+        <p>The ORM directory is an entity file, consisting of two files: one is the end of the mysql.h for operating database query interfaces, and the other is the end of the data table entity mapping base.h, which is also an interface for operating query results. When updating this directory file, it will be overwritten because it corresponds one-to-one with the database table structure</p>
+        <p>The models directory is the business code file, and we actually manipulate the files in the models directory. These two files, one cpp and one h, are automatically generated, but they are only generated once and will not be overwritten. In our own project system, we can add business code to them.</p>
         <p>For example</p>
         <p>auto myworld = orm::World();
         models directory  World.h</p>

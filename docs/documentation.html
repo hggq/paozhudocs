@@ -522,7 +522,8 @@
         (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:x
         </code></pre>
         <p>输入 x 退出</p>
-        <pre><code>可以看到 /Users/hzq/paozhu/orm 目录下生成文件
+        <p>可以看到 /Users/hzq/paozhu/orm 目录下生成文件</p>
+        <pre><code>
         orm
         ├── include
         │   ├── fortune_mysql.h
@@ -538,9 +539,8 @@
             ├── Fortune.h
             └── World.h
         </code></pre>
-        <p>ORM目录是实体文件，两个文件一个是mysql连接层mysql结尾，一个是数据表实体映射base.h结尾。
-        我们其实是操作models目录下ORM文件，这两个文件一个cpp一个h文件，自动生成，
-        但是只生成一次，有了不会覆盖，因为真正业务系统可以自己加业务代码在里面。</p>
+        <p>orm目录是实体文件，两个文件一个是mysql连接层mysql结尾,操作数据库查询接口，一个是数据表实体映射base.h结尾，也是操作查询结果的接口,这个目录文件更新时候会覆盖，因为与数据库表结构一一对应。</p>
+        <p>models目录是业务代码文件，我们其实是操作models目录下文件，这两个文件一个cpp一个h文件，自动生成， 但是只生成一次，有了不会覆盖，在自己的项目系统可以加业务代码在里面。</p>
         <p>比如
         auto myworld = orm::World();
         就是 models 目录下 World.h
