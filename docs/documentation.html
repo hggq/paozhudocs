@@ -885,12 +885,12 @@
         
         namespace home{ 
         
-            std::string header(const struct view_param &amp;vinfo,http::OBJ_VALUE &amp;obj);
+            std::string header(const struct view_param &amp;vinfo,http::obj_val &amp;obj);
         }
         
         namespace login{ 
         
-            std::string login(const struct view_param &amp;vinfo,http::OBJ_VALUE &amp;obj);
+            std::string login(const struct view_param &amp;vinfo,http::obj_val &amp;obj);
         }
         
         
@@ -1016,7 +1016,7 @@
 
         <pre><code>Thread 17 (Thread 0x7fd9f16b9640 (LWP 10658)):
           #0  http::hash_objkey (key=&quot;data:image/php;base64,PD9waHAgJE8wME9PMD11cmxkZWNvZGUoIiU3OCUzNCU2My&quot;...) at /www/paozhu/vendor/httpserver/src/request.cpp:54
-          #1  0x000000000060032f in http::OBJ_VALUE::operator[] (this=0x7fd9cc01e520, key=&quot;data:image/php;base64,PD9waHAgJE8wME9PMD11cmxkZWNvZGUoIiU3OCUzNCU2MyU2RiUyRiU3MCUzOSU3OSU3MSU2RSU2NCUyRCU2QyU3MiU2QiU2NCU2NyU1RiU&quot;...) at /www/paozhu/vendor/httpserver/src/request.cpp:315
+          #1  0x000000000060032f in http::obj_val::operator[] (this=0x7fd9cc01e520, key=&quot;data:image/php;base64,PD9waHAgJE8wME9PMD11cmxkZWNvZGUoIiU3OCUzNCU2MyU2RiUyRiU3MCUzOSU3OSU3MSU2RSU2NCUyRCU2QyU3MiU2QiU2NCU2NyU1RiU&quot;...) at /www/paozhu/vendor/httpserver/src/request.cpp:315
           #2  0x00000000005a990c in http::httpparse::procssxformurlencoded (this=0x7fd9b400d370) at /www/paozhu/vendor/httpserver/src/http_parse.cpp:389
           #3  0x00000000005b1bfa in http::httpparse::process (this=0x7fd9b400d370, buffer=0x2e223c0 &quot;POST /public/static/lib/webuploader/0.1.5/server/preview.php HTTP/1.1\r\nHost: www. paozhu.org\r\nUser-Agent: Mozilla/5.0 AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0\r\nAccept-Encoding: gzip, deflate&quot;..., buffersize=964) at /www/paozhu/vendor/httpserver/src/http_parse.cpp:2823
           </code></pre>
