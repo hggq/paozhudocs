@@ -761,13 +761,13 @@
           }
           &lt;/style&gt;
         &lt;ul&gt;
-          &lt;li&gt;&lt;a class=&quot;active&quot; href=&quot;/&quot;&gt;主页&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#news&quot;&gt;新闻&lt;/a&gt;&lt;/li&gt;
-          &lt;li&gt;&lt;a href=&quot;#contact&quot;&gt;联系&lt;/a&gt;&lt;/li&gt;
-          &lt;li style=&quot;float:right&quot;&gt;&lt;a href=&quot;#about&quot;&gt;关于&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a class=&quot;active&quot; href=&quot;/&quot;&gt;HOME&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#news&quot;&gt;News&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#contact&quot;&gt;Contact&lt;/a&gt;&lt;/li&gt;
+          &lt;li style=&quot;float:right&quot;&gt;&lt;a href=&quot;#about&quot;&gt;About&lt;/a&gt;&lt;/li&gt;
         &lt;/ul&gt;
         
-        &lt;h3&gt;子页面页面include_sub(&quot;home/header&quot;)导航测试 |&lt;%c echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string(); %&gt;| &lt;/h3&gt;
+        &lt;h3&gt; subpage include_sub(&quot;home/header&quot;)Nav test |&lt;%c echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string(); %&gt;| &lt;/h3&gt;
              
          
         </code></pre>
@@ -776,7 +776,7 @@
         <p>echo is a buffer, which is assembled together with the external HTML</p>
         <p>Convert to C++ code</p>
         <p>It's like this</p>
-        <p>echo&lt;&lt;&quot;导航测试 |&quot;;</p>
+        <p>echo&lt;&lt;&quot;Nav test |&quot;;</p>
         <p>echo&lt;&lt;vinfo.get[&quot;aa&quot;].to_string();</p>
         <p>echo&lt;&lt;&quot;| &lt;/h3&gt;&quot;;</p>
         <p>You can refer to the viewsrc/view/home/head.cpp code for details.</p>
@@ -917,7 +917,7 @@
               std::string testloginview(std::shared_ptr&lt;httppeer&gt; peer)
               {
                     httppeer &amp;client = peer-&gt;getpeer();
-                    client &lt;&lt; &quot; 视图测试 &quot;;
+                    client &lt;&lt; &quot; view test &quot;;
                     // client &lt;&lt; client.gethosturl();
                     // client&lt;&lt;&quot;&lt;p&gt;&lt;a href=\&quot;&quot;&lt;&lt;client.gethosturl()&lt;&lt;&quot;/showcookie\&quot;&gt;show&lt;/a&gt;&lt;/p&gt;&quot;;
         
@@ -928,51 +928,50 @@
         }
         
         </code></pre>
-        <p>把 testview 映射到 testloginview 上，两个名字可以不一样。</p>
-        <p>就是http://localhost/testview 可以访问我们的testloginview函数</p>
-        <h4>5、编译</h4>
-        <p>一切准备就绪了，我们开始编译</p>
-        <p>回到项目根目录进入build目录</p>
+        <p>Map testview to testloginview function, the two names can be different.</p>
+        <p><code>http://localhost/testview</code> You can access our testloginview function</p>
+        <h4>5、Compile</h4>
+        <p>Everything is ready, let's start compiling</p>
+        <p>Return to the project root directory and enter the build directory</p>
         <p>cmake ..</p>
         <p>make</p>
-        <p>然后在回到根目录，或打开新的命令窗口</p>
-        <p>执行</p>
+        <p>Then go back to the root directory or open a new command window</p>
+        <p>cd ..</p>
         <p>./bin/paozhu</p>
-        <p>用浏览器打开</p>
+        <p>Open with a browser</p>
         <p>http://localhost/testview</p>
-        <p>可以看到视图内容了</p>
-        <h3>C++生产环境故障排查</h3>
-        <p>框架开启了ASAN，如果在调试时候被ASAN检测到会指出哪一行有问题。</p>
-        <p>生产环境因为没有输出原因，难以看到。</p>
-        <p>生产环境编译参数是</p>
+        <p>You can see the content of the view now</p>
+        <h3>Troubleshooting in C++ Production Environment</h3>
+        <p>The framework has enabled ASAN, and if it is detected by ASAN during debugging, it will indicate which line is problematic.</p>
+        <p>The production environment is difficult to see due to the lack of output reasons.</p>
+        <p>The compilation parameters for the production environment are</p>
         <pre><code class="language-shell">mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release
         make -j8
         </code></pre>
-        <p>需要安装gdb coredumpctl</p>
-        <p>框架会隔1分钟左右检查 <code>log</code> 目录是否有<code>restart_server</code>文件</p>
-        <p>如果我们需要取现在线程栈样品，可以 <code>touch log/restart_server</code> 这样可以让进程重启</p>
-        <p>可以使用<code>pstree -aup</code> 查看进程情况</p>
-        <p>如果已经取样，我命需要分析进程栈情况</p>
-        <p>核心coredump查看</p>
-        <pre><code>coredumpctl list
+        <p>Need to install gdb coredumpctl</p>
+        <p>The framework will be checked every minute ,at <code>log</code> have a <code>restart_server</code> file</p>
+        <p>If we need to retrieve a sample of the process stack, we can <code>touch log/start_Server</code> so that the process can restart</p>
+        <p>have access to <code>pstree -aup</code> view process status</p>
+        <p>If the sample has already been taken, I need to analyze the process stack situation</p>
+        <p>view coredump info</p>
+        <pre><code>
+        coredumpctl list
         coredumpctl info
         </code></pre>
-        <p>直接在线看,1524是 info 显示的进程号，也就是之前<code>pstree -aup</code> 看的</p>
-        <pre><code>coredumpctl gdb 1524
-        </code></pre>
-        <p>bt可以查看</p>
-        <p>进去后我们可以保存出来看，保存在当前目前 <code>thread_info.txt</code>文件。</p>
+        <p>Looking directly online 1524 pid, That's what I saw before<code>pstree up</code></p>
+        <pre><code>coredumpctl gdb 1524</code></pre>
+        <p><code></code>bt</code> can be view it</p>
+        <p>After entering, we can save it and view it in the current<code>thread_info.txt</code>file.</p>
         <pre><code>set logging file thread_info.txt
         set logging enabled on
         thread apply all bt
         set logging enabled off
         </code></pre>
-        <p>核心coredump一般在</p>
-        <pre><code>/var/lib/systemd/coredump
-        </code></pre>
-        <p>如果编译使用-g 那么会看到类似下面样子，一般会显示各种线程目前正在干什么事</p>
+        <p>The core coredump file is usually located in</p>
+        <pre><code>/var/lib/systemd/coredump</code></pre>
+        <p>If compiled using -g, you will see something similar to the following, usually displaying what various threads are currently doing</p>
         <pre><code>Thread 17 (Thread 0x7fd9f16b9640 (LWP 10658)):
                   #0  http::hash_objkey (key=&amp;quot;data:image/php;base64,PD9waHAgJE8wME9PMD11cmxkZWNvZGUoIiU3OCUzNCU2My&amp;quot;...) at /www/paozhu/vendor/httpserver/src/request.cpp:54
                   #1  0x000000000060032f in http::OBJ_VALUE::operator[] (this=0x7fd9cc01e520, key=&amp;quot;data:image/php;base64,PD9waHAgJE8wME9PMD11cmxkZWNvZGUoIiU3OCUzNCU2MyU2RiUyRiU3MCUzOSU3OSU3MSU2RSU2NCUyRCU2QyU3MiU2QiU2NCU2NyU1RiU&amp;quot;...) at /www/paozhu/vendor/httpserver/src/request.cpp:315
