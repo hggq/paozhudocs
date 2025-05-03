@@ -103,6 +103,7 @@
 
 <body>
     <h1 style="text-align:center;">PaoZhu C++ Web Frameworks</h1>
+    <h4 style="text-align:center;"><a href="documentation.html">中文</a> <a href="documentation_en.html">English</a></h4>
     <div class="container">
         <h3><strong>Abstract</strong></h3>
         <p>Paozhu is a C++ Web development framework with built-in HTTP/1/HTTP/2 ORM, making it easy and elegant to write web programs, breaking the previous inconvenience of writing web programs in C++.</p>
@@ -944,14 +945,15 @@
         <h3>Troubleshooting in C++ Production Environment</h3>
         <p>The framework has enabled ASAN, and if it is detected by ASAN during debugging, it will indicate which line is problematic.</p>
         <p>The production environment is difficult to see due to the lack of output reasons.</p>
-        <p>The compilation parameters for the production environment are</p>
-        <pre><code class="language-shell">mkdir build
+        <p>The compilation parameters for the production environment.</p>
+        <pre><code class="language-shell">
+        mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release
         make -j8
         </code></pre>
-        <p>Need to install gdb coredumpctl</p>
-        <p>The framework will be checked every minute ,at <code>log</code> have a <code>restart_server</code> file</p>
+        <p>Need to install <code>gdb</code> and <code>coredumpctl</code></p>
+        <p>The framework will be checked every minute, at <code>log</code> directory have a <code>restart_server</code> file</p>
         <p>If we need to retrieve a sample of the process stack, we can <code>touch log/start_Server</code> so that the process can restart</p>
         <p>have access to <code>pstree -aup</code> view process status</p>
         <p>If the sample has already been taken, I need to analyze the process stack situation</p>
@@ -962,7 +964,7 @@
         </code></pre>
         <p>Looking directly online 1524 pid, That's what I saw before<code>pstree up</code></p>
         <pre><code>coredumpctl gdb 1524</code></pre>
-        <p><code></code>bt</code> can be view it</p>
+        <p><code>bt</code> can be view it</p>
         <p>After entering, we can save it and view it in the current<code>thread_info.txt</code>file.</p>
         <pre><code>set logging file thread_info.txt
         set logging enabled on
