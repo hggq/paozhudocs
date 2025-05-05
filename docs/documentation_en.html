@@ -275,8 +275,8 @@
         <h3>Annotation Fundamentals</h3>
         <p>All annotation functions must be placed in the 'controller/src' directory</p>
         <p>This <code>techempower.cpp</code> file must contain its own file name <code>#include "techempower.h"</code>, The <code>techempower.h</code> file will be automatically generated.</p>
-        <p>When compiling, use the CMake Hook to first compile an annotation handler that can be used, and then execute this program to handle <code>controller/src</code> Extract functions in the format of '//@ urlpath(null, plaintext)' from all files in the directory, create corresponding header files, and then generate Annotate the function and save the mapping function to the 'common/autocontrolmethod.hpp' file.</p>
-        <p>Doesn't it have a strong Java Spring Boot flavor, so that we can elegantly write URL and function mapping relationships after all.</p>
+        <p>When compiling, use the CMake Hook to first compile an annotation handler that can be used, and then execute this program to handle <code>controller/src</code> Extract functions in the format of <code>//@urlpath(null, plaintext)</code> from all files in the directory, create corresponding header files, and then generate Annotate the function and save the mapping function to the <code>common/autocontrolmethod.hpp</code> file.</p>
+        <p>Doesn't it have a strong Java Spring Boot flavor so that we can elegantly write URL and function mapping relationships without manually registering functions and writing header files.</p>
         <h3>Annotation Example</h3>
         <p><code>//@urlpath(null,plaintext)</code> annotate functions，Mapping with URL，Example http://localhost/plaintext Will access the annotation function of 'plaintext'.</p>
         <p>null represents the annotation function that must be executed before accessing plaintext, for example: a backend with permissions that requires verification of login status</p>
