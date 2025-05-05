@@ -114,6 +114,7 @@
             <li><a href="#objval">内建JSON对象</a></li>
             <li><a href="#ormcontent">ORM 介绍</a></li>
             <li><a href="#Htmltemplate">HTML Template 介绍</a></li>
+            <li><a href="#jsonencode">JSON和结构体互换函数 json_encode json_decode</a></li>
             <li><a href="#Troubleshooting">故障排除</a></li>
         </ul>
     </div>
@@ -991,6 +992,199 @@
         <p>可以看到视图内容了</p>
 
       </div>   
+      <div class="container">
+
+        <h3 id="jsonencode">JSON和结构体互换函数 json_encode json_decode</h3>
+        <p>框架内置了 结构体和JSON互换功能，减轻自己写代码压力</p>
+        <h4>使用方法</h4>
+
+        <p>框架提供了 <code>json_encode</code> <code>json_decode</code>两个函数操作 结构体或类对象</p>
+
+        <p>std::string json_encode(obj)</p>
+        <p>std::string json_encode(std::vector&lt;obj&gt;)</p>
+
+        <p>表示把对象编码为JSON 支持数组或单个对象</p>
+
+        <p>int json_decode(obj,json_string)</p>
+        <p>int json_decode(std::vector&lt;obj&gt;,json_string)</p>
+
+        <p>表示解码JSON字符串到对象</p>
+        <h4>原理</h4>
+        <p><code>common/json_reflect_headers.h</code> 是所有反射对象引用的头文件</p>
+
+        <p>这个文件是<code>paozhu_cli</code>生成的</p>
+
+        <p>你要在libs目录下创建相应的类型文件，然后运行paozhu_cli生成， 框架是直接分析类型文件生成相应的代码，目前支持常用的结构体， 结构体可以多层嵌套，或引用同样是反射的结构体。</p>
+        <h4>使用例子</h4>
+        <p>创建测试文件 <code>libs/department/department_type.h</code></p>
+        <pre><code class="language-cpp">
+            #ifndef LIBS_DEPARTMENT_TYPE_H
+            #define LIBS_DEPARTMENT_TYPE_H
+            #include &lt;iostream&gt;
+            #include &lt;string&gt;
+            #include &lt;vector&gt;
+            #include &lt;sstream&gt;
+            #include &lt;sstream&gt;
+            #include "unicode.h"
+            
+            namespace psy
+            { 
+            //@reflect json to_json from_json
+            struct department_outjson_t
+            {
+              unsigned int id          = 0;
+              unsigned int key         = 0;
+              unsigned int value       = 0;
+              unsigned int parentid    = 0;
+              unsigned int bianzhi_num = 0;
+              bool isopen              = true;
+              bool _is_use             = false;
+              std::string title;
+              std::string desc;
+              std::vector&lt;department_outjson_t&gt; children;
+              std::string to_json(std::string aa="",int offset=0);
+              unsigned int from_json()
+              {
+                    //**aaaaa
+                    /*
+                    aaaa [][}]
+                    */
+                    char b='}';
+                    if(b=='{')
+                    {
+                        std::cout&lt;&lt;"assss}sss}{ssss}sss}"&lt;&lt;std::endl;
+                    }
+                    return 0;
+              }
+            };
+            
+            //@reflect json to_json from_json
+            struct department_listoutjson_t
+            {
+              unsigned int code=0;
+              struct department_tables
+              {
+                std::vector&lt;department_outjson_t&gt; list;
+                unsigned int total=0;
+              } data;
+              std::vector&lt;std::vector&lt;std::string&gt;&gt; names;
+            };
+            
+            } // namespace psy
+            #endif            
+        </code></pre>     
+        
+        <p><code>//@reflect json</code> 是框架分析源码提取标志，必须是这个开头的struct或class,不然不起作用。</p>
+
+        <p>我们创建两个结构体，后面一个还嵌套一个，这样方便业务代码操作 to_json from_json 是测试框架分析源代码是不是正确跳过这些函数</p>
+
+        <p>下划线开头不会输出到JSON字符串里面</p>
+        <h4>生成对象 json_encode json_decode 实体代码</h4>
+        <pre><code class="language-shell">
+        sudo ./bin/paozhu_cli
+        </code></pre>    
+        <pre><code class="language-shell">
+        ./bin/paozhu_cli  model | view | viewtocpp | control   
+        🎉 Welcome to use cli to manage your MVC files。
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:
+        </code></pre>  
+
+        <p>输入 j</p>
+        <p>可以看到生成文件了</p>
+        <pre><code class="language-shell">
+        1 /Users/hzq/paozhu/libs/department/department_type_jsonreflect.cpp
+        (m)model (v)view (f)viewtocpp or (c)control , (j)son ,x or q to exit[input m|v|f|c|j|]:
+        </code></pre>   
+        
+        <h4>json_encode json_decode 使用</h4>
+
+        <p>可以参考 <code>controller/src/testjsonreflect.cpp</code></p>
+
+        <pre><code class="language-cpp">
+        #include &lt;chrono&gt;
+        #include &lt;thread&gt;
+        #include "httppeer.h"
+        #include "testjsonreflect.h"
+        #include "json_reflect_headers.h"
+        #include "array_to_tree.h"
+        namespace http
+        {
+        //@urlpath(null,testjsonreflect)
+        std::string testjsonreflect(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &client = peer-&gt;getpeer();
+            // client &lt;&lt; " json reflect 🧨 Paozhu c++ web framework ";
+
+            psy::department_outjson_t deps_json_one;
+            std::vector&lt;psy::department_outjson_t&gt; depsjsonlist;
+
+            deps_json_one.id          = 38;
+            deps_json_one.key         = 38;
+            deps_json_one.value       = 38;
+            deps_json_one.parentid    = 0;
+            deps_json_one.isopen      = true;
+            deps_json_one.title       = "First Item 第一条";
+            deps_json_one.desc        = "First Item 第一条备注";
+            deps_json_one.bianzhi_num = 12;
+
+            depsjsonlist.push_back(deps_json_one);
+
+            deps_json_one.id          = 48;
+            deps_json_one.key         = 48;
+            deps_json_one.value       = 48;
+            deps_json_one.parentid    = 0;
+            deps_json_one.isopen      = true;
+            deps_json_one.title       = "Second Item 第二条";
+            deps_json_one.desc        = "Second memo 第二条备注";
+            deps_json_one.bianzhi_num = 16;
+
+            depsjsonlist.push_back(deps_json_one);
+
+            deps_json_one.id          = 58;
+            deps_json_one.key         = 58;
+            deps_json_one.value       = 58;
+            deps_json_one.parentid    = 48;
+            deps_json_one.isopen      = true;
+            deps_json_one.title       = "Three Item 第二条01";
+            deps_json_one.desc        = "Three memo 第二条01备注";
+            deps_json_one.bianzhi_num = 22;
+
+            depsjsonlist.push_back(deps_json_one);
+
+            psy::department_listoutjson_t depout_data;
+
+            array_to_tree&lt;psy::department_outjson_t&gt;(depout_data.data.list, depsjsonlist);
+
+            depout_data.code = 0;
+            // depout_data.data.list=depsjsonlist; //has array_to_tree
+            depout_data.data.total = 0;
+
+            std::string jsondep_str = psy::json_encode(depout_data);
+
+            psy::department_listoutjson_t new_depout_data;
+            psy::json_decode(new_depout_data, jsondep_str);
+            std::cout &lt;&lt; "data.list:" &lt;&lt; depout_data.data.list.size() &lt;&lt; std::endl;
+            std::cout &lt;&lt; "data.list:" &lt;&lt; new_depout_data.data.list.size() &lt;&lt; std::endl;
+
+            std::string jsondep_str_temp = psy::json_encode(new_depout_data);
+
+            client &lt;&lt; jsondep_str_temp;
+            client.out_jsontype();
+            return "";
+        }
+
+        } // namespace http    
+        </code></pre>   
+        <p>我们先把数组转为树，然后测试对象编码为JSON字符串</p>
+        <p>先std::string jsondep_str = psy::json_encode(depout_data);</p>
+        <p>然后 在用这个 jsondep_str 解码到新的对象</p>
+        <p>psy::json_decode(new_depout_data, jsondep_str);</p>
+
+        <p>然后我们再次 编码 std::string jsondep_str_temp = psy::json_encode(new_depout_data);</p>
+
+        <p>然后输出 jsondep_str_temp 看看是不是符合我们的预期</p>
+
+      </div>      
       <div class="container">
 
         <h3 id="Troubleshooting">C++生产环境故障排查</h3>
