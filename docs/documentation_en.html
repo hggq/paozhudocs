@@ -105,7 +105,20 @@
     <h1 style="text-align:center;">PaoZhu C++ Web Frameworks</h1>
     <h4 style="text-align:center;"><a href="documentation.html">中文</a> <a href="documentation_en.html">English</a></h4>
     <div class="container">
-        <h3><strong>Abstract</strong></h3>
+        <h3>Catalogue</h3>
+        <ul>
+            <li><a href="#Abstract">Abstract</a></li>
+            <li><a href="#Install">Paozhu Install</a></li>
+            <li><a href="#Config">Paozhu Config</a></li>
+            <li><a href="#Helloworld">Hello World</a></li>
+            <li><a href="#objval">Introduction to Built in Micro Objects(JSON)</a></li>
+            <li><a href="#ormcontent">ORM Introduction</a></li>
+            <li><a href="#Htmltemplate">HTML Template View Description</a></li>
+            <li><a href="#Troubleshooting">Troubleshooting in C++ Production Environment</a></li>
+        </ul>
+    </div>
+    <div class="container">
+        <h3 id="Abstract"><strong>Abstract</strong></h3>
         <p>Paozhu is a C++ Web development framework with built-in HTTP/1/HTTP/2 ORM, making it easy and elegant to write web programs, breaking the previous inconvenience of writing web programs in C++.</p>
         <p>Paozhu has developed the underlying infrastructure for web development, such as multi domain binding, SSL certificate management, cookies, sessions, HTML form management, URL processing, file upload and download, HttpClient, ORM, WebSocket, Logs, HTML Template, covering the basics of web development.</p>
         <p>The framework is based on C++20, using new standards with complete compiler support, and modernizing the code. The framework has enabled ASAN and all error prompts(-Wall), making it easy to identify problems during the development phase. It can also be combined with the coredumpctl tool at runtime to view the memory stacks of various programs. Combined with intelligent pointers, the framework has basically eliminated memory leaks and out of bounds issues, and has not encountered any memory leaks or crashes so far.</p>
@@ -137,7 +150,7 @@
         <li><code>RockyLinux</code> <code>AlmaLinux</code> 9.1 above</li>
         <li><code>Windows</code> Win10 Compiler 19.25 or above。</li>
         </ul>
-        <h3>Paozhu install</h3>
+        <h3 id="Install">Paozhu install</h3>
         <p>Download <a href="https://github.com/hggq/paozhu" target="_blank">https://github.com/hggq/paozhu</a></p>
         <ul>
         <li><a href="https://hggq.github.io/paozhudocs/macos_en.html" target="_blank">MacOS install</a></li>
@@ -145,7 +158,7 @@
         <li><a href="https://hggq.github.io/paozhudocs/linux_en.html" target="_blank">RockyLinux AlmaLinux install</a></li>
         <li><a href="https://hggq.github.io/paozhudocs/windows_en.html" target="_blank">Windows install</a></li>
         </ul>
-        <h3>paozhu Config</h3>
+        <h3 id="Config">paozhu Config</h3>
         <p>paozhu Config file at <code>conf/server.conf</code></p>
         <p>You can first understand a few variables to get the project running.</p>
         <pre><code>[default]
@@ -244,8 +257,8 @@
         init_func=
         </code></pre>
         <p>Beginners only need to understand <code>httpport</code> <code>httpsport</code> <code>wwwpath</code> <code>logpath</code> Ensure that the settings are correct, Replace all '/Users/hzq/paozhu' with your directory.</p>
-        <h3>paozhu Introduction</h3>
-        <h4>Hello, World Example</h4>
+        <h3 id="Helloworld">paozhu Introduction</h3>
+        <h4>Hello World Example</h4>
         <pre><code class="language-C++">
         #include "techempower.h"       
         //@urlpath(null,plaintext)
@@ -303,7 +316,7 @@
         <p>For more code usage cases, please refer to the examples in the 'controller/src' directory</p>
     </div>
     <div class="container"> 
-        <h3>Introduction to Built in Micro Objects</h3>
+        <h3 id="objval">Introduction to Built in Micro Objects</h3>
         <pre><code class="language-C++">http::obj_val hval;
         hval[&quot;aaa&quot;]=3344;
         hval[&quot;bbb&quot;]=&quot;1234567890&quot;;
@@ -425,7 +438,7 @@
         </code></pre>
 
         <p>Mainly used in complex object swapping programs, if it is not possible to use C++built-in objects or STL library methods.</p>
-        <h3>ORM Introduction</h3>
+        <h3 id="ormcontent">ORM Introduction</h3>
         <p>The data imported in the installation environment section.</p>
         <p>The paozhu framework has built-in ORM objects and currently analyzes the MySQL protocol to facilitate integration with ORM. It also supports coroutine mode, which is not officially supported by MySQL.</p>
         <p>Config file at <code>conf/orm.conf</code></p>
@@ -646,7 +659,7 @@
         <p><code>whereIn</code> it's just &quot; and fieldname IN(val) &quot; alias</p>
     </div>
     <div class="container"> 
-        <h3>Paozhu Framework View Beginner's Guide</h3>
+        <h3 id="Htmltemplate">Paozhu Framework View Beginner's Guide</h3>
         <p>Paozhu, as a C++web framework framework, is the MVC pattern, which now refers to the view function of V</p>
         <h4>1、View Description</h4>
         <p>It is the content displayed to the browser, which is actually HTML content, similar to PHP scripting language output. So how do we operate C++? We put C++code in HTML and compile it into a C++. cpp file, which is resident in memory. This is also very fast. Hundreds of view files only require a few MB of memory, and one company project is about 1000 pages. It is estimated to have less than 10MB of memory, and if running in a scripting language, it will require a large amount of IO to read files. The framework compiles it directly into a program without the need for IO reading, which is extremely fast.</p>
@@ -942,7 +955,7 @@
         <p>Open with a browser</p>
         <p>http://localhost/testview</p>
         <p>You can see the content of the view now</p>
-        <h3>Troubleshooting in C++ Production Environment</h3>
+        <h3 id="Troubleshooting">Troubleshooting in C++ Production Environment</h3>
         <p>The framework has enabled ASAN, and if it is detected by ASAN during debugging, it will indicate which line is problematic.</p>
         <p>The production environment is difficult to see due to the lack of output reasons.</p>
         <p>The compilation parameters for the production environment.</p>

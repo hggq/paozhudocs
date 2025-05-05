@@ -105,7 +105,20 @@
     <h1 style="text-align:center;">PaoZhu C++ Web Frameworks</h1>
     <h4 style="text-align:center;"><a href="documentation.html">中文</a> <a href="documentation_en.html">English</a></h4>
     <div class="container">
-        <h3><strong>简介</strong></h3>
+        <h3>目录</h3>
+        <ul>
+            <li><a href="#Abstract">简介</a></li>
+            <li><a href="#Install">Paozhu 安装</a></li>
+            <li><a href="#Config">Paozhu 配置</a></li>
+            <li><a href="#Helloworld">Hello World</a></li>
+            <li><a href="#objval">内建JSON对象</a></li>
+            <li><a href="#ormcontent">ORM 介绍</a></li>
+            <li><a href="#Htmltemplate">HTML Template 介绍</a></li>
+            <li><a href="#Troubleshooting">故障排除</a></li>
+        </ul>
+    </div>
+    <div class="container">
+        <h3 id="Abstract"><strong>简介</strong></h3>
         <p>paozhu是一款C++ Web开发框架，内置HTTP/1 HTTP/2 ORM,可以轻松优雅写Web程序，打破以往C++写Web程序不方便问题。</p>
         <p>paozhu编写了Web开发底层设施，比如多域名绑定、SSL证书管理、Cookie、Session、HTML表单管理 、URL处理、文件上传下载、HttpClient客户端、数据库连接ORM、WebSocket、日志、HTML模板、涵盖Web开发基础。</p>
         <p>框架基于C++20为基础，一个是使用新标准，编译器支持完整，一个是让代码更加现代化，框架开启了ASAN和所有错误提示，方便开发阶段发现问题，也可以运行时候结合coredumpctl工具，查看各个线程内存栈。配合智能指针基本杜绝内存泄露和越界问题，框架目前基本没有碰到内存泄露或崩溃情况。</p>
@@ -136,7 +149,7 @@
         </ul>
     </div>
     <div class="container">
-        <h3>paozhu安装</h3>
+        <h3 id="Install">paozhu安装</h3>
         <p>到官方github库：<a href="https://github.com/hggq/paozhu" target="_blank">https://github.com/hggq/paozhu</a></p>
         <ul>
         <li><a href="macos.html" target="_blank">MacOS安装</a> 参考</li>
@@ -151,7 +164,7 @@
         一般建议使用一个连接一个线程，业务线程也是有队列的，所以业务代码不要随便使用sleep函数睡眠。</p>
     </div>
     <div class="container">
-        <h3>paozhu配置</h3>
+        <h3 id="Config">paozhu配置</h3>
         <p>paozhu配置文件在<code>conf/server.conf</code></p>
         <p>可以先了解几个变量让项目运行起来。</p>
         <pre><code>[default]
@@ -255,7 +268,7 @@
             把所有<code>/Users/hzq/paozhu</code>换成你的目录。</p>
     </div>
     <div class="container">
-        <h3>paozhu入门</h3>
+        <h3 id="Helloworld">paozhu入门</h3>
         <h4>Hello, World 例子</h4>
         <pre><code class="language-C++">
         #include "techempower.h"    
@@ -321,7 +334,7 @@
         <p>更多代码使用案例请参考 <code>controller/src</code> 目录下的例子</p>
     </div>
     <div class="container">
-        <h3>内置微型对象介绍</h3>
+        <h3 id="objval">内置微型对象介绍</h3>
         <pre><code class="language-C++">http::obj_val hval;
         hval[&quot;aaa&quot;]=3344;
         hval[&quot;bbb&quot;]=&quot;1234567890&quot;;
@@ -447,7 +460,7 @@
     </div>
     <div class="container">
         
-        <h3>ORM介绍</h3>
+        <h3 id="ormcontent">ORM介绍</h3>
         <p>先在按照安装环境教程导入的数据。</p>
         <p>paozhu框架内置ORM对象，目前自己分析MySQL协议，方便和ORM整合，而且支持协程模式，这个官方没有支持。</p>
         <p>配置文件位置 <code>conf/orm.conf</code></p>
@@ -680,7 +693,7 @@
       </div>
 
       <div class="container">
-        <h3>paozhu 框架view 视图入门</h3>
+        <h3 id="Htmltemplate">paozhu 框架view 视图入门</h3>
         <p>paozhu 做为 c++ web framework 框架 就是MVC 模式，现在就是说v 这个视图功能</p>
         <h4>1、视图说明</h4>
         <p>就是给浏览器显示的内容，其实就是HTML内容，类似PHP脚本语言输出，那我们C++怎么操作呢，也是在HTML里面放C++ 代码，然后编译成为C++的.cpp文件，常驻内存，这样速度也很快，几百个视图文件只要几M内存，一个公司项目也就是1000左右页面。估计不到10M内存，如果用脚本语言运行时会还要大量io读取文件。 框架直接编译其为程序，不用io读取了，速度极快。</p>
@@ -980,7 +993,7 @@
       </div>   
       <div class="container">
 
-        <h3>C++生产环境故障排查</h3>
+        <h3 id="Troubleshooting">C++生产环境故障排查</h3>
         <p>框架开启了ASAN，如果在调试时候被ASAN检测到会指出哪一行有问题。</p>
         <p>生产环境因为没有输出原因，难以看到。</p>
         <p>生产环境编译参数是</p>
