@@ -111,8 +111,15 @@
         </code></pre>
         <p>Config <code>conf/server.conf</code> replace /Users/hzq/paozhu path to your project path</p>
         <pre><code>
-        paozhu-main> unzip asio.zip    
+        paozhu-main> unzip asio.zip
         paozhu-main> xmake
+        paozhu-main> .\build\windows\x64\release\paozhu.exe
+
+        copy 
+        C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\bin\Hostx64\x64\clang_rt.asan_dynamic-x86_64.dll
+        to 
+        bin\Debug\clang_rt.asan_dynamic-x86_64.dll
+        
         paozhu-main> .\build\windows\x64\release\paozhu.exe
         </code></pre>
         <p>Open Browser</p>
@@ -139,10 +146,22 @@
             cmake --build . --config Debug    
         </code></pre>
 
+        <p>OR NOT ninja</p>
+        <pre><code>
+cmake . -B . -DENABLE_WIN_VCPKG=ON -DENABLE_VCPKG=ON -DCMAKE_TOOLCHAIN_FILE=C:/Users/a/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_BUILD_TYPE=Debug
+cmake --build . --config Debug
+copy 
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\bin\Hostx64\x64\clang_rt.asan_dynamic-x86_64.dll
+to 
+bin\Debug\clang_rt.asan_dynamic-x86_64.dll
+
+PS C:\Users\a\paozhu> C:\Users\a\paozhu\bin\Debug\paozhu.exe
+</code></pre>
+
         <p>Open Browser</p>
         <p>http://localhost</p>
         <p>http port see <code>conf/server.conf</code> file</p>      
-<p><a href="documentation_en.html">Docs</a></p>
+<p><a href="documentation.html">Docs</a></p>
 </div>
 </body>
 
