@@ -105,6 +105,35 @@
     <div class="container">
         <h3>Greater than Windows 10, C++20 must be used</h3>
         <p>Open powershell</p>
+        <p>Download paozhu</p>
+        <p><a href="https://github.com/hggq/paozhu" target="_blank">https://github.com/hggq/paozhu</a></p>
+        <p>Extract to current directory paozhu</p>
+
+        <h4>Install MySQL</h4>
+        <p><a href="https://dev.mysql.com/downloads/mysql/" target="_blank">https://dev.mysql.com/downloads/mysql/</a></p>
+
+        
+        MySQL Community Server 8
+        <pre><code>
+        #mysql -u root -p
+        
+        create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
+    
+        use cppcms;
+    
+        source C:\Users\a\paozhu\conf\cppcms.sql;
+    
+        use mysql;
+    
+        create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';
+        GRANT ALL PRIVILEGES ON cppcms.* TO 'cppcms'@'localhost'; 
+        ALTER USER 'cppcms'@'localhost' ;
+    
+        select host,user,authentication_string from user;
+    
+        exit;
+        </code></pre>
+        
         <h4>By XMake install</h4>
         <pre><code>
         Invoke-Expression (Invoke-Webrequest 'https://xmake.io/psget.text' -UseBasicParsing).Content
