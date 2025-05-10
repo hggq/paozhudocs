@@ -589,12 +589,14 @@
         <li>record   一个std::vector数组</li>
         </ul>
         <p>表数据结构</p>
-        <pre><code class="language-C++">struct meta{
+        <p>参考文件 <code>orm/include/world_base.h</code> </p>
+        <pre><code class="language-C++">
+        struct meta{
          unsigned  int  id = 0; 
          int  randomnumber = 0;  
         } data;
         
-        std::vector&lt;worldbase::meta&gt; record;
+        std::vector&lt;world_base::meta&gt; record;
         </code></pre>
         <h4>协程方式使用ORM</h4>
         <pre><code class="language-C++">//@urlpath(null,queries)

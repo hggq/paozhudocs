@@ -561,12 +561,14 @@
         <li>record   is a std::vector array</li>
         </ul>
         <p>Table Data Structure</p>
-        <pre><code class="language-C++">struct meta{
+        <p>Reference file <code>orm/include/world_base.h</code> </o>
+        <pre><code class="language-C++">
+        struct meta{
          unsigned  int  id = 0; 
          int  randomnumber = 0;  
         } data;
         
-        std::vector&lt;worldbase::meta&gt; record;
+        std::vector&lt;world_base::meta&gt; record;
         </code></pre>
         <h4>ORM use for Coroutine</h4>
         <pre><code class="language-C++">//@urlpath(null,queries)
