@@ -107,8 +107,8 @@
         <p>paozhu框架内置了SAAS模式支持,目前可以是ID多租户模式和域名隔离模式，后台有一个简单管理多租户管理页面，也可以多虚拟主机模式，就是域名隔离。 这种模式可以其他方式呈现，比如类似微服务模式，<code>controller/src</code> 创建目录如果类似域名，就是中间有一个点，那么这个目录独立注解函数。</p>
         <p>比如我们在 <code>controller/src</code> 创建<code>aaa.com</code> <code>bbb.com</code>两个目录，他们都有news注解函数，实现功能有所不同</p>
         <ul>
-        <li>www.aaa.com/news  对应的是aaa.com的注解函数</li>
-       <li> www.bbb.com/news  对应的是bbb.com的注解函数</li>
+        <li>http://www.aaa.com/news  对应的是aaa.com的注解函数</li>
+        <li>http://www.bbb.com/news  对应的是bbb.com的注解函数</li>
        </ul>   
        <p>这种模式可以管理复杂大型项目，而且还是单体模式，更多使用方式可能等熟悉后自己自由发挥。</p>
 
