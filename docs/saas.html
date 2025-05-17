@@ -129,9 +129,9 @@
         <p>wwwpath 就是<code>cn.aaa.com</code> 域名www根目录，这个可以手动创建或由超级后台创建，详见cppcms数据库 <code>superadmin</code> 表，里面 <code>basesitepath</code> 字段表示本超级管理员名下多租户基本目录。 </p>
         <p>http2_enable=1 表示开启http/2</p>
         <p>upload_max_size=16777216 表示上传文件最大为16M</p>
-        <p>siteid=9 就是有超级管理员创建产生的ID,详见cppcms数据库 <code>siteinfo</code>表，里面userid字段</p>
+        <p>siteid=9 就是有超级管理员创建产生的ID,详见cppcms数据库 <code>siteinfo</code>表，里面 <code>userid</code> 字段</p>
         <p>groupid=0 是备用的，预设分组用</p>
-        <p>alias_domain=aaa.com 默认不用设置，表示<code>controller/src</code>目录下 <code>aaa.com</code>目录下注解函数，如果没有会使用框架默认带的注解函数，其它域名也可以使用这个目录下注解函数，只要同样<code>alias_domain=aaa.com</code>设置</p>
+        <p>alias_domain=aaa.com 默认为空不用设置，表示使用 <code>controller/src</code> 目录下 <code>aaa.com</code> 目录下注解函数，如果没有会使用框架默认带的注解函数，其它域名也可以使用这个目录下注解函数，只要同样<code>alias_domain=aaa.com</code>设置</p>
         <p>themes=cn 表示使用view目录下cn目录</p>
         <p>themes_url= 表示访问themes图片等资源的url</p>
 
