@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>SAAS介绍</title>
+     <style>
+        /* Light mode */
+        body {
+            font-family:'PingFang SC','Helvetica Neue','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC',Sathu,EucrosiaUPC,Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:1.45em;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+  </head>
+  <body>
+     <div class="container">
+        <h3>SAAS开发模式</h3>
+        <p>paozhu框架内置了SAAS模式支持,目前可以是ID多租户模式和域名隔离模式，后台有一个简单管理多租户管理页面，也可以多虚拟主机模式，就是域名隔离。 这种模式可以其他方式呈现，比如类似微服务模式，<code>controller/src</code> 创建目录如果类似域名，就是中间有一个点，那么这个目录独立注解函数。</p>
+        <p>比如我们在 <code>controller/src</code> 创建<code>aaa.com</code> <code>bbb.com</code>两个目录，他们都有news注解函数，实现功能有所不同</p>
+        <ul>
+        <li>www.aaa.com/news  对应的是aaa.com的注解函数</li>
+       <li> www.bbb.com/news  对应的是bbb.com的注解函数</li>
+       </ul>   
+       <p>这种模式可以管理复杂大型项目，而且还是单体模式，更多使用方式可能等熟悉后自己自由发挥。</p>
+
+       <h3>SAAS开发模式配置</h3>
+       <p>先配置 <code>conf/server.conf</code> 假设 <code>cn.aaa.com</code> 域名 配置SAAS模式</p>
+
+        <pre><code>
+        [cn.aaa.com]
+        wwwpath=/www/user/www/aaa
+        http2_enable=1
+        upload_max_size=16777216
+        siteid=9
+        groupid=0
+        alias_domain=aaa.com
+        themes=cn
+        </code></pre> 
+
+        <p>wwwpath 就是<code>cn.aaa.com</code> 域名www根目录，这个可以手动创建或由超级后台创建，详见 <code>superadmin</code> 数据库表，里面<code>basesitepath</code>表示本超级管理员名下多租户基本目录。 </p>
+        <p>http2_enable=1 表示开启http/2</p>
+        <p>upload_max_size=16777216 表示上传文件最大为16M</p>
+        <p>siteid=9 就是有超级管理员创建产生的ID,详见cppcms数据库 <code>siteinfo</code>表，里面userid字段</p>
+        <p>groupid=0 是备用的，预设分组用</p>
+        <p>alias_domain=aaa.com 默认不用设置，表示<code>controller/src</code>目录下 <code>aaa.com</code>目录下注解函数，如果没有会使用框架默认带的注解函数，其它域名也可以使用这个目录下注解函数，只要同样<code>alias_domain=aaa.com</code>设置</p>
+        <p>themes=cn 表示使用view目录下cn目录</p>
+        <p>themes_url= 表示访问themes图片等资源的url</p>
+
+        <h3>SAAS模式使用</h3>
+        <p>使用方法在<code>httppeer.h</code>定义</p>
+        <pre><code class="language-C++"> 
+    std::string get_sitepath();
+    unsigned long long get_siteid();
+    unsigned long long get_groupid();
+    std::string get_theme();
+    std::string get_themeurl();
+    void theme_view(const std::string &a);
+          </code></pre> 
+<p>使用方法例子，在注解函数中使用</p>
+    <pre><code class="language-C++"> 
+//@urlpath(null,articles)
+std::string front_article(std::shared_ptr&lt;httppeer&gt; peer)
+{
+  unsigned int userid=peer-&gtget_siteid();
+  peer-&gttheme_view("front/articlelist");
+}
+          </code></pre> 
+          <p><code>peer-&gttheme_view("front/articlelist");</code> 前面我们设置了 <code>themes=cn</code> theme_view 使用<code>view/cn/front/articlelist.html</code>视图文件</p>
+     
+          <p>主要特性1：<code>controller/src</code> 创建<code>aaa.com</code> 目录，如果不使用<code>alias_domain=aaa.com</code>设置 是无法使用的，这样方便大型项目使用 </p>
+          <p>主要特性2：<code>peer-&gttheme_view("front/articlelist");</code> 自动设置视图，方便管理员在后台设置<code>themes=cn</code> 这样实现动态更换主题</p>
+          <p><a href="documentation.html">Docs</a></p>
+      </div>
+  </body>
+</html>

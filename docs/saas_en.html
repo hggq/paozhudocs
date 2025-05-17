@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>SAAS Introduction</title>
+     <style>
+        /* Light mode */
+        body {
+            font-family:'PingFang SC','Helvetica Neue','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC',Sathu,EucrosiaUPC,Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:1.45em;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+  </head>
+  <body>
+     <div class="container">
+        <h3>SAAS Development model</h3>
+        <p>The Paozhu framework has built-in SAAS mode support, which can currently be ID multi tenant mode and domain isolation mode. There is a simple management multi tenant management page in the background, and it can also be multi virtual host mode, which is domain isolation. This pattern can be presented in other ways, such as similar to microservice patterns, where <code>controller/src</code> creates a directory. If it is similar to a domain name, with a dot in the middle, then this directory is independently annotated as a function.</p>
+        <p>For example, we can create two directories in <code>controller/src</code> <code>aaa.com</code> <code>bbb.com</code>, both of which have news annotation functions and different implementation functions</p>
+        <ul>
+        <li>http://www.aaa.com/news  Corresponding to the annotation function of aaa.com</li>
+        <li>http://www.bbb.com/news  Corresponding to the annotation function of bbb.com</li>
+       </ul>   
+       <p>This mode can manage complex large-scale projects, and it is also a monolithic mode. More usage methods may be freely developed after becoming familiar with it.</p>
+
+       <h3>SAAS Development mode configuration</h3>
+       <p>First, configure<code>conf/server.conf</code> Assuming <code>cn.aaa.com</code> domain name configuration SAAS mode</p>
+
+        <pre><code>
+        [cn.aaa.com]
+        wwwpath=/www/user/www/aaa
+        http2_enable=1
+        upload_max_size=16777216
+        siteid=9
+        groupid=0
+        alias_domain=aaa.com
+        themes=cn
+        </code></pre> 
+
+        <p>wwwpath is the root directory of the domain name <code>cn.aaa.com</code>, which can be manually created or created by the super backend. Please refer to the <code>superadmin</code> database table, where the <code>basesitepath</code> field represents the basic directory of multiple tenants under the name of this super administrator.</p>
+        <p>http2_enable=1 means to enable http/2</p>
+        <p>upload_max_size=16777216 The maximum size for uploading files is 16M</p>
+        <p>siteid=9 It is an ID created by a super administrator, as detailed in the cppcms database <code>siteinfo</code> table, where the user ID field is located</p>
+        <p>groupid=0 It is a backup, used for preset grouping</p>
+        <p>alias_domain=aaa.com By default, there is no need to set it, which means that the annotation functions in the <code>controller/src</code> directory <code>aaa.com</code> will be used. If there are no annotation functions that the framework comes with by default, other domains can also use the annotation functions in this directory, as long as the <code>alias_domain=aaa.com</code> setting is the same</p>
+        <p>themes=cn Indicate the use of the cn directory under the view directory</p>
+        <p>themes_url= Indicate the URL for accessing resources such as themes, images, etc</p>
+
+        <h3>SAAS mode usage</h3>
+        <p>The usage method is defined in<code>httppeer.h</code></p>
+        <pre><code class="language-C++"> 
+    std::string get_sitepath();
+    unsigned long long get_siteid();
+    unsigned long long get_groupid();
+    std::string get_theme();
+    std::string get_themeurl();
+    void theme_view(const std::string &a);
+          </code></pre> 
+<p>Example of usage, using in annotated functions</p>
+    <pre><code class="language-C++"> 
+//@urlpath(null,articles)
+std::string front_article(std::shared_ptr&lt;httppeer&gt; peer)
+{
+  unsigned int userid=peer-&gtget_siteid();
+  peer-&gttheme_view("front/articlelist");
+}
+          </code></pre> 
+          <p><code>peer-&gttheme_view("front/articlelist");</code> We set it up earlier <code>themes=cn</code> theme_view Use the <code>view/cn/front/articlelist.html</code> view file</p>
+     
+          <p>Main feature 1:<code>controller/src</code> Create the <code>aaa.com</code> directory, which cannot be used without the <code>alias_domain=aaa.com</code> setting, to facilitate the use of large projects</p>
+          <p>Main feature 2:<code>peer-&gttheme_view("front/articlelist");</code> Automatically set the view, making it convenient for administrators to set <code>themes=cn</code> in the background to dynamically change themes</p>
+          <p><a href="documentation_en.html">Docs</a></p>
+      </div>
+  </body>
+</html>
