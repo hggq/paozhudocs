@@ -128,7 +128,7 @@
         <p>wwwpath is the root directory of the domain name <code>cn.aaa.com</code>, This can be manually created or created via the super admin backend. For details, Please refer to the <code>superadmin</code> table in the cppcms database, where the <code>basesitepath</code> field indicates the base directory for multi-tenancy under this super administrator's account</p>
         <p>http2_enable=1 means to enable http/2</p>
         <p>upload_max_size=16777216 The maximum size for uploading files is 16M</p>
-        <p>siteid=9 It is an ID created by a super administrator, as detailed in the cppcms database <code>siteinfo</code> table, where the user ID field is located</p>
+        <p>siteid=9 It is an ID created by a super administrator, as detailed in the cppcms database <code>siteinfo</code> table, where the <code>userid</code> field is located</p>
         <p>groupid=0 It is a backup, used for preset grouping</p>
         <p>alias_domain=aaa.com By default, there is no need to set it, which means that the annotation functions in the <code>controller/src</code> directory <code>aaa.com</code> will be used. If there are no annotation functions that the framework comes with by default, other domains can also use the annotation functions in this directory, as long as the <code>alias_domain=aaa.com</code> setting is the same</p>
         <p>themes=cn Indicate the use of the cn directory under the view directory</p>
