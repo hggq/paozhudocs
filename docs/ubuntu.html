@@ -201,6 +201,10 @@
         # cd ..
         # sudo ./bin/paozhu
         </code></pre>
+        <p>If in a production environment, enable daemon mode</p>
+        <pre><code>
+        #cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_GD=ON     
+        </code></pre>
         <p>Open Browser</p>
         <p>http://localhost</p>
         <p>http port see conf/server.conf file</p>
