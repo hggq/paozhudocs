@@ -259,10 +259,13 @@
         # cd ..
         # sudo ./bin/paozhu
         </code></pre>
-        <p>If in a production environment, enable daemon mode</p>
+        <p>如果在生产环境，打开守护进程模式</p>
         <pre><code>
-        #cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_GD=ON     
+        # cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_GD=ON    
+        # make 
         </code></pre>
+        <p>用 <code>pstree -aup</code> 看进程树 </p>
+        <p>用 <code>killall paozhu</code> 杀进程 </p>
         <p>Open Browser</p>
         <p>http://localhost</p>
         <p>http port see <code>conf/server.conf</code> file</p>   

@@ -203,8 +203,11 @@
         </code></pre>
         <p>If in a production environment, enable daemon mode</p>
         <pre><code>
-        #cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_GD=ON     
-        </code></pre>        
+        # cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_GD=ON  
+        # make    
+        </code></pre>   
+        <p>Use <code>pstree -aup</code> See pid </p>
+        <p>Use <code>killall paozhu</code> Kill process </p>     
         <p>Open Browser</p>
         <p>http://localhost</p>
         <p>http port see <code>conf/server.conf</code> file</p>   
