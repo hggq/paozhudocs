@@ -259,16 +259,20 @@
         <p><code>wwwpath=/Users/hzq/paozhu/www/default</code> <code>/Users/hzq/paozhu</code>建议换成你的当前目录名称,
         项目下<code>www/default</code>，是静态文件目录，如果是多域名建议创建<code>www/domain.com</code>这个设置是为SAAS服务的。</p>
         <p><code>upload_max_size=16777216</code> 上传文件大小，默认是16M</p>
-        <p>下面几个是SAAS设置可以先不管,<a href="saas.html">查看使用SAAS模式</a></p>
+        <h3 id="saas">SAAS设置</h3>
+        <p>下面几个是SAAS设置可以先不管。</p>
+        <a href="saas.html">查看使用SAAS模式</a>
         <pre><code>
         siteid=1
         groupid=0
         alias_domain=
         init_func=
+        themes = 
         </code></pre>
         <p><code>client.get_siteid();</code> 取得 siteid </p>
         <p><code>client.get_groupid();</code> 取得 groupid </p>
         <p><code>client.get_theme();</code> 取得 theme </p>
+        <p><code>client.theme_view(contt std::string &);</code> 设置 theme 视图</p>
         <p>初学者只要关注 <code>httpport</code> <code>httpsport</code> <code>wwwpath</code> <code>logpath</code>设置是否正确,
             把所有<code>/Users/hzq/paozhu</code>换成你的目录。</p>
     </div>

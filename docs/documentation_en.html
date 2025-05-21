@@ -251,16 +251,20 @@
         It is recommended to set the production environment to 0</p>
         <p><code>wwwpath=/Users/hzq/paozhu/www/default</code> <code>/Users/hzq/paozhu</code> Suggest changing to your current directory name, Under the project, 'www/default' is a static file directory. If it is a multi domain, it is recommended to create a 'www/domain.com' setting for SAAS services.</p>
         <p><code>upload_max_size=16777216</code> Upload file size, default is 16M</p>
-        <p>The following are SAAS settings that can be ignored for now ,<a href="saas_en.html">View using SAAS mode</a></p>
+        <h3 id="saas">SAAS settings</h3>
+        <p>The following are SAAS settings that can be ignored for now .</p>
+        <p><a href="saas_en.html">View using SAAS mode</a></p>
         <pre><code>
         siteid=1
         groupid=0
         alias_domain=
         init_func=
+        themes = 
         </code></pre>
         <p><code>client.get_siteid();</code> get siteid </p>
         <p><code>client.get_groupid();</code> get groupid </p>
         <p><code>client.get_theme();</code> get theme </p>
+        <p><code>client.theme_view(contt std::string &);</code> set theme view file</p>
         <p>Beginners only need to understand <code>httpport</code> <code>httpsport</code> <code>wwwpath</code> <code>logpath</code> Ensure that the settings are correct, Replace all '/Users/hzq/paozhu' with your directory.</p>
         <h3 id="Helloworld">paozhu Introduction</h3>
         <h4>Hello World Example</h4>
