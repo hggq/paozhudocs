@@ -605,7 +605,8 @@
         std::vector&lt;world_base::meta&gt; record;
         </code></pre>
         <h4>协程方式使用ORM</h4>
-        <pre><code class="language-C++">//@urlpath(null,queries)
+        <pre><code class="language-C++">
+        //@urlpath(null,queries)
         asio::awaitable&lt;std::string&gt; techempowerqueries(std::shared_ptr&lt;httppeer&gt; peer)
         {
             peer-&gt;type(&quot;application/json; charset=UTF-8&quot;);
@@ -649,7 +650,8 @@
     <div class="container">
         <h4>同步使用ORM</h4>
         <p>正常业务代码在一个线程中运行，就是一个连接一个线程，这个很经典方式。</p>
-        <pre><code class="language-C++">//@urlpath(admin_islogin,admin/addtopic)
+        <pre><code class="language-C++">
+        //@urlpath(admin_islogin,admin/addtopic)
         std::string admin_addtopic(std::shared_ptr&lt;httppeer&gt; peer)
         {
             httppeer &amp;client = peer-&gt;get_peer();
@@ -696,9 +698,21 @@
         <p><code>.page(page, 10, 5)</code> 返回四个数值，<code>bar_min</code> <code>bar_max</code>由传入5决定范围，
         就是前后2页窗口，每页10个，</p>
         <p>ORM where其它方法</p>
-        <p><code>whereLike(fieldname,searchword)</code> 其实就是 and fieldname '%searchword%'设置<br />
-        <code>whereAnd</code> 其实就是 and fieldname = val 设置<br />
-        <code>whereIn</code> 其实就是 and fieldname IN(val) 设置</p>
+        <p><code>whereLike(fieldname,searchword)</code> 其实就是 <code>and fieldname '%searchword%'</code>设置<br />
+        <code>whereAnd</code> 其实就是 <code>and fieldname = val</code> 设置<br />
+        <code>whereIn</code> 其实就是 <code>and fieldname IN(val)</code> 设置</p>
+        <p><code>whereLT(const std::string &wq, const std::string &val)</code> 其实就是 <code>and fieldname &lt; val</code> 设置</p>
+        <p><code>whereLE(const std::string &wq, const std::string &val)</code> 其实就是 <code>and fieldname &lt;= val</code> 设置</p>
+        <p><code>whereOrLT(const std::string &wq, const std::string &val)</code> 其实就是 <code>OR fieldname &lt; val</code> 设置</p>    
+        <p><code>whereOrLE(const std::string &wq, const std::string &val)</code> 其实就是 <code>OR fieldname &lt;= val</code> 设置</p>   
+        <p><br /></p> 
+        <p><code>whereBT(const std::string &wq, const std::string &val)</code> 其实就是 <code>and fieldname &gt; val</code> 设置</p>
+        <p><code>whereBE(const std::string &wq, const std::string &val)</code> 其实就是 <code>and fieldname &gt;= val</code> 设置</p>
+        <p><code>whereOrBT(const std::string &wq, const std::string &val)</code> 其实就是 <code>OR fieldname &gt; val</code> 设置</p>    
+        <p><code>whereOrBE(const std::string &wq, const std::string &val)</code> 其实就是 <code>OR fieldname &gt;= val</code> 设置</p>  
+        <p>更多参考ORM目录下mysql.h结尾的文件里面方法。</p> 
+        <p><br /></p> 
+        
       </div>
 
       <div class="container">

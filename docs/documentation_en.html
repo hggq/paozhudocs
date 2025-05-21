@@ -577,7 +577,8 @@
         std::vector&lt;world_base::meta&gt; record;
         </code></pre>
         <h4>ORM use for Coroutine</h4>
-        <pre><code class="language-C++">//@urlpath(null,queries)
+        <pre><code class="language-C++">
+        //@urlpath(null,queries)
         asio::awaitable&lt;std::string&gt; techempowerqueries(std::shared_ptr&lt;httppeer&gt; peer)
         {
             peer-&gt;type(&quot;application/json; charset=UTF-8&quot;);
@@ -618,7 +619,8 @@
         <p><code>peer-&gt;output = myworld.to_json();</code> Directly output JSON to the browser.</p>
         <h4>Synchronize the use of ORM</h4>
         <p>Normal business code runs in a thread, one thread by one connect at a time, which is a classic way.</p>
-        <pre><code class="language-C++">//@urlpath(admin_islogin,admin/addtopic)
+        <pre><code class="language-C++">
+        //@urlpath(admin_islogin,admin/addtopic)
         std::string admin_addtopic(std::shared_ptr&lt;httppeer&gt; peer)
         {
             httppeer &amp;client = peer-&gt;get_peer();
@@ -662,10 +664,23 @@
         </code></pre>
         <p><code>.page(page, 10, 5)</code> Return four numerical values,<code>bar_min</code> <code>bar_max</code> The range is determined by the input of 5, It consists of two pages of windows, with 10 per page,</p>
         <p>ORM where Other Methods</p>
-        <p><code>whereLike(fieldname,searchword)</code> it's just &quot; and fieldname '%searchword%'&quot; alias</p>
+        <p><code>whereLike(fieldname,searchword)</code> It's equivalent to <code>and fieldname '%searchword%'</code> alias</p>
         
-        <p><code>whereAnd</code> it's just &quot; and fieldname = val &quot; alias</p>
-        <p><code>whereIn</code> it's just &quot; and fieldname IN(val) &quot; alias</p>
+        <p><code>whereAnd</code> It's equivalent to <code>and fieldname = val </code> alias</p>
+        <p><code>whereIn</code> iIt's equivalent to <code>and fieldname IN(val) </code> alias</p>
+
+        <p><code>whereLT(const std::string &wq, const std::string &val)</code> It's equivalent to <code>and fieldname &lt; val</code> alias</p>
+        <p><code>whereLE(const std::string &wq, const std::string &val)</code> It's equivalent to <code>and fieldname &lt;= val</code> alias</p>
+        <p><code>whereOrLT(const std::string &wq, const std::string &val)</code> It's equivalent to <code>OR fieldname &lt; val</code> alias</p>    
+        <p><code>whereOrLE(const std::string &wq, const std::string &val)</code> It's equivalent to <code>OR fieldname &lt;= val</code> alias</p>   
+        <p><br /></p>  
+        <p><code>whereBT(const std::string &wq, const std::string &val)</code> It's equivalent to <code>and fieldname &gt; val</code> alias</p>
+        <p><code>whereBE(const std::string &wq, const std::string &val)</code> It's equivalent to <code>and fieldname &gt;= val</code> alias</p>
+        <p><code>whereOrBT(const std::string &wq, const std::string &val)</code> It's equivalent to <code>OR fieldname &gt; val</code> alias</p>    
+        <p><code>whereOrBE(const std::string &wq, const std::string &val)</code> It's equivalent to <code>OR fieldname &gt;= val</code> alias</p>  
+        <p>For more information, please refer to the methods in the file ending with mysql.h in the ORM directory.</p> 
+        <p><br /></p> 
+
     </div>
     <div class="container"> 
         <h3 id="Htmltemplate">Paozhu Framework View Beginner's Guide</h3>
