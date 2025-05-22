@@ -564,6 +564,7 @@
         They can mix clusters, and individual server programs can also be clustered, because they have built-in read-write separation, and the write servers can be the same,
         Querying can allocate database servers in a fixed or dynamic manner, and the framework can be suitable for large business systems.
         Currently, the focus is on integrating a server with a database and business programs.</p>
+        <p>ORM does not have multi table join queries and requires manual writing of multi table queries. This may result in one or more additional queries at the beginning of the design, mainly due to fast in and fast out, which makes it easy to hit the cache and is in line with the current storage computing separation design. It also performs smoothly under high pressure, and novice programmers will not encounter any problems when writing business code.</p>
         <h3>ORM usage example</h3>
         <p>The table model has two important member variables</p>
         <ul>
