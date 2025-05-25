@@ -718,6 +718,104 @@
         <p>更多参考ORM目录下<code>mysql.h</code>结尾的文件里面方法。</p> 
         <p><br /></p> 
         
+        <h4>ORM 插入、编辑</h4>
+        <p>参考文件  <code>controller/src/superadmin/supermain.cpp</code> 数据插入例子。</p> 
+        <pre><code class="c++">
+        //@urlpath(superadmin_islogin,superadmin/adduserpost)
+        std::string superadmin_adduserpost(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            unsigned int sid = client.post[&quot;sid&quot;].to_int();
+            auto stinfo      = orm::cms::Siteinfo();
+
+            stinfo.where(&quot;agentid&quot;, client.session[&quot;superid&quot;].to_int()).whereAnd(&quot;sid&quot;, sid).fetch_one();
+            if (stinfo.data.userid == 0)
+            {
+                client.goto_url(&quot;/superadmin/welcome&quot;, 3, &quot;没有站点信息！&quot;);
+                return &quot;&quot;;
+            }
+
+            std::string expdate = str_trim(client.post[&quot;expectdate&quot;].to_string());
+            if (!check_isodate(expdate))
+            {
+                expdate = get_date(&quot;%Y-%m-%d&quot;);
+            }
+
+            auto uinfo = orm::cms::Sysuser();
+
+            std::string username = client.post[&quot;username&quot;].to_string();
+            std::string password = client.post[&quot;password&quot;].to_string();
+            uinfo.where(&quot;name&quot;, username).fetch_one();
+            std::string urlmsg = &quot;/superadmin/adduser?sid=&quot;;
+            urlmsg.append(std::to_string(sid));
+            if (uinfo.data.adminid &gt; 0)
+            {
+                client.goto_url(urlmsg, 3, &quot;用户名已经存在！&quot;);
+                return &quot;&quot;;
+            }
+            if (username.size() &gt; 26 || username.size() &lt; 4)
+            {
+                client.goto_url(urlmsg, 3, &quot;用户名必须在4到20之间！&quot;);
+                return &quot;&quot;;
+            }
+            if (password.size() &gt; 20 || password.size() &lt; 6)
+            {
+                client.goto_url(urlmsg, 3, &quot;密码必须在4到20之间！&quot;);
+                return &quot;&quot;;
+            }
+            uinfo.clear();
+            uinfo.data.name            = username;
+            uinfo.data.password        = md5(password);
+            uinfo.data.isopen          = client.post[&quot;isopen&quot;].to_int() == 1 ? 1 : 0;
+            uinfo.data.companyid       = sid;
+            uinfo.data.textword        = password;
+            uinfo.data.created_at      = timeid();
+            uinfo.data.enddate         = strtotime(expdate);
+            uinfo.data.nickname        = client.post[&quot;nickname&quot;].to_string();
+            uinfo.data.mobile          = client.post[&quot;mobile&quot;].to_string();
+            uinfo.data.email           = client.post[&quot;email&quot;].to_string();
+            auto [effect_num, last_id] = uinfo.save();
+            if (effect_num == 0)
+            {
+                client.goto_url(urlmsg, 3, &quot;保存出错！&quot;);
+                return &quot;&quot;;
+            }
+            urlmsg = &quot;/superadmin/listuser?sid=&quot;;
+            urlmsg.append(std::to_string(sid));
+            client.goto_url(urlmsg, 3, &quot;用户添加成功！&quot;);
+            return &quot;&quot;;
+        }
+        </code></pre>   
+        <p><code>auto [effect_num, last_id] = uinfo.save();</code> 方法返回tuple值，effect_num 表示插入多少行, last_id 表示第一个插入数据自增id.</p> 
+
+        <p>参考文件  <code>controller/src/admin/topics.cpp</code> 数据更新例子。</p> 
+        <pre><code class="c++">
+        //@urlpath(admin_isloginjson,admin/updatetopicview)
+        std::string admin_updatetopicview(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+
+            try
+            {
+                auto topicm          = orm::cms::Topic();
+                unsigned char isview = client.post[&quot;isview&quot;].to_int() &gt; 0 ? 1 : 0;
+
+                topicm.setIsview(isview);
+                topicm.where(&quot;userid&quot;, client.session[&quot;userid&quot;].to_int()).whereAnd(&quot;topicid&quot;, client.get[&quot;id&quot;].to_int());
+                client.val[&quot;code&quot;] = topicm.update(&quot;isview&quot;);
+                client.val[&quot;msg&quot;]  = &quot;ok&quot;;
+            }
+            catch (std::exception &amp;e)
+            {
+                client.val[&quot;code&quot;] = 0;
+            }
+            client.out_json();
+            return &quot;&quot;;
+        }
+
+        </code></pre>
+        <p><code>client.val[&quot;code&quot;] = topicm.update(&quot;isview&quot;);</code> update("filed1,field2...") 表示更新字段</p> 
+
       </div>
 
       <div class="container">
