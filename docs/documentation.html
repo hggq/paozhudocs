@@ -715,7 +715,24 @@
         <p><code>whereBE(const std::string &wq, const std::string &val)</code> 其实就是 <code>and fieldname &gt;= val</code> 设置</p>
         <p><code>whereOrBT(const std::string &wq, const std::string &val)</code> 其实就是 <code>OR fieldname &gt; val</code> 设置</p>    
         <p><code>whereOrBE(const std::string &wq, const std::string &val)</code> 其实就是 <code>OR fieldname &gt;= val</code> 设置</p>  
+
+        <p>ORM执行命令</p>
+        <p>同步方式</p> 
+        <p><code>fetch()</code> 取回多个结果到 record</p>  
+        <p><code>fetch_one()</code> 取回一个结果到 data</p>  
+        <p><code>save()</code> 把data 数据插入数据库</p>     
+        <p><code>update("field1,field2...")</code> 更新data中的字段到数据库</p>  
+        <p><code>remove()</code> 删除表中数据和where条件配合</p>  
+        <p><br /></p> 
+        <p>协程方式</p> 
+        <p><code>async_fetch()</code> 协程方式取回多个结果到 record</p>  
+        <p><code>async_fetch_one()</code> 协程方式取回一个结果到 data</p>  
+        <p><code>async_save()</code> 协程方式把data 数据插入数据库</p>  
+        <p><code>async_update("field1,field2...")</code> 协程方式更新data中的字段到数据库</p>      
+        <p><code>async_remove()</code> 协程方式删除表中数据和where条件配合</p>      
+
         <p>更多参考ORM目录下<code>mysql.h</code>结尾的文件里面方法。</p> 
+
         <p><br /></p> 
         
         <h4>ORM 插入、编辑</h4>

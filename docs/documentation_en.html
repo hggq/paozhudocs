@@ -683,6 +683,23 @@
         <p><code>whereBE(const std::string &wq, const std::string &val)</code> It's equivalent to <code>and fieldname &gt;= val</code> alias</p>
         <p><code>whereOrBT(const std::string &wq, const std::string &val)</code> It's equivalent to <code>OR fieldname &gt; val</code> alias</p>    
         <p><code>whereOrBE(const std::string &wq, const std::string &val)</code> It's equivalent to <code>OR fieldname &gt;= val</code> alias</p>  
+
+        <p>ORM Execute Command</p>
+        <p>Synchronous mode</p> 
+        <p><code>fetch()</code> Get multiple results to variable record  </p>  
+        <p><code>fetch_one()</code> Get a result to variable data </p>  
+        <p><code>save()</code> Insert variable data into database table</p>  
+        <p><code>update("field1,field2...")</code> Update fields in variable data to the database</p>  
+        <p><code>remove()</code> Delete data from the table and match it with the <code>where</code> condition</p>  
+
+        <p><br /></p> 
+        <p>Coroutine mode</p> 
+        <p><code>async_fetch()</code> Get multiple results to variable record using coroutine method</p>  
+        <p><code>async_fetch_one()</code> Get a result to variable data through coroutine method</p>  
+        <p><code>async_save()</code> Insert variable data into database table using coroutine method</p>  
+        <p><code>async_update("field1,field2...")</code> Update fields in variable data to the database using coroutine method</p>      
+        <p><code>async_remove()</code> Delete data from the table and match it with the <code>where</code> condition using coroutine method</p>      
+
         <p>For more information, please refer to the methods in the file ending with <code>mysql.h</code> in the ORM directory.</p> 
         <p><br /></p> 
 
