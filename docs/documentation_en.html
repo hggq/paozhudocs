@@ -281,7 +281,7 @@
         
         </code></pre>
         <h3>Annotation Fundamentals</h3>
-        <p>All annotation functions must be placed in the 'controller/src' directory</p>
+        <p>All annotation function cpp files must be placed in the<code>controller/src</code>directory.</p>
         <p>This <code>techempower.cpp</code> file must contain its own file name <code>#include "techempower.h"</code>, The <code>techempower.h</code> file will be automatically generated.</p>
         <p>When compiling, use the CMake Hook to first compile an annotation handler that can be used, and then execute this program to handle <code>controller/src</code> Extract functions in the format of <code>//@urlpath(null, plaintext)</code> from all files in the directory, create corresponding header files, and then generate Annotate the function and save the mapping function to the <code>common/autocontrolmethod.hpp</code> file.</p>
         <p>Doesn't it have a strong Java Spring Boot flavor so that we can elegantly write URL and function mapping relationships without manually registering functions and writing header files.</p>
@@ -289,7 +289,8 @@
         <p><code>//@urlpath(null,plaintext)</code> annotate functions，Mapping with URL，Example http://localhost/plaintext Will access the annotation function of 'plaintext'.</p>
         <p>null represents the annotation function that must be executed before accessing plaintext, for example: a backend with permissions that requires verification of login status</p>
         <p><code>//@urlpath(islogin,plaintext)</code> This requires first executing the 'islogin' annotation and returning 'OK' to indicate success.</p>
-        <pre><code class="language-C++">//@urlpath(null, islogin)
+        <pre><code class="language-C++">
+        //@urlpath(null, islogin)
         asio::awaitable&lt;std::string&gt; checklogin(std::shared_ptr&lt;httppeer&gt; peer)
         {
             httppeer &amp;client = peer-&gt;get_peer();
@@ -312,7 +313,8 @@
         <p>It is recommended to use this ordinary function for load computing, otherwise a large amount of computation may affect concurrency, which is possible if it is only for CRUD business
         It shouldn't be a problem to use that method. When using coroutines, don't use std:: this_thread::sleep_for(std::chrono::microseconds(1000));`
         This type of code.</p>
-        <pre><code class="language-C++">//@urlpath(null,hello)
+        <pre><code class="language-C++">
+        //@urlpath(null,hello)
         std::string testhello(std::shared_ptr&lt;httppeer&gt; peer)
         {
             httppeer &amp;client = peer-&gt;get_peer();
@@ -322,7 +324,22 @@
         }
         
         </code></pre>
-        <p>For more code usage cases, please refer to the examples in the 'controller/src' directory</p>
+        <p>For more code usage cases, please refer to the examples in the <code>controller/src</code> directory</p>
+        <h4>Compile your first project</h4>
+        <p>Operate in the root directory of your project. </p>
+        <pre><code class="language-C++">
+        mkdir build
+        cd build
+        cmake ..
+        make  
+        </code></pre>
+
+        <p>The compilation is complete, and the server program can now be started. Please pay attention to the execution permissions of the program. </p>
+        <pre><code class="language-C++">
+        cd ..
+        MacOS #./bin/paozhu 
+        Linux #sudo ./bin/paozhu 
+        </code></pre>
     </div>
     <div class="container"> 
         <h3 id="objval">Introduction to Built in Micro Objects</h3>
