@@ -1497,9 +1497,9 @@
       </div>      
 
             <div class="container">
-            <h3 id="httpclient">HttpClient Introduction</h3>
-            <p>Example file <code>controller/src/testcowaitclient.cpp</code> </p>
-            <p>This is the synchronous usage method</p>
+            <h3 id="httpclient">HttpClient 介绍</h3>
+            <p>例子文件 <code>controller/src/testcowaitclient.cpp</code> </p>
+            <p>同步使用方式</p>
             <pre><code class="language-cpp">
             //@urlpath(null,testcowaitclient5)
             std::string testhttpclient_cowait_post(std::shared_ptr&lt;httppeer&gt; peer)
@@ -1547,7 +1547,7 @@
                 return &quot;&quot;;
             }
             </code></pre>
-            <p>This is the Coroutine usage method</p>
+            <p>协程中使用方式</p>
             <pre><code class="language-cpp">
             //@urlpath(null,testcowaitclient22)
             asio::awaitable&lt;std::string&gt; testhttpclient22_cowait_body(std::shared_ptr&lt;httppeer&gt; peer)
