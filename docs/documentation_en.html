@@ -117,6 +117,7 @@
             <li><a href="#ormcontent">ORM Introduction</a></li>
             <li><a href="#Htmltemplate">HTML Template View Description</a></li>
             <li><a href="#jsonencode">JSON and struct conversion function json_encode json_decode</a></li>
+            <li><a href="#httpclient">HttpClient Introduction</a></li>
             <li><a href="#Troubleshooting">Troubleshooting in C++ Production Environment</a></li>
         </ul>
     </div>
@@ -1466,7 +1467,85 @@
             <p>Then output jsondep_str_temp, See if it meets our expectations</p>
     
         </div>      
+        <div class="container">
+            <h3 id="httpclient">HttpClient Introduction</h3>
+            <p>Example file <code>controller/src/testcowaitclient.cpp</code> </p>
+            <p>This is the synchronous usage method</p>
+            <pre><code class="language-cpp">
+            //@urlpath(null,testcowaitclient5)
+            std::string testhttpclient_cowait_post(std::shared_ptr&lt;httppeer&gt; peer)
+            {
+                httppeer &amp;client = peer-&gt;get_peer();
+                client &lt;&lt; &quot;hello world!  test testhttpclient_cowait_body&quot;;
 
+                std::shared_ptr&lt;http::client&gt; a = std::make_shared&lt;http::client&gt;();
+
+                a-&gt;get(&quot;http://www.xxxxxx.net/&quot;);
+                a-&gt;add_header(&quot;Connection&quot;, &quot;keep-alive&quot;);
+                a-&gt;send();
+                if (a-&gt;get_status() == 200)
+                {
+                    //  client &lt;&lt; a-&gt;getBody();
+                    std::cout &lt;&lt; &quot;http://www.xxxxxx.net/login.php&quot; &lt;&lt; std::endl;
+                    a-&gt;post(&quot;http://www.xxxxxx.net/login.php&quot;);
+                    a-&gt;add_header(&quot;Connection&quot;, &quot;keep-alive&quot;);
+                    a-&gt;data[&quot;user_name&quot;] = &quot;admin&quot;;
+                    a-&gt;data[&quot;user_pass&quot;] = &quot;123456&quot;;
+                    a-&gt;data[&quot;action&quot;]    = &quot;login&quot;;
+                    a-&gt;send();
+                    if (a-&gt;get_status() == 200)
+                    {
+                        //client &lt;&lt; a-&gt;getBody();
+                        std::cout &lt;&lt; &quot;http://www.xxxxxx.net/main.php&quot; &lt;&lt; std::endl;
+                        a-&gt;get(&quot;http://www.xxxxxx.net/main.php&quot;);
+                        a-&gt;requst_clear();
+                        a-&gt;add_cookie(&quot;PHPSESSID&quot;, a-&gt;state.cookie[&quot;PHPSESSID&quot;]);
+                        a-&gt;add_header(&quot;Connection&quot;, &quot;Close&quot;);
+
+                        a-&gt;send();
+                        if (a-&gt;get_status() == 200)
+                        {
+                            std::cout &lt;&lt; a-&gt;get_body() &lt;&lt; std::endl;
+                            //client &lt;&lt; a-&gt;getBody();
+                        }
+                    }
+                }
+                else
+                {
+                    client &lt;&lt; a-&gt;error_msg;
+                    client &lt;&lt; &quot;+++++not content++++&quot;;
+                }
+                return &quot;&quot;;
+            }
+            </code></pre>
+            <p>This is the Coroutine usage method</p>
+            <pre><code class="language-cpp">
+            //@urlpath(null,testcowaitclient22)
+            asio::awaitable&lt;std::string&gt; testhttpclient22_cowait_body(std::shared_ptr&lt;httppeer&gt; peer)
+            {
+                httppeer &amp;client = peer-&gt;get_peer();
+                client &lt;&lt; &quot;hello world! co_await test localhost http://127.0.0.1addpost.html &quot;;
+
+                std::shared_ptr&lt;http::client&gt; a = std::make_shared&lt;http::client&gt;();
+
+                a-&gt;get(&quot;http://127.0.0.1/addpost.html&quot;);
+                co_await a-&gt;async_send();
+                if (a-&gt;get_status() == 200)
+                {
+                    client &lt;&lt; a-&gt;get_body();
+                }
+                else
+                {
+                    client &lt;&lt; &quot;+++++not content++++&quot;;
+                }
+                co_return &quot;&quot;;
+            }
+            </code></pre>
+
+            <p>the Coroutine use <code>async_</code> prefix. </p>
+            <p><br /></p>
+        </div>
+        <div class="container">
         <h3 id="Troubleshooting">Troubleshooting in C++ Production Environment</h3>
         <p>The framework has enabled ASAN, and if it is detected by ASAN during debugging, it will indicate which line is problematic.</p>
         <p>The production environment is difficult to see due to the lack of output reasons.</p>
