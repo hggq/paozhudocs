@@ -312,8 +312,7 @@
         <p><code>co_return &quot;&quot;;</code> It is a coroutine that returns the result. Please note that it is different from a regular function, and it is best to return an empty string if you are unsure.</p>
         <p>The following is a regular registration function, pay attention to the return value, indicating that it goes through the business thread pool, which assigns one thread to each connection. This is a classic application.</p>
         <p>It is recommended to use this ordinary function for load computing, otherwise a large amount of computation may affect concurrency, which is possible if it is only for CRUD business
-        It shouldn't be a problem to use that method. When using coroutines, don't use std:: this_thread::sleep_for(std::chrono::microseconds(1000));`
-        This type of code.</p>
+        It shouldn't be a problem to use that method. When using coroutines, don't use <code>std::this_thread::sleep_for(std::chrono::microseconds(1000));</code> This type of code.</p>
         <pre><code class="language-C++">
         //@urlpath(null,hello)
         std::string testhello(std::shared_ptr&lt;httppeer&gt; peer)
