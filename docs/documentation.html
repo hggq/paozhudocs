@@ -113,6 +113,7 @@
             <li><a href="#Helloworld">Hello World</a></li>
             <li><a href="#objval">内建JSON对象</a></li>
             <li><a href="#sessioncookie">Session 和 Cookie</a></li>
+            <li><a href="#getpostfiles">get、post和files</a></li>
             <li><a href="#ormcontent">ORM 介绍</a></li>
             <li><a href="#Htmltemplate">HTML Template 介绍</a></li>
             <li><a href="#jsonencode">JSON和结构体互换函数 json_encode json_decode</a></li>
@@ -548,7 +549,92 @@
         }
         </code></pre>
         <p><code>save_session()</code> 把session值保存到磁盘或内存。</p> 
+        <p><br /></p> 
+        <h3 id="getpostfiles">get post 和 files</h3>
+
+        <p>URL 参数传值, 使用 <code>client.get[]</code> 获取, 例如 <code>http://www.xxx.com/aa?keyname=1111</code> 使用 <code>client.get["keyname"].to_int()</code> 取得数据。</p> 
         
+        
+        <p>HTML 表单数据传值和接收 使用 <code>client.post[]</code> 取得数据。</p> 
+        <p>例子文件 <code>www/default/testpost.html</code>, 下面是HTML代码。</p> 
+        <pre><code>
+        &lt;form method=&quot;post&quot; enctype=&quot;multipart/form-data&quot; name=&quot;form1&quot; id=&quot;form1&quot; action=&quot;/tfilepost&quot;&gt;
+        &lt;p&gt;
+        &lt;label for=&quot;textfield&quot;&gt;Text Field:&lt;/label&gt;
+        &lt;input type=&quot;text&quot; name=&quot;textfield&quot; id=&quot;textfield&quot;&gt;
+        &lt;/p&gt;
+        &lt;p&gt;
+        &lt;label for=&quot;textfield&quot;&gt;Text Field:&lt;/label&gt;
+        &lt;input type=&quot;text&quot; name=&quot;aa[]&quot; id=&quot;textfield1&quot;&gt;
+        &lt;/p&gt;
+        &lt;p&gt;
+        &lt;label for=&quot;textfield&quot;&gt;Text Field:&lt;/label&gt;
+        &lt;input type=&quot;text&quot; name=&quot;aa[]&quot; id=&quot;textfield2&quot;&gt;
+        &lt;/p&gt;
+            &lt;p&gt;
+        &lt;label for=&quot;textfield&quot;&gt;Text Field:&lt;/label&gt;
+        &lt;input type=&quot;text&quot; name=&quot;aa[8]&quot; id=&quot;textfield3&quot;&gt;
+        &lt;/p&gt;
+        &lt;p&gt;
+        &lt;label for=&quot;textarea&quot;&gt;Text Area:&lt;/label&gt;
+        &lt;textarea name=&quot;textarea&quot; id=&quot;textarea&quot;&gt;&lt;/textarea&gt;
+        &lt;/p&gt;
+        &lt;p&gt;
+        &lt;label for=&quot;fileField&quot;&gt;File:&lt;/label&gt;
+        &lt;input type=&quot;file&quot; name=&quot;fileField&quot; id=&quot;fileField&quot;&gt;
+        &lt;/p&gt;
+        &lt;p&gt;&amp;nbsp;&lt;/p&gt;
+        &lt;p&gt;
+        &lt;input type=&quot;submit&quot; name=&quot;submit&quot; id=&quot;submit&quot; value=&quot;Submit&quot;&gt;
+        &lt;/p&gt;
+    &lt;/form&gt;
+    </code></pre>
+        <p>服务器端接收代码，注意 <code>client.post["aa"]</code> 取值的使用方式。</p> 
+        <p>例子文件 <code>controller/src/testformpost.cpp</code></p>
+        <pre><code class="language-c++">
+        //@urlpath(null,tfilepost)
+        std::string testformmultipart(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            client &lt;&lt; &quot;hello world! multipart/form-data &quot;;
+
+            try
+            {
+                client &lt;&lt; &quot;&lt;p&gt;--------------&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;&quot;;
+                client &lt;&lt; client.post.to_json();
+                client &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;textfield:&quot; &lt;&lt; client.post[&quot;textfield&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;aa[]:&quot; &lt;&lt; client.post[&quot;aa&quot;][0] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;aa[]:&quot; &lt;&lt; client.post[&quot;aa&quot;][1] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;aa[8]:&quot; &lt;&lt; client.post[&quot;aa&quot;][8] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;textarea:&quot; &lt;&lt; client.post[&quot;textarea&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+
+                client &lt;&lt; &quot;&lt;p&gt;fileField:name:&quot; &lt;&lt; client.files[&quot;fileField&quot;][&quot;name&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;fileField:filename:&quot; &lt;&lt; client.files[&quot;fileField&quot;][&quot;filename&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;fileField:tempfile:&quot; &lt;&lt; client.files[&quot;fileField&quot;][&quot;tempfile&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;fileField:size:&quot; &lt;&lt; client.files[&quot;fileField&quot;][&quot;size&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;fileField:error:&quot; &lt;&lt; client.files[&quot;fileField&quot;][&quot;error&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+
+                client &lt;&lt; &quot;&lt;p&gt;submit:&quot; &lt;&lt; client.post[&quot;submit&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;--------------&lt;/p&gt;&quot;;
+            }
+            catch (std::exception &amp;e)
+            {
+                client &lt;&lt; &quot;&lt;p&gt;&quot; &lt;&lt; e.what() &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                return &quot;&quot;;
+            }
+            catch (const char *e)
+            {
+                client &lt;&lt; &quot;&lt;p&gt;&quot; &lt;&lt; e&lt;&lt; &quot;&lt;/p&gt;&quot;;
+                return &quot;&quot;;
+            }
+            return &quot;&quot;;
+        }
+        </code></pre>
+        <p><code>client.files["fileField"]["tempfile"]</code> 是服务器端临时保存的文件路径, 使用 <code>std::filesystem::rename(client.files["fileField"]["tempfile"].as_string(), newfilepath)</code> 函数, 保存到服务器端正确的位置。</p> 
+
+        <p><br /></p> 
         <h3 id="ormcontent">ORM介绍</h3>
         <p>先在按照安装环境教程导入的数据。</p>
         <p>paozhu框架内置ORM对象，目前自己分析MySQL协议，方便和ORM整合，而且支持协程模式，这个MySQL官方Client端都没有支持协程。</p>
