@@ -446,12 +446,14 @@
             std::cout&lt;&lt;&quot;------&quot;&lt;&lt;std::endl;
         </code></pre>
 
-        <p>Mainly used in complex object swapping programs, if it is not possible to use C++built-in objects or STL library methods.</p>
+        <p>Mainly used for complex object swapping programs, if it is not a complex object, C++ built-in POD, class objects, or STL library methods can be used.</p>
+        <p><br /></p> 
         <h3 id="ormcontent">ORM Introduction</h3>
         <p>The data imported in the installation environment section.</p>
         <p>The paozhu framework has built-in ORM objects and currently analyzes the MySQL protocol to facilitate integration with ORM. It also supports coroutine mode, which is not officially supported by MySQL.</p>
         <p>Config file at <code>conf/orm.conf</code></p>
-        <pre><code>[default]
+        <pre><code>
+        [default]
         type=main
         host=127.0.0.1
         port=3306
