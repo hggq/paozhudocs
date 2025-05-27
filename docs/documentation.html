@@ -112,6 +112,7 @@
             <li><a href="#Config">Paozhu 配置</a></li>
             <li><a href="#Helloworld">Hello World</a></li>
             <li><a href="#objval">内建JSON对象</a></li>
+            <li><a href="#sessioncookie">Session 和 Cookie</a></li>
             <li><a href="#ormcontent">ORM 介绍</a></li>
             <li><a href="#Htmltemplate">HTML Template 介绍</a></li>
             <li><a href="#jsonencode">JSON和结构体互换函数 json_encode json_decode</a></li>
@@ -485,7 +486,68 @@
         </code></pre>
         <p>主要应用在复杂对象交换程序，如果不是可以使用C++ 内置对象或STL库方式。</p>
     </div>
-    <div class="container">
+    <div class="container"> 
+        <h3 id="sessioncookie">Session 和 Cookie</h3>
+        <p>Session and Cookie 区别，Session数据保存在服务器端，Cookie数据保存在浏览器端，Cookie保存数据有限大小在4Kb。</p>
+        <p>例子文件 <code>controller/src/testsessionid.cpp</code> </p> 
+        <pre><code class="language-c++">
+        //@urlpath(null,testsetsession)
+        std::string testsetsession(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            client &lt;&lt; &quot;hello world!  add cookie &quot;;
+            client &lt;&lt; client.get_hosturl();
+
+            int semid = client.get[&quot;aaa&quot;].to_int();
+            if (semid != 0)
+            {
+                client.session[&quot;aaa&quot;] = semid;
+                client &lt;&lt; &quot;&lt;br /&gt;set session 2222 &quot;;
+            }
+            else
+            {
+                client.session[&quot;aaa&quot;] = 1111;
+            }
+
+            client.save_session();
+            client &lt;&lt; &quot;&lt;p&gt;&lt;a href=\&quot;&quot; &lt;&lt; client.get_hosturl() &lt;&lt; &quot;/testsetsession?aaa=2222\&quot;&gt;2222 session&lt;/a&gt;&lt;/p&gt;&quot;;
+            client.set_cookie(&quot;ccbb&quot;, &quot;123456abc&quot;, 7200 * 24);
+            client.set_cookie(&quot;same&quot;, &quot;samesite&quot;, 7200 * 24, &quot;/&quot;, client.host, false, true, &quot;Lax&quot;);
+            client.set_header(&quot;server&quot;, &quot;cpphttp&quot;);
+            client &lt;&lt; &quot;&lt;p&gt;&lt;a href=\&quot;&quot; &lt;&lt; client.get_hosturl() &lt;&lt; &quot;/testshowsession\&quot;&gt;show&lt;/a&gt;&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;&lt;a href=\&quot;&quot; &lt;&lt; client.get_hosturl() &lt;&lt; &quot;/testshowsession?sessionid=&quot; &lt;&lt; client.get_session_id()
+                &lt;&lt; &quot;\&quot;&gt;session(&quot; &lt;&lt; client.get_session_id() &lt;&lt; &quot;)&lt;/a&gt;&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;session aaa:|&quot; &lt;&lt; client.session.to_json() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+            return &quot;&quot;;
+        }
+        //@urlpath(null,testshowsession)
+        std::string testshowsession(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            client &lt;&lt; &quot;hello world!  show cookie&lt;br/&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;&lt;a href=\&quot;&quot; &lt;&lt; client.get_hosturl() &lt;&lt; &quot;/testsetsession\&quot;&gt;add cookie&lt;/a&gt;&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;session aaa:|&quot; &lt;&lt; client.session.to_json() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;session aaa:|&quot; &lt;&lt; client.session[&quot;aaa&quot;].to_string() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;session_id:|&quot; &lt;&lt; client.get_session_id() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+
+            client &lt;&lt; &quot;&lt;p&gt;cookie same:&quot; &lt;&lt; client.cookie[&quot;same&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;cookie ccbb:&quot; &lt;&lt; client.cookie[&quot;ccbb&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+
+            std::string semid = client.get[&quot;sessionid&quot;].as_string();
+            if (!semid.empty())
+            {
+                client.set_session_id(semid);
+                client &lt;&lt; &quot;&lt;p&gt;new session_id:|&quot; &lt;&lt; client.get_session_id() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;new session aaa:|&quot; &lt;&lt; client.session[&quot;aaa&quot;] &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;cookie same:&quot; &lt;&lt; client.cookie[&quot;same&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;cookie ccbb:&quot; &lt;&lt; client.cookie[&quot;ccbb&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;session aaa:|&quot; &lt;&lt; client.session.to_json() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+            }
+            client.view(&quot;cookie/show&quot;);
+            return &quot;&quot;;
+        }
+        </code></pre>
+        <p><code>save_session()</code> 把session值保存到磁盘或内存。</p> 
         
         <h3 id="ormcontent">ORM介绍</h3>
         <p>先在按照安装环境教程导入的数据。</p>

@@ -112,6 +112,7 @@
             <li><a href="#Config">Paozhu Config</a></li>
             <li><a href="#Helloworld">Hello World</a></li>
             <li><a href="#objval">Introduction to Built in Micro Objects(JSON)</a></li>
+            <li><a href="#sessioncookie">Session and Cookie</a></li>
             <li><a href="#ormcontent">ORM Introduction</a></li>
             <li><a href="#Htmltemplate">HTML Template View Description</a></li>
             <li><a href="#jsonencode">JSON and struct conversion function json_encode json_decode</a></li>
@@ -268,7 +269,7 @@
         <p>Beginners only need to understand <code>httpport</code> <code>httpsport</code> <code>wwwpath</code> <code>logpath</code> Ensure that the settings are correct, Replace all '/Users/hzq/paozhu' with your directory.</p>
         <h3 id="Helloworld">paozhu Introduction</h3>
         <h4>Hello World Example</h4>
-        <p>Example of<code>controller/src/techepower.cpp</code> file in project directory</p>
+        <p>Example of <code>controller/src/techepower.cpp</code> file in project directory</p>
         <pre><code class="language-C++">
         #include "techempower.h"       
         //@urlpath(null,plaintext)
@@ -412,7 +413,8 @@
         <li><code>obj_val multi_sort(std::string_view key,unsigned char order,std::string_view key2,unsigned char order2);</code>	2D array key name sorting, order is SORT_ASC or SORT_DESC, If there is the same secondary sorting,need key2 and order2.</li>
         </ul>
         <h4>Micro Objects advanced methods example</h4>
-        <pre><code class="language-c++">    http::obj_val zval4;
+        <pre><code class="language-c++">
+            http::obj_val zval4;
             zval4.set_array();
             float s[6]={83.3,77.75,60.45,83.3,77.75,45.6};
             for(unsigned int jjj=0;jjj&lt;6;jjj++)
@@ -464,6 +466,72 @@
         </code></pre>
 
         <p>Mainly used for complex object swapping programs, if it is not a complex object, C++ built-in POD, class objects, or STL library methods can be used.</p>
+        <p><br /></p> 
+    </div>
+    <div class="container"> 
+        <h3 id="sessioncookie">Session and Cookie</h3>
+        <p>The difference between Session and Cookie is that session data is stored on the server side, cookie data is stored on the browser side, and cookie data has a limited size of 4Kb.</p>
+        <p>Example file <code>controller/src/testsessionid.cpp</code> </p> 
+        <pre><code class="language-c++">
+        //@urlpath(null,testsetsession)
+        std::string testsetsession(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            client &lt;&lt; &quot;hello world!  add cookie &quot;;
+            client &lt;&lt; client.get_hosturl();
+
+            int semid = client.get[&quot;aaa&quot;].to_int();
+            if (semid != 0)
+            {
+                client.session[&quot;aaa&quot;] = semid;
+                client &lt;&lt; &quot;&lt;br /&gt;set session 2222 &quot;;
+            }
+            else
+            {
+                client.session[&quot;aaa&quot;] = 1111;
+            }
+
+            client.save_session();
+            client &lt;&lt; &quot;&lt;p&gt;&lt;a href=\&quot;&quot; &lt;&lt; client.get_hosturl() &lt;&lt; &quot;/testsetsession?aaa=2222\&quot;&gt;2222 session&lt;/a&gt;&lt;/p&gt;&quot;;
+            client.set_cookie(&quot;ccbb&quot;, &quot;123456abc&quot;, 7200 * 24);
+            client.set_cookie(&quot;same&quot;, &quot;samesite&quot;, 7200 * 24, &quot;/&quot;, client.host, false, true, &quot;Lax&quot;);
+            client.set_header(&quot;server&quot;, &quot;cpphttp&quot;);
+            client &lt;&lt; &quot;&lt;p&gt;&lt;a href=\&quot;&quot; &lt;&lt; client.get_hosturl() &lt;&lt; &quot;/testshowsession\&quot;&gt;show&lt;/a&gt;&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;&lt;a href=\&quot;&quot; &lt;&lt; client.get_hosturl() &lt;&lt; &quot;/testshowsession?sessionid=&quot; &lt;&lt; client.get_session_id()
+                &lt;&lt; &quot;\&quot;&gt;session(&quot; &lt;&lt; client.get_session_id() &lt;&lt; &quot;)&lt;/a&gt;&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;session aaa:|&quot; &lt;&lt; client.session.to_json() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+            return &quot;&quot;;
+        }
+        //@urlpath(null,testshowsession)
+        std::string testshowsession(std::shared_ptr&lt;httppeer&gt; peer)
+        {
+            httppeer &amp;client = peer-&gt;get_peer();
+            client &lt;&lt; &quot;hello world!  show cookie&lt;br/&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;&lt;a href=\&quot;&quot; &lt;&lt; client.get_hosturl() &lt;&lt; &quot;/testsetsession\&quot;&gt;add cookie&lt;/a&gt;&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;session aaa:|&quot; &lt;&lt; client.session.to_json() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;session aaa:|&quot; &lt;&lt; client.session[&quot;aaa&quot;].to_string() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;session_id:|&quot; &lt;&lt; client.get_session_id() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+
+            client &lt;&lt; &quot;&lt;p&gt;cookie same:&quot; &lt;&lt; client.cookie[&quot;same&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+            client &lt;&lt; &quot;&lt;p&gt;cookie ccbb:&quot; &lt;&lt; client.cookie[&quot;ccbb&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+
+            std::string semid = client.get[&quot;sessionid&quot;].as_string();
+            if (!semid.empty())
+            {
+                client.set_session_id(semid);
+                client &lt;&lt; &quot;&lt;p&gt;new session_id:|&quot; &lt;&lt; client.get_session_id() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;new session aaa:|&quot; &lt;&lt; client.session[&quot;aaa&quot;] &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;cookie same:&quot; &lt;&lt; client.cookie[&quot;same&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;cookie ccbb:&quot; &lt;&lt; client.cookie[&quot;ccbb&quot;] &lt;&lt; &quot;&lt;/p&gt;&quot;;
+                client &lt;&lt; &quot;&lt;p&gt;session aaa:|&quot; &lt;&lt; client.session.to_json() &lt;&lt; &quot;|&lt;/p&gt;&quot;;
+            }
+            client.view(&quot;cookie/show&quot;);
+            return &quot;&quot;;
+        }
+        </code></pre>
+        <p><code>save_session()</code> save session values to disk or memory.</p> 
+        
+
         <p><br /></p> 
         <h3 id="ormcontent">ORM Introduction</h3>
         <p>The data imported in the installation environment section.</p>
