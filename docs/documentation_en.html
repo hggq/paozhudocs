@@ -450,7 +450,7 @@
         <p><br /></p> 
         <h3 id="ormcontent">ORM Introduction</h3>
         <p>The data imported in the installation environment section.</p>
-        <p>The paozhu framework has built-in ORM objects and currently analyzes the MySQL protocol to facilitate integration with ORM. It also supports coroutine mode, which is not officially supported by MySQL.</p>
+        <p>The paozhu framework comes with built-in ORM objects and utilizes the built-in MySQL protocol library, eliminating the need for third-party libraries and facilitating integration with ORM. It also supports C++ Coroutine mode.</p>
         <p>Config file at <code>conf/orm.conf</code></p>
         <pre><code>
         [default]
@@ -479,14 +479,15 @@
         #ssl=ON
         </code></pre>
         <h3>ORM Config</h3>
-        <p><code>type</code> The type is master-slave separation, and cache synchronization can be developed in the future. Currently, master-slave is preferred. Host '127.0.0.1' fills in the local address, MySQL must be greater than or equal to version 8 because MySQL 9 does not support old authentication，</p>
+        <p><code>type</code> The type is Master-Slave Replication and cache synchronization can be developed in the future. Currently, master-slave is preferred. Host '127.0.0.1' fills in the local address, MySQL must be greater than or equal to version 8 because MySQL 9 does not support old authentication.</p>
         <p><code>pretable</code> It is a table prefix, sometimes only one database permission can store multiple businesses in one database.</p>
         <p><code>dbtype</code> Currently supports MySQL.</p>
         <p><code>SSL</code> can be opened, especially when connecting remotely, enabling encrypted connections. Local SSL connections will not be enabled.</p>
         <h3>ORM Usage</h3>
         <p>The framework currently supports database to create cpp file conversion, so modifying the database can regenerate ORM files.</p>
-        <p>After successful compilation</p>
-        <pre><code># ./bin/paozhu_cli 
+        <p>After the project is successfully compiled, the following method can be used to generate cpp files.</p>
+        <pre><code>
+        # ./bin/paozhu_cli 
         
         paozhu_cli(1495,0x7ff85ac38fc0) malloc: nano zone abandoned due to inability to reserve vm space.
           model ｜ view | viewtocpp | control   
