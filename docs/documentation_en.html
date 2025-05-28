@@ -984,17 +984,15 @@
         <h4>2、Create View File</h4>
         <p>We are in the view directory</p>
         <p>Create a login directory and then create a login.html file in the login directory</p>
-        <p>view</p>
-        <ul>
-        <li>login
-        <ul>
-        <li>login.html</li>
-        </ul>
-        </li>
-        </ul>
+        <pre><code class="language-html">
+        view
+        └── login
+            └── login.html
+        </code></pre>
         <p>Probably like this</p>
         <h4>login.html file content</h4>
-        <pre><code class="language-html">&lt;!doctype html&gt;
+        <pre><code class="language-html">
+        &lt;!doctype html&gt;
         &lt;html lang=&quot;en&quot;&gt;
           &lt;head&gt;
             &lt;meta charset=&quot;utf-8&quot;&gt;
@@ -1040,21 +1038,16 @@
         
         
         </code></pre>
-        <p>include_sub(&quot;home/header&quot;,obj);</p>
+        <p><code>include_sub(&quot;home/header&quot;,obj);</code></p>
         <p>The description also includes a subpage, and we will create a subpage directory called home in the view</p>
-        <p>view</p>
-        <ul>
-        <li>home
-        <ul>
-        <li>header.html</li>
-        </ul>
-        </li>
-        <li>login
-        <ul>
-        <li>login.html</li>
-        </ul>
-        </li>
-        </ul>
+
+        <pre><code class="language-html">
+        view
+        ├── home
+        │   └── header.html
+        └── login
+            └── login.html    
+        </code></pre>
         <p>Probably like this</p>
         <h4>The content of header.html is actually the header information of the webpage</h4>
         <pre><code class="language-html">
@@ -1132,31 +1125,17 @@
         <p>We input f and compile it directly with the framework.</p>
         <p>Then enter a, and all modified or newly created view files will be converted to cpp files</p>
         <p>The file is saved in the viewsrc directory</p>
-        <p>viewsrc</p>
-        <ul>
-        <li>
-        <p>view</p>
-        <ul>
-        <li>login
-        <ul>
-        <li>login.cpp</li>
-        </ul>
-        </li>
-        <li>home
-        <ul>
-        <li>header.cpp</li>
-        </ul>
-        </li>
-        </ul>
-        </li>
-        <li>
-        <p>include</p>
-        <ul>
-        <li>viewsrc.h</li>
-        <li>regviewmethod.hpp</li>
-        </ul>
-        </li>
-        </ul>
+        <pre><code class="language-html">
+        viewsrc
+        ├── include
+        │   ├── regviewmethod.hpp
+        │   └── viewsrc.h
+        └── view
+            ├── home
+            │   └── header.cpp
+            └── login
+                └── login.cpp
+        </code></pre>   
         <p>Probably like this</p>
         <p>The login.html header.html files have been converted to cpp files</p>
         <p>Two files in the include directory</p>

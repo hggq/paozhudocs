@@ -1011,14 +1011,11 @@
         <h4>2、创建视图</h4>
         <p>我们在view目录</p>
         <p>创建 login 目录 然后再创建一个login.html文件在login目录里面</p>
-        <p>view</p>
-        <ul>
-        <li>login
-        <ul>
-        <li>login.html</li>
-        </ul>
-        </li>
-        </ul>
+        <pre><code class="language-html">
+        view
+        └── login
+            └── login.html
+        </code></pre>
         <p>大概这样子</p>
         <h4>login.html 文件内容</h4>
         <pre><code class="language-html">&lt;!doctype html&gt;
@@ -1067,21 +1064,15 @@
         
         
         </code></pre>
-        <p>include_sub(&quot;home/header&quot;,obj);</p>
+        <p><code>include_sub(&quot;home/header&quot;,obj);</code></p>
         <p>说明还包括一个子页面，我们再在view创建一个子页面目录home</p>
-        <p>view</p>
-        <ul>
-        <li>home
-        <ul>
-        <li>header.html</li>
-        </ul>
-        </li>
-        <li>login
-        <ul>
-        <li>login.html</li>
-        </ul>
-        </li>
-        </ul>
+        <pre><code class="language-html">
+        view
+        ├── home
+        │   └── header.html
+        └── login
+            └── login.html    
+        </code></pre>
         <p>大概这样子</p>
         <h4>header.html 内容其实就是网页头部信息</h4>
         <pre><code class="language-html">
@@ -1159,31 +1150,17 @@
         <p>我们先用f,直接跟框架一起编译的方法。</p>
         <p>然后选择a,所有修改或新建的视图文件都转化为cpp文件</p>
         <p>文件保存在 viewsrc目录</p>
-        <p>viewsrc</p>
-        <ul>
-        <li>
-        <p>view</p>
-        <ul>
-        <li>login
-        <ul>
-        <li>login.cpp</li>
-        </ul>
-        </li>
-        <li>home
-        <ul>
-        <li>header.cpp</li>
-        </ul>
-        </li>
-        </ul>
-        </li>
-        <li>
-        <p>include</p>
-        <ul>
-        <li>viewsrc.h</li>
-        <li>regviewmethod.hpp</li>
-        </ul>
-        </li>
-        </ul>
+        <pre><code class="language-html">
+        viewsrc
+        ├── include
+        │   ├── regviewmethod.hpp
+        │   └── viewsrc.h
+        └── view
+            ├── home
+            │   └── header.cpp
+            └── login
+                └── login.cpp
+        </code></pre>    
         <p>大概这样</p>
         <p>我们两个 login.html header.html已经转为cpp文件</p>
         <p>include 目录里面两个文件</p>
