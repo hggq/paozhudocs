@@ -552,7 +552,7 @@
         <p><code>save_session()</code> 把session值保存到磁盘或内存。</p> 
         <p><br /></p> 
         <h3 id="getpostfiles">get post 和 files</h3>
-        <p>框架内置了三种处理HTML传值对象，他们都是内置微型对象 <code>http::obj_val</code> 类型， <code>client.get[]</code> <code>client.post[]</code> <code>client.files[]</code></p> 
+        <p>框架内置了三种处理HTML传值对象，他们都是内置微型对象 <code>http::obj_val</code> 类型，三个对象是 <code>client.get[]</code> <code>client.post[]</code> <code>client.files[]</code></p> 
 
         <p>URL 参数传值, 使用 <code>client.get[]</code> 获取, 例如 <code>http://www.xxx.com/aa?username=root&userid=1111</code> 使用 <code>client.get["username"].to_string()</code> 和 <code>client.get["userid"].to_int()</code> 取得数据。</p> 
 
