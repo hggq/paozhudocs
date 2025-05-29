@@ -536,7 +536,7 @@
         <p><br /></p> 
         <h3 id="getpostfiles">get post and files</h3>
 
-        <p>URL parameter value transmission, use <code>client.get[]</code> get values, example <code>http://www.xxx.com/aa?keyname=1111</code> use <code>client.get["keyname"].to_int()</code> get the value.</p> 
+        <p>URL parameter value transmission, use <code>client.get[]</code> get values, example <code>http://www.xxx.com/aa?username=root&userid=1111</code> use <code>client.get["username"].to_string()</code> and <code>client.get["userid"].to_int()</code>  get the values.</p> 
         
         
         <p>HTML form post data use <code>client.post[]</code> get the values</p> 
