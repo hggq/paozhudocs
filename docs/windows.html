@@ -110,13 +110,17 @@
         <p><a href="https://github.com/hggq/paozhu" target="_blank">https://github.com/hggq/paozhu</a></p>
         <p>Extract to current directory paozhu</p>
 
+        <P>Install Visual Studio Community</P>
+        <p>https://visualstudio.microsoft.com/zh-hans/vs/compare/</p>
         <h4>Install MySQL</h4>
         <p><a href="https://dev.mysql.com/downloads/mysql/" target="_blank">https://dev.mysql.com/downloads/mysql/</a></p>
 
         
-        MySQL Community Server 8
+        <p>MySQL Community Server 8</p>
+
+        <p>Open MySQL 8.4 command line client (open search input mysql find this tools 在工具栏输入mysql)</p>
         <pre><code>
-        #mysql -u root -p
+        #[Option 可选]mysql -u root -p
         
         create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
     
@@ -163,13 +167,13 @@
             unzip vcpkg2024.zip
             mv vcpkg-2024.09.30 vcpkg
             cd vcpkg
-            bootstrap-vcpkg.bat
-            vcpkg integrate install
-            vcpkg integrate project
-            vcpkg install
-            vcpkg install zlib 
-            vcpkg install openssl
-            vcpkg install brotli
+            .\bootstrap-vcpkg.bat
+            .\vcpkg.exe integrate install
+            .\vcpkg.exe integrate project
+ 
+            .\vcpkg.exe install zlib 
+            .\vcpkg.exe install openssl
+            .\vcpkg.exe install brotli
         </code></pre>
         <p>Install ninja <a href="https://github.com/ninja-build/ninja/releases" target="_blank">https://github.com/ninja-build/ninja/releases</a> </p>
         <p>Compile project CMAKE_TOOLCHAIN_FILE is vcpkg install localtion path</p>
