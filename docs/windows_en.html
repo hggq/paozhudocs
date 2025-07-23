@@ -176,13 +176,6 @@
             .\vcpkg.exe install brotli
             .\vcpkg.exe install asio
         </code></pre>
-        <p>Install ninja <a href="https://github.com/ninja-build/ninja/releases" target="_blank">https://github.com/ninja-build/ninja/releases</a> </p>
-        <p>Compile project CMAKE_TOOLCHAIN_FILE is vcpkg install localtion path</p>
-        <pre><code>
-            unzip asio.zip
-            cmake . -B . -DENABLE_WIN_VCPKG=ON -DENABLE_VCPKG=ON -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_BUILD_TYPE=Debug -G Ninja
-            cmake --build . --config Debug    
-        </code></pre>
 
         <p>OR NOT ninja</p>
         <p>Notice: Replace C:/Users/a/vcpkg to your vcpkg directory</p>
@@ -196,6 +189,16 @@ bin\Debug\clang_rt.asan_dynamic-x86_64.dll
 
 PS C:\Users\a\paozhu> C:\Users\a\paozhu\bin\Debug\paozhu.exe
 </code></pre>
+
+        <p>Install ninja <a href="https://github.com/ninja-build/ninja/releases" target="_blank">https://github.com/ninja-build/ninja/releases</a> </p>
+        <p>Compile project CMAKE_TOOLCHAIN_FILE is vcpkg install localtion path</p>
+        <pre><code>
+            unzip asio.zip
+            cmake . -B . -DENABLE_WIN_VCPKG=ON -DENABLE_VCPKG=ON -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_BUILD_TYPE=Debug -G Ninja
+            cmake --build . --config Debug    
+        </code></pre>
+
+
 
         <p>Open Browser</p>
         <p>http://localhost</p>
