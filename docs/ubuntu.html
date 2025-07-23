@@ -156,12 +156,28 @@
         
         &gt;create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';
         
-        &gt;GRANT ALL PRIVILEGES ON `cppcms`.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ; 
-        
+        &gt;GRANT ALL PRIVILEGES ON `cppcms`.* TO 'cppcms'@'localhost';
+        &gt;[May be in TEST ENV] ALTER USER 'cppcms'@'localhost' identified by '12345678';
         &gt;select host,user,authentication_string from user;
-        
+        &gt;flush privileges;
         &gt;exit;
         </code></pre>
+
+        <p>[Warning!!] 下面是在测试环境配置root密码</p>
+        <p>[Warning!!] MySQL8 修改root 密码为 12345678</p>
+        <pre><code>$ mysql -u debian-sys-maint -p
+        &gt;use mysql;
+        &gt;update user set user='rootother' where user='root' and host='localhost'; //将原来的修改为其他名字
+        &gt;create user 'root'@'localhost' identified by '12345678';
+        &gt;GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost';
+        &gt;flush privileges;
+        [OR]
+        &gt;use mysql;
+        &gt;create user 'root'@'%' identified by '12345678';
+        &gt;GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
+        &gt;flush privileges;
+        </code></pre>  
+
         <p>Config system</p>
         <pre><code>#vim conf/server.conf
         </code></pre>

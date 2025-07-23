@@ -137,12 +137,14 @@
         <p>create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';</p>
         </blockquote>
         <blockquote>
-        <p>GRANT ALL PRIVILEGES ON <code>cppcms</code>.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ;</p>
+        <p>GRANT ALL PRIVILEGES ON <code>cppcms</code>.* TO 'cppcms'@'localhost';</p>
+        <p>[May be in TEST ENV] ALTER USER 'cppcms'@'localhost' identified by '12345678';</p>
         </blockquote>
         <blockquote>
         <p>select host,user,authentication_string from user;</p>
         </blockquote>
         <blockquote>
+        <p>flush privileges;</p>
         <p>exit;</p>
         </blockquote>
         <p>Config system</p>

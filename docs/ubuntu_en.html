@@ -158,10 +158,29 @@
         
         &gt;GRANT ALL PRIVILEGES ON `cppcms`.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ; 
         
+        &gt;[May be in TEST ENV] ALTER USER 'cppcms'@'localhost' identified by '12345678';
+
         &gt;select host,user,authentication_string from user;
-        
+
+        &gt;flush privileges;
         &gt;exit;
         </code></pre>
+   
+        <p>[Warning!!] This config in testing environment</p>
+        <p>[Warning!!] MySQL8 Modify the root password to 12345678</p>
+        <pre><code>$ mysql -u debian-sys-maint -p
+        &gt;use mysql;
+        &gt;update user set user='rootother' where user='root' and host='localhost';
+        &gt;create user 'root'@'localhost' identified by '12345678';
+        &gt;GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost';
+        &gt;flush privileges;
+        [OR]
+        &gt;use mysql;
+        &gt;create user 'root'@'%' identified by '12345678';
+        &gt;GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
+        &gt;flush privileges;
+        </code></pre>    
+
         <p>Config server system</p>
         <pre><code>#vim conf/server.conf
         </code></pre>
@@ -211,6 +230,10 @@
         <p>Open Browser</p>
         <p>http://localhost</p>
         <p>http port see <code>conf/server.conf</code> file</p>   
+
+        
+
+
         <p><a href="documentation_en.html">Docs</a></p>    
         
 </div>
