@@ -133,7 +133,7 @@
     
         create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';
         GRANT ALL PRIVILEGES ON cppcms.* TO 'cppcms'@'localhost'; 
-        ALTER USER 'cppcms'@'localhost' ;
+        [如果是开发测试环境可以修改简单密码] ALTER USER 'cppcms'@'localhost' identified by '12345678';
     
         select host,user,authentication_string from user;
     
