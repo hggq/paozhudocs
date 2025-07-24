@@ -145,9 +145,9 @@
         password = 5hiIbvxR2DgC7ekz
         socket   = /var/run/mysqld/mysqld.sock
         </code></pre>
-        <p>登陆加root密码</p>
+        <p>登录初始化cppcms数据库和修改root密码</p>
         <pre><code>$ mysql -u debian-sys-maint -p
-        
+        #password [输入上面看到的密码]
         &gt;create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
         &gt;use cppcms; 
         &gt;source /root/paozhu/conf/cppcms.sql;
