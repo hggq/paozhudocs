@@ -106,19 +106,20 @@
         <h3>大于 Windows 10 必须使用 C++20</h3>
         <p>介绍两种编译方法: xmake 和 vcpkg</p>
         <p>Open powershell</p>
-        <p>Download paozhu</p>
+        <p>下载 paozhu</p>
         <p><a href="https://github.com/hggq/paozhu" target="_blank">https://github.com/hggq/paozhu</a></p>
         <p>Extract to current directory paozhu</p>
 
-        <P>Install Visual Studio Community</P>
+        <P>安装 Visual Studio Community</P>
         <p>https://visualstudio.microsoft.com/zh-hans/vs/compare/</p>
+        <p>选择桌面开发模式</p>
         <h4>Install MySQL</h4>
         <p><a href="https://dev.mysql.com/downloads/mysql/" target="_blank">https://dev.mysql.com/downloads/mysql/</a></p>
 
         
         <p>MySQL Community Server 8</p>
 
-        <p>Open MySQL 8.4 command line client (open search input mysql find this tools 在工具栏输入mysql)</p>
+        <p>打开 MySQL 8.4 command line client (open search input mysql find this tools 在工具栏输入mysql)</p>
         <pre><code>
         #[Option 可选]mysql -u root -p
         
@@ -161,9 +162,9 @@
         <p>http port see <code>conf/server.conf</code> file</p>    
         <p> </p>
         <h4>By vcpkg install</h4>
-        <p>Install CMake <a href="https://cmake.org/download/" target="_blank">https://cmake.org/download/</a></p>
+        <p>安装 CMake <a href="https://cmake.org/download/" target="_blank">https://cmake.org/download/</a></p>
+        <p>下载最新一个vcpkg <a href="https://github.com/microsoft/vcpkg/releases" target="_blank">https://github.com/microsoft/vcpkg/releases</a></p>
         <pre><code>
-            powershell Invoke-WebRequest -OutFile vcpkg2024.zip https://github.com/microsoft/vcpkg/archive/refs/tags/2024.09.30.zip
             unzip vcpkg2024.zip
             mv vcpkg-2024.09.30 vcpkg
             cd vcpkg
@@ -179,7 +180,7 @@
         
         
         <p>OR NOT ninja</p>
-        <p>Notice: Replace C:/Users/a/vcpkg to your vcpkg directory</p>
+        <p>注意: 替换 C:/Users/a/vcpkg 为你的 vcpkg 目录</p>
         <pre><code>
         cmake . -B . -DENABLE_WIN_VCPKG=ON -DENABLE_VCPKG=ON -DCMAKE_TOOLCHAIN_FILE=C:/Users/a/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_BUILD_TYPE=Debug
         cmake --build . --config Debug
