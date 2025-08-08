@@ -1597,7 +1597,7 @@
           #3  0x00000000005b1bfa in http::httpparse::process (this=0x7fd9b400d370, buffer=0x2e223c0 &quot;POST /public/static/lib/webuploader/0.1.5/server/preview.php HTTP/1.1\r\nHost: www. paozhu.org\r\nUser-Agent: Mozilla/5.0 AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0\r\nAccept-Encoding: gzip, deflate&quot;..., buffersize=964) at /www/paozhu/vendor/httpserver/src/http_parse.cpp:2823
           </code></pre>
           <h3 id="docsmemo">后记</h3>
-          <p>最后提示，平时写代码应该注意写法，不能用直接使用new和delete，建议使用智能指针，老一代程序员喜欢榨干CPU性能，其实很多时候编译器给你优化了，所以业务代码应该开开心心使用。</p>
+          <p>最后提示，平时写代码应该注意写法，不能用直接使用new和delete，建议使用智能指针，用自带STL也够用了，老一代程序员喜欢榨干CPU性能，其实很多时候编译器给你优化了，所以业务代码应该开开心心使用。</p>
           <p>Web开发本来就是重视业务流程，很多C++喜欢在业务代码写元编译，各种模板代码，这个需要禁止的，不是炫耀技术，怀疑是在写垃圾代码动机，入库可以使用元编译，模板代码。</p>
           <p>Web开发很多时候没有足够时间，所以很多代码变成垃圾，不过C++ 就是再垃圾，运行速度也很快，也有可能业务流程变更，来不及优化就作废了。</p>
           <p>很多人印象中C++写Web是不可能的，但是paozhu做到了，如果你是纯CRUD业务，也可以用其它语言，如果是C++可以有广阔的天地，不但可以写CRUD应用，还可以用FFmpeg写多媒体，WebRTC，工业级OpenCV应用，人脸认证、物联网等。</p>
