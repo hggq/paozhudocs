@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PaoZhu C++ Web Frameworks</title>
+    <title>PaoZhu C++ Web Framework</title>
     <style>
         /* Light mode */
         body {
@@ -102,7 +102,7 @@
 </head>
 
 <body>
-    <h1 style="text-align:center;">PaoZhu C++ Web Frameworks</h1>
+    <h1 style="text-align:center;">PaoZhu C++ Web Framework</h1>
     <h4 style="text-align:center;"><a href="documentation.html">中文</a> <a href="documentation_en.html">English</a></h4>
     <div class="container">
         <h3>Contents</h3>
@@ -138,7 +138,7 @@
         </ol>
         <h3>paozhu Framework technology architecture principle</h3>
         <p>The Paozhu framework uses ASIO's thread pool, which is specifically designed for IO usage, such as network sending and receiving. The framework also has a built-in business thread pool, which is dedicated to running business code.</p>
-        <p>At present, the frameworks mainly use HTTP and HTTPS, with two threads constantly listening for connections to arrive. When a user accesses using a browser or client, a connection is generated, and after handshake, the server waits for the client to send HTTP header information. Then, the server processes the HTTP protocol. If the URL matches, it registers a function and checks whether the function is a coroutine or a regular function. The coroutine runs directly. If it is a regular function, it is thrown directly into the business thread pool. If the URL is a static file, it is sent directly without going through the business thread.</p>
+        <p>At present, the Framework mainly use HTTP and HTTPS, with two threads constantly listening for connections to arrive. When a user accesses using a browser or client, a connection is generated, and after handshake, the server waits for the client to send HTTP header information. Then, the server processes the HTTP protocol. If the URL matches, it registers a function and checks whether the function is a coroutine or a regular function. The coroutine runs directly. If it is a regular function, it is thrown directly into the business thread pool. If the URL is a static file, it is sent directly without going through the business thread.</p>
         <p>Because C++coroutines are contagious, when running business code in coroutine registration functions, you need to use ORM coroutine methods. If you cannot initiate coroutine functions in regular functions, you can only use ORM regular functions.</p>
         <p>It is generally recommended to use one connection to one thread, and business threads also have queues, so business code should not use the sleep function to sleep casually.</p>
         <h3>paozhu Environment</h3>
@@ -722,7 +722,7 @@
         <p>orm is namespae, Mainly used for ORM business
         CMS is the orm.conf file database configuration tag and also the generated CMS namespace, which facilitates database isolation and transformation. If it is [default], default can be omitted</p>
         <h3>ORM design philosophy</h3>
-        <p>Why is it designed in this way? Actually, it is also a unique design of the Paozhu framework compared to other frameworks.</p>
+        <p>Why is it designed in this way? Actually, it is also a unique design of the Paozhu framework compared to other Framework.</p>
         <ol>
         <li>A database can have multiple connections, so we don't have to know which connection to use.</li>
         <li>The database name may be very long, for example, a cloud host may automatically generate a database name that is tens of characters long, even with underscores.</li>
