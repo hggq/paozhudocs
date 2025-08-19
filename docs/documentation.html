@@ -768,6 +768,14 @@
         <li>record   一个std::vector数组</li>
         </ul>
         <p>表数据结构和数据表实体结构</p>
+        <pre><code class="language-C++">
+        mysql&gt; select * from world where 1 limit 1;
+        +----+--------------+
+        | id | randomNumber |
+        +----+--------------+
+        |  1 |         3562 |
+        +----+--------------+
+        </code></pre>
         <p>参考文件 <code>orm/include/world_base.h</code> </p>
         <pre><code class="language-C++">
         struct meta{

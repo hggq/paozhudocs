@@ -746,6 +746,14 @@
         <li>record   is a std::vector array</li>
         </ul>
         <p>Table Data Structure and Data table entity structure</p>
+        <pre><code class="language-C++">
+        mysql&gt; select * from world where 1 limit 1;
+        +----+--------------+
+        | id | randomNumber |
+        +----+--------------+
+        |  1 |         3562 |
+        +----+--------------+
+        </code></pre>
         <p>Reference file <code>orm/include/world_base.h</code> </o>
         <pre><code class="language-C++">
         struct meta{
