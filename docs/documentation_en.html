@@ -127,7 +127,7 @@
         <p>Paozhu has developed the underlying infrastructure for web development, such as multi domain binding, SSL certificate management, cookies, sessions, HTML form management, URL processing, file upload and download, HttpClient, ORM, WebSocket, Logs, HTML Template, covering the basics of web development.</p>
         <p>The framework is based on C++20, using new standards with complete compiler support, and modernizing the code. The framework has enabled ASAN and all error prompts(-Wall), making it easy to identify problems during the development phase, stress testing can also detect multi-threaded data race issues. It can also be combined with the coredumpctl tool at runtime to view the memory stacks of various programs. Combined with intelligent pointers, the framework has basically eliminated memory leaks and out of bounds issues, and has not encountered any memory leaks or crashes so far.</p>
         <p>Paozhu uses C++ mainly to consider the integration of large models (CUDA, file storage, network, memory operations), compared to GO JAVA RUST, which are not very perfect. C++ is also not perfect, RUST syntax is not good-looking, GO is simple but lacks AI culture in Big models, etc. At present, the experience is that ASAN and coredumpctl tools can also ensure the quality of C++, and the new compiler can also provide some hints.</p>
-        <h3>paozhu Feature</h3>
+        <h3>Paozhu Feature</h3>
         <ol>
         <li>Supports HTTP2.</li>
         <li>Built in ORM (self-developed MySQL protocol), supporting coroutine mode.</li>
@@ -136,12 +136,12 @@
         <li>Built in micro objects, JSON import and export, similar to variables in scripting languages.</li>
         <li>Built in FastCGI supports PHP</li>
         </ol>
-        <h3>paozhu Framework technology architecture principle</h3>
+        <h3>Paozhu Framework technology architecture principle</h3>
         <p>The Paozhu framework uses ASIO's thread pool, which is specifically designed for IO usage, such as network sending and receiving. The framework also has a built-in business thread pool, which is dedicated to running business code.</p>
         <p>At present, the Framework mainly use HTTP and HTTPS, with two threads constantly listening for connections to arrive. When a user accesses using a browser or client, a connection is generated, and after handshake, the server waits for the client to send HTTP header information. Then, the server processes the HTTP protocol. If the URL matches, it registers a function and checks whether the function is a coroutine or a regular function. The coroutine runs directly. If it is a regular function, it is thrown directly into the business thread pool. If the URL is a static file, it is sent directly without going through the business thread.</p>
         <p>Because C++coroutines are contagious, when running business code in coroutine registration functions, you need to use ORM coroutine methods. If you cannot initiate coroutine functions in regular functions, you can only use ORM regular functions.</p>
         <p>It is generally recommended to use one connection to one thread, and business threads also have queues, so business code should not use the sleep function to sleep casually.</p>
-        <h3>paozhu Environment</h3>
+        <h3>Paozhu Environment</h3>
         <p>Paozhu supports <code>MacOS</code> <code>Linux</code> and <code>Windows</code> systems.</p>
         <p>Uses third-party dependencies</p>
         <p><code>OpenSSL</code> <code>Zlib</code> <code>Brotli</code> <code>ASIO</code></p>
@@ -162,8 +162,8 @@
         <li><a href="https://hggq.github.io/paozhudocs/linux_en.html" target="_blank">RockyLinux AlmaLinux install</a></li>
         <li><a href="https://hggq.github.io/paozhudocs/windows_en.html" target="_blank">Windows install</a></li>
         </ul>
-        <h3 id="Config">paozhu Config</h3>
-        <p>paozhu Config file at <code>conf/server.conf</code></p>
+        <h3 id="Config">Paozhu Config</h3>
+        <p>Paozhu Config file at <code>conf/server.conf</code></p>
         <p>You can first understand a few variables to get the project running.</p>
         <pre><code>[default]
         threadmax=1024
@@ -269,7 +269,7 @@
         <p><code>client.get_theme();</code> get theme </p>
         <p><code>client.theme_view(contt std::string &);</code> set theme view file</p>
         <p>Beginners only need to understand <code>httpport</code> <code>httpsport</code> <code>wwwpath</code> <code>logpath</code> Ensure that the settings are correct, Replace all '/Users/hzq/paozhu' with your directory.</p>
-        <h3 id="Helloworld">paozhu Introduction</h3>
+        <h3 id="Helloworld">Paozhu Introduction</h3>
         <h4>Hello World Example</h4>
         <p>Paozhu uses annotation to associate URLs with functions, turning a function into an annotated function with just one line.</p>
         <p><code>//@urlpath(null,plaintext)</code></p>
