@@ -97,6 +97,28 @@
                 margin: 0 auto;
             }
         }
+
+        .scroll-top {
+            position: fixed;
+            color:#bbb;
+            opacity: 50;
+            right: 15px;
+            bottom: 10px;
+            z-index: 99999;
+            background-color: #666;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            border-radius: 30px;
+            transition: all 0.4s;
+            text-align: center;
+            text-decoration:none;
+        }
+        @media print {
+            .scroll-top {
+            display: none !important;
+            }
+        }
     </style>
 
 </head>
@@ -1614,6 +1636,7 @@
           <p>很多人印象中C++写Web是不可能的，但是paozhu做到了，如果你是纯CRUD业务，也可以用其它语言，如果是C++可以有广阔的天地，不但可以写CRUD应用，还可以用FFmpeg写多媒体，WebRTC，工业级OpenCV应用，人脸认证、物联网等。</p>
           <p>在中国大陆还符合信创，没有过多依赖第三方，减少中间件攻击风险。</p>
     </div>
+      <a href="javascript:window.scrollTo({ top: 0,  behavior: 'smooth' });" class="scroll-top align-items-center justify-content-center">Top</a>
 </body>
 
 </html>

@@ -97,6 +97,27 @@
                 margin: 0 auto;
             }
         }
+        .scroll-top {
+            position: fixed;
+            color:#bbb;
+            opacity: 50;
+            right: 15px;
+            bottom: 10px;
+            z-index: 99999;
+            background-color: #666;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            border-radius: 30px;
+            transition: all 0.4s;
+            text-align: center;
+            text-decoration:none;
+        }
+        @media print {
+            .scroll-top {
+            display: none !important;
+            }
+        }
     </style>
 
 </head>
@@ -1586,6 +1607,7 @@
         <p>Many people think that it is impossible to write the web in C++, but Paozhu has achieved it. If you are a pure CRUD business, you can also use other languages. If it is C++, there is a vast world. Not only can you write CRUD applications, but you can also use FFmpeg to write multimedia, WebRTC， Industrial grade OpenCV applications, facial authentication, IoT, etc.</p>
         <p>Paozhu does not rely too much on third parties, reducing the risk of middleware attacks.</p>
 </div>
+<a href="javascript:window.scrollTo({ top: 0,  behavior: 'smooth' });" class="scroll-top align-items-center justify-content-center">Top</a>
 </body>
 
 </html>
