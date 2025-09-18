@@ -166,6 +166,16 @@
 
         <p>[Warning!!] 下面是在测试环境配置root密码</p>
         <p>[Warning!!] MySQL8 修改root 密码为 12345678</p>
+        <pre><code>
+        #sudo mysql -u root
+        &gt;use mysql;
+        &gt;ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '12345678';
+        &gt;select host,user,authentication_string from user;
+        &gt;flush privileges;
+        &gt;exit;    
+        </code></pre>
+        
+        <p>[跳过!!] 已经配置请跳过 其它修改root密码</p>
         <pre><code>$ mysql -u debian-sys-maint -p
         &gt;use mysql;
         &gt;update user set user='rootother' where user='root' and host='localhost'; //将原来的修改为其他名字

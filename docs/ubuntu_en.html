@@ -170,6 +170,16 @@
    
         <p>[Warning!!] This config in testing environment</p>
         <p>[Warning!!] MySQL8 Modify the root password to 12345678</p>
+        <pre><code>
+        #sudo mysql -u root
+        &gt;use mysql;
+        &gt;ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '12345678';
+        &gt;select host,user,authentication_string from user;
+        &gt;flush privileges;
+        &gt;exit;    
+        </code></pre>
+
+        <p>[Skip! Skip!] Other changes to root password</p>
         <pre><code>$ mysql -u debian-sys-maint -p
         &gt;use mysql;
         &gt;update user set user='rootother' where user='root' and host='localhost';
