@@ -136,6 +136,7 @@
             <li><a href="#Install">Paozhu Install</a></li>
             <li><a href="#Config">Paozhu Config</a></li>
             <li><a href="#Helloworld">Hello World</a></li>
+            <li><a href="#Router">URL Router</a></li>
             <li><a href="#objval">Introduction to Built in Micro Objects(JSON)</a></li>
             <li><a href="#sessioncookie">Session and Cookie</a></li>
             <li><a href="#getpostfiles">get post and files</a></li>
@@ -312,7 +313,7 @@
         }
         
         </code></pre>
-        <h3>Annotation Fundamentals</h3>
+        <h3 id="Router">Annotation Fundamentals</h3>
         <p>All annotation function cpp files must be placed in the<code>controller/src</code>directory.</p>
         <p>This <code>techempower.cpp</code> file must contain its own file name <code>#include "techempower.h"</code>, The <code>techempower.h</code> file will be automatically generated.</p>
         <p>When compiling, use the CMake Hook to first compile an annotation handler that can be used, and then execute this program to handle <code>controller/src</code> Extract functions in the format of <code>//@urlpath(null, plaintext)</code> from all files in the directory, create corresponding header files, and then generate Annotate the function and save the mapping function to the <code>common/autocontrolmethod.hpp</code> file.</p>
@@ -1565,7 +1566,8 @@
         <div class="container">
         <h3 id="Troubleshooting">Troubleshooting in C++ Production Environment</h3>
         <p>The framework has enabled ASAN, and if it is detected by ASAN during debugging, it will indicate which line is problematic.</p>
-        <p>The production environment is difficult to see due to the lack of output reasons.</p>
+        <p>The g++ compilation flags have been enabled with <code>-Wall -Werror -O3 -fsanitize=address</code>, which can detect errors when using GCC15, such as incorrect return addresses of temporary variables.</p>  
+        <p>In the production environment, the absence of output reasons makes it difficult to see the error message content.</p>
         <p>You can refer to this <a href="CMakeLists_debug_product.txt" target="_blank">CMakeLists.txt</a> Use (-g) to retain debugging information in the product environment.</p>
         <p>The compilation parameters for the production environment.</p>
         <pre><code class="language-shell">

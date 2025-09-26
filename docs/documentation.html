@@ -137,6 +137,7 @@
             <li><a href="#Install">Paozhu 安装</a></li>
             <li><a href="#Config">Paozhu 配置</a></li>
             <li><a href="#Helloworld">Hello World</a></li>
+            <li><a href="#Router">URL Router</a></li>
             <li><a href="#objval">内建JSON对象</a></li>
             <li><a href="#sessioncookie">Session 和 Cookie</a></li>
             <li><a href="#getpostfiles">get、post和files</a></li>
@@ -326,7 +327,7 @@
         </code></pre>
     </div>
     <div class="container">
-        <h3>注解原理</h3>
+        <h3 id="Router">注解原理</h3>
         <p>所有注解函数cpp文件必须放在 <code>controller/src</code> 目录下</p>
         <p>如 <code>techempower.cpp</code> 文件必须包含自身文件名的头文件 <code>#include "techempower.h"</code> ，<code>techempower.h</code>这个文件会自动生成。</p>
         <p>编译时候使用CMake Hook，先编译一个可以使用的注解处理程序，然后执行这个程序处理  <code>controller/src</code>
@@ -1594,7 +1595,8 @@
 
         <h3 id="Troubleshooting">C++生产环境故障排查</h3>
         <p>框架开启了ASAN，如果在调试时候被ASAN检测到会指出哪一行有问题。</p>
-        <p>生产环境因为没有输出原因，难以看到。</p>
+        <p>g++ 编译参数已经打开 <code>-Wall -Werror -O3 -fsanitize=address</code> 如果用GCC5可以检测到错误，比如返回临时变量地址错误。</p>
+        <p>生产环境因为没有输出原因，难以看到输出错误提示内容。</p>
         <p>可以参考这个 <a href="CMakeLists_debug_product.txt" target="_blank">CMakeLists.txt</a> 在产品环境下使用（-g）保留调试信息。</p>
         <p>生产环境编译参数是</p>
         <pre><code class="language-shell">mkdir build
