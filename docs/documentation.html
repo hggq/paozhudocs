@@ -1596,7 +1596,7 @@
 
         <h3 id="Troubleshooting">C++生产环境故障排查</h3>
         <p>框架开启了ASAN，如果在调试时候被ASAN检测到会指出哪一行有问题。</p>
-        <p>g++ 编译参数已经打开 <code>-Wall -Werror -O3 -fsanitize=address</code> 如果用GCC15可以检测到错误，比如返回临时变量地址错误。</p>
+        <p>g++ 编译参数已经打开 <code>-Wall -Werror -O3 -fsanitize=address</code> 如果用GCC15可以检测到常见错误，比如返回临时变量地址错误。</p>
         <p>生产环境因为没有输出原因，难以看到输出错误提示内容。</p>
         <p>可以参考这个 <a href="CMakeLists_debug_product.txt" target="_blank">CMakeLists.txt</a> 在产品环境下使用（-g）保留调试信息。</p>
         <p>生产环境编译参数是</p>
