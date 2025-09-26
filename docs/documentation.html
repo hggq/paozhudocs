@@ -1599,7 +1599,8 @@
         <p>生产环境因为没有输出原因，难以看到输出错误提示内容。</p>
         <p>可以参考这个 <a href="CMakeLists_debug_product.txt" target="_blank">CMakeLists.txt</a> 在产品环境下使用（-g）保留调试信息。</p>
         <p>生产环境编译参数是</p>
-        <pre><code class="language-shell">mkdir build
+        <pre><code class="language-shell">
+        mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release #OR cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_GD=ON
         make -j8
@@ -1610,7 +1611,8 @@
         <p>可以使用<code>pstree -aup</code> 查看进程情况</p>
         <p>如果已经取样，需要分析进程栈情况</p>
         <p>核心coredump查看</p>
-        <pre><code>coredumpctl list
+        <pre><code>
+        coredumpctl list
         coredumpctl info
         </code></pre>
         <p>直接在线看,1524是 info 显示的进程号，也就是之前<code>pstree -aup</code> 看的</p>
