@@ -259,7 +259,8 @@
         alias_domain=
         init_func=
         </code></pre>
-        <pre><code>threadmax=1024  Maximum number of business threads
+        <pre><code>
+        threadmax=1024  Maximum number of business threads
         threadmin=5		 Minimum number of business threads
         httpport=80	    Server listening port
         httpsport=443   SSL server listening port
@@ -267,13 +268,15 @@
         </code></pre>
         <p><code>http2_enable=1</code> Whether to enable HTTP/2, each domain can have its own settings</p>
         <p>SSL certificate file, after successful application, it should be placed in the conf directory. For production environments, a copy should be placed in <code>/var/local/etc/paozhu</code>.</p>
-        <pre><code>mainhost=www.869869.com
+        <pre><code>
+        mainhost=www.869869.com
         certificate_chain_file=www.869869.com.pem
         private_key_file=www.869869.com.key
         </code></pre>
         <p><code>reboot_cron</code> Automatic restart process cycle day D week W month M season S h time hour 180 days 5 am restart process
         <code>links_restart_process</code> If the number of connections is reached, you can also restart the number of connections after n, The ts start period and te end period will restart if they are idle during this period.</p>
-        <pre><code>reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
+        <pre><code>
+        reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
         clean_cron  =m5t600 ;5-minute interval clean 600 seconds ago inactive connection
         links_restart_process =n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
         </code></pre>

@@ -199,7 +199,8 @@
         <h3 id="Config">paozhu配置</h3>
         <p>paozhu配置文件在<code>conf/server.conf</code></p>
         <p>可以先了解几个变量让项目运行起来。</p>
-        <pre><code>[default]
+        <pre><code>
+        [default]
         threadmax=1024
         threadmin=5
         httpport=80
@@ -266,7 +267,8 @@
         alias_domain=
         init_func=
         </code></pre>
-        <pre><code>threadmax=1024  最大业务线程数
+        <pre><code>
+        threadmax=1024  最大业务线程数
         threadmin=5		最小业务线程数
         httpport=80	    服务器倾听端口 
         httpsport=443   ssl服务器倾听端口 
@@ -274,14 +276,16 @@
         </code></pre>
         <p><code>http2_enable=1</code> 是否启用http2，可以每个域名有自己的设置</p>
         <p>ssl证书文件，申请成功后放在conf目录，生产环境需要在<code>/var/local/etc/paozhu</code>放一份</p>
-        <pre><code>mainhost=www.869869.com
+        <pre><code>
+        mainhost=www.869869.com
         certificate_chain_file=www.869869.com.pem
         private_key_file=www.869869.com.key
         </code></pre>
         <p><code>reboot_cron</code> 自动重启进程周期天D 周W 月M 季节S  h时间小时 180天凌晨5点重启进程
         <code>links_restart_process</code> 如果达到连接数也可以重启n后面连接数，
         ts 开始时段 te结束时段，如果这段时间空闲就会重启。</p>
-        <pre><code>reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
+        <pre><code>
+        reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
         clean_cron  =m5t600 ;5-minute interval clean 600 seconds ago inactive connection
         links_restart_process =n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
         </code></pre>
