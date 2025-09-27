@@ -251,7 +251,7 @@
         alias_domain=
         init_func=
         [www.host.com]
-        wwwpath=/Users/hzq/paozhu/www/default
+        wwwpath=/Users/hzq/paozhu/www/host.com
         http2_enable=1
         ;rewrite_404=1
         ;rewrite_404_action=index.html|psy/index.html|exam/index.html
@@ -294,7 +294,7 @@
         <p><code>directorylist=1</code> 显示目录，如果请求静态文件是目录名，目录下也没有index.html文件会显示目录列表。
         生产环境建议设置为0.</p>
         <p><code>wwwpath=/Users/hzq/paozhu/www/default</code> <code>/Users/hzq/paozhu</code>建议换成你的当前目录名称,
-        项目下<code>www/default</code>，是静态文件目录，如果是多域名建议创建<code>www/domain.com</code>这个设置是为SAAS服务的。</p>
+        项目下<code>www/default</code>，是静态文件目录，如果是多域名建议创建<code>www/host.com</code>这个设置是为SAAS服务的。</p>
         <p><code>upload_max_size=16777216</code> 上传文件大小，默认是16M</p>
         <h3 id="Staticfile">静态文件网站</h3> 
         <p><code>conf/server.conf</code> 配置文件中 <code>wwwpath</code>是Web静态文件存放路径，不用写程序就可以提供WWW服务，一般存放html、js、css、jpg文件，可以直接使用浏览器打开访问。</p>
