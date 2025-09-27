@@ -205,9 +205,9 @@
         http2_enable=1
         debug_enable=1
         deamon_enable=0
-        mainhost=www.869869.com
-        certificate_chain_file=www.869869.com.pem
-        private_key_file=www.869869.com.key
+        mainhost=www.host.com
+        certificate_chain_file=www.host.com.pem
+        private_key_file=www.host.com.key
         tmp_dh_file=dh4096.pem
         reboot_password=e10adc3949ba59abbe56e057f20f883e ;md5(md5(&quot;123456&quot;)+&quot;rand_char&quot;+md5(&quot;123456&quot;))
         reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
@@ -243,7 +243,7 @@
         groupid=0
         alias_domain=
         init_func=
-        [www.869869.com]
+        [www.host.com]
         wwwpath=/Users/hzq/paozhu/www/default
         http2_enable=1
         ;rewrite_404=1
@@ -272,9 +272,9 @@
         <p><code>http2_enable=1</code> Whether to enable HTTP/2, each domain can have its own settings</p>
         <p>SSL certificate file, after successful application, it should be placed in the conf directory. For production environments, a copy should be placed in <code>/var/local/etc/paozhu</code>.</p>
         <pre><code>
-        mainhost=www.869869.com
-        certificate_chain_file=www.869869.com.pem
-        private_key_file=www.869869.com.key
+        mainhost=www.host.com
+        certificate_chain_file=www.host.com.pem
+        private_key_file=www.host.com.key
         </code></pre>
         <p><code>reboot_cron</code> Automatic restart process cycle day D week W month M season S h time hour 180 days 5 am restart process
         <code>links_restart_process</code> If the number of connections is reached, you can also restart the number of connections after n, The ts start period and te end period will restart if they are idle during this period.</p>

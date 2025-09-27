@@ -212,9 +212,9 @@
         http2_enable=1
         debug_enable=1
         deamon_enable=0
-        mainhost=www.869869.com
-        certificate_chain_file=www.869869.com.pem
-        private_key_file=www.869869.com.key
+        mainhost=www.host.com
+        certificate_chain_file=www.host.com.pem
+        private_key_file=www.host.com.key
         tmp_dh_file=dh4096.pem
         reboot_password=e10adc3949ba59abbe56e057f20f883e ;md5(md5(&quot;123456&quot;)+&quot;rand_char&quot;+md5(&quot;123456&quot;))
         reboot_cron =d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week  
@@ -250,7 +250,7 @@
         groupid=0
         alias_domain=
         init_func=
-        [www.869869.com]
+        [www.host.com]
         wwwpath=/Users/hzq/paozhu/www/default
         http2_enable=1
         ;rewrite_404=1
@@ -279,9 +279,9 @@
         <p><code>http2_enable=1</code> 是否启用http2，可以每个域名有自己的设置</p>
         <p>ssl证书文件，申请成功后放在conf目录，生产环境需要在<code>/var/local/etc/paozhu</code>放一份</p>
         <pre><code>
-        mainhost=www.869869.com
-        certificate_chain_file=www.869869.com.pem
-        private_key_file=www.869869.com.key
+        mainhost=www.host.com
+        certificate_chain_file=www.host.com.pem
+        private_key_file=www.host.com.key
         </code></pre>
         <p><code>reboot_cron</code> 自动重启进程周期天D 周W 月M 季节S  h时间小时 180天凌晨5点重启进程
         <code>links_restart_process</code> 如果达到连接数也可以重启n后面连接数，
