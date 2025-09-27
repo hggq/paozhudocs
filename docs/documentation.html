@@ -136,6 +136,8 @@
             <li><a href="#Abstract">简介</a></li>
             <li><a href="#Install">Paozhu 安装</a></li>
             <li><a href="#Config">Paozhu 配置</a></li>
+            <li><a href="#Staticfile">静态文件网站</a></li>
+            <li><a href="#saas">SAAS设置</a></li>
             <li><a href="#Helloworld">Hello World</a></li>
             <li><a href="#Router">URL Router</a></li>
             <li><a href="#objval">内建JSON对象</a></li>
@@ -150,7 +152,7 @@
     </div>
     <div class="container">
         <h3 id="Abstract"><strong>简介</strong></h3>
-        <p>paozhu (🧨) 是一款C++ Web开发框架，内置HTTP/1、HTTP/2、C++ ORM,可以轻松优雅写Web程序，打破以往C++写Web程序不方便问题。</p>
+        <p>paozhu (🧨) 是一款C++ Web开发框架，内置HTTP/1、HTTP/2、C++ ORM, 可以轻松优雅写Web程序，打破以往C++写Web程序不方便问题。</p>
         <p>paozhu编写了Web开发底层设施，比如多域名绑定、SSL证书管理、Cookie、Session、HTML表单管理 、URL处理、文件上传下载、HttpClient客户端、数据库连接ORM、WebSocket、日志、HTML模板、涵盖Web开发基础。</p>
         <p>框架基于C++20为基础，一个是使用新标准，编译器支持完整，一个是让代码更加现代化，框架开启了ASAN和所有错误提示，方便开发阶段发现问题，压力测试也可以发现多线程数据竞争问题，也可以运行时候结合coredumpctl工具，查看各个线程内存栈。配合智能指针基本杜绝内存泄露和越界问题，框架目前基本没有碰到内存泄露或崩溃情况。</p>
         <p>paozhu使用C++，主要是考虑接入大模型（CUDA、文件存储、网络、内存操作）、对比下GO JAVA RUST，都不是很完美，C++也不完美，RUST语法不好看、GO简单但是大模型等没有很深厚文化。目前经验是ASAN和coredumpctl两个工具也能保证C++质量，新编译器也能提示一部分。</p>
@@ -294,6 +296,19 @@
         <p><code>wwwpath=/Users/hzq/paozhu/www/default</code> <code>/Users/hzq/paozhu</code>建议换成你的当前目录名称,
         项目下<code>www/default</code>，是静态文件目录，如果是多域名建议创建<code>www/domain.com</code>这个设置是为SAAS服务的。</p>
         <p><code>upload_max_size=16777216</code> 上传文件大小，默认是16M</p>
+        <h3 id="Staticfile">静态文件网站</h3> 
+        <p><code>conf/server.conf</code> 配置文件中 <code>wwwpath</code>是Web静态文件存放路径，不用写程序就可以提供WWW服务，一般存放html、js、css、jpg文件，可以直接使用浏览器打开访问。</p>
+        <p>所有域名网站存放在www目录，类似下面结构。</p>
+        <pre><code>
+        www
+        ├──default
+        ├──english
+        ├──host.com
+        │   └──index.html
+        └──japan
+        </code></pre>     
+        <p><code>http://www.host.com/index.html</code> 浏览器打开的是<code>host.com</code>目录下index.html</p>
+
         <h3 id="saas">SAAS设置</h3>
         <p>下面几个是SAAS设置可以先不管。</p>
         <a href="saas.html">查看使用SAAS模式</a>

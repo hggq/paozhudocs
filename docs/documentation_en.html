@@ -135,6 +135,8 @@
             <li><a href="#Abstract">Abstract</a></li>
             <li><a href="#Install">Paozhu Install</a></li>
             <li><a href="#Config">Paozhu Config</a></li>
+            <li><a href="#Staticfile">Static file website</a></li>
+            <li><a href="#saas">SAAS settings</a></li>
             <li><a href="#Helloworld">Hello World</a></li>
             <li><a href="#Router">URL Router</a></li>
             <li><a href="#objval">Introduction to Built in Micro Objects(JSON)</a></li>
@@ -192,7 +194,8 @@
         <h3 id="Config">Paozhu Config</h3>
         <p>Paozhu Config file at <code>conf/server.conf</code></p>
         <p>You can first understand a few variables to get the project running.</p>
-        <pre><code>[default]
+        <pre><code>
+        [default]
         threadmax=1024
         threadmin=5
         httpport=80
@@ -284,6 +287,21 @@
         It is recommended to set the production environment to 0</p>
         <p><code>wwwpath=/Users/hzq/paozhu/www/default</code> <code>/Users/hzq/paozhu</code> Suggest changing to your current directory name, Under the project, 'www/default' is a static file directory. If it is a multi domain, it is recommended to create a 'www/domain.com' setting for SAAS services.</p>
         <p><code>upload_max_size=16777216</code> Upload file size, default is 16M</p>
+
+        <h3 id="Staticfile">Static file website</h3> 
+        <p><code>conf/server.conf</code> In this configuration file, <code>wwwpath</code> It is a path for storing static web files, which can provide WWW services without writing programs. Generally, it stores HTML, JS, CSS, and JPG files, which can be directly opened and accessed using a browser.</p>
+        <p>All domain websites are stored in the www directory, with a structure similar to the following.</p>
+        <pre><code>
+        www
+        ├──default
+        ├──english
+        ├──host.com
+        │   └──index.html
+        └──japan
+        </code></pre>     
+        <p><code>http://www.host.com/index.html</code> The browser opens index.html in the <code>host.com</code> directory.</p>
+
+
         <h3 id="saas">SAAS settings</h3>
         <p>The following are SAAS settings that can be ignored for now .</p>
         <p><a href="saas_en.html">View using SAAS mode</a></p>
@@ -379,7 +397,8 @@
     </div>
     <div class="container"> 
         <h3 id="objval">Introduction to Built in Micro Objects</h3>
-        <pre><code class="language-C++">http::obj_val hval;
+        <pre><code class="language-C++">
+        http::obj_val hval;
         hval[&quot;aaa&quot;]=3344;
         hval[&quot;bbb&quot;]=&quot;1234567890&quot;;
         
