@@ -164,11 +164,7 @@
         <li>Built in micro objects, JSON import and export, similar to variables in scripting languages.</li>
         <li>Built in FastCGI supports PHP</li>
         </ol>
-        <h3>Paozhu Framework technology architecture principle</h3>
-        <p>The Paozhu framework uses ASIO's thread pool, which is specifically designed for IO usage, such as network sending and receiving. The framework also has a built-in business thread pool, which is dedicated to running business code.</p>
-        <p>At present, the Framework mainly use HTTP and HTTPS, with two threads constantly listening for connections to arrive. When a user accesses using a browser or client, a connection is generated, and after handshake, the server waits for the client to send HTTP header information. Then, the server processes the HTTP protocol. If the URL matches, it registers a function and checks whether the function is a coroutine or a regular function. The coroutine runs directly. If it is a regular function, it is thrown directly into the business thread pool. If the URL is a static file, it is sent directly without going through the business thread.</p>
-        <p>Because C++coroutines are contagious, when running business code in coroutine registration functions, you need to use ORM coroutine methods. If you cannot initiate coroutine functions in regular functions, you can only use ORM regular functions.</p>
-        <p>It is generally recommended to use one connection to one thread, and business threads also have queues, so business code should not use the sleep function to sleep casually.</p>
+
         <h3>Paozhu Environment</h3>
         <p>Paozhu supports <code>MacOS</code> <code>Linux</code> and <code>Windows</code> systems.</p>
         <p>Uses third-party dependencies</p>
@@ -182,7 +178,25 @@
         <li><code>RockyLinux</code> <code>AlmaLinux</code> 9.1 above</li>
         <li><code>Windows</code> Win10 Compiler 19.25 or above。</li>
         </ul>
+        <h3>Paozhu Framework technology architecture principle</h3>
+        <pre><code>
+                               +------------------------+   +------------------------------+
+                               |   asio spawn thread    |   |  thread pool (business code) |
+                               +------------------------+   +------------------------------+
 
++--------------------------+   +------------------------+   +------------------------------+
+| thread accept  (80 443)  |   |   asio spawn thread    |   |  thread pool (business code) |
++--------------------------+   +------------------------+   +------------------------------+
+
+                               +------------------------+   +------------------------------+
+                               |   asio spawn thread    |   |  thread pool (business code) |
+                               +------------------------+   +------------------------------+
+        </code></pre>
+
+        <p>The Paozhu framework uses ASIO's thread pool, which is specifically designed for IO usage, such as network sending and receiving. The framework also has a built-in business thread pool, which is dedicated to running business code.</p>
+        <p>At present, the Framework mainly use HTTP and HTTPS, with two threads constantly listening for connections to arrive. When a user accesses using a browser or client, a connection is generated, and after handshake, the server waits for the client to send HTTP header information. Then, the server processes the HTTP protocol. If the URL matches, it registers a function and checks whether the function is a coroutine or a regular function. The coroutine runs directly. If it is a regular function, it is thrown directly into the business thread pool. If the URL is a static file, it is sent directly without going through the business thread.</p>
+        <p>Because C++coroutines are contagious, when running business code in coroutine registration functions, you need to use ORM coroutine methods. If you cannot initiate coroutine functions in regular functions, you can only use ORM regular functions.</p>
+        <p>It is generally recommended to use one connection to one thread, and business threads also have queues, so business code should not use the sleep function to sleep casually.</p>
         <h3 id="Structure"><strong>Overview of Paozhu Project Structure</strong></h3>
         <p>Paozhu is a command-line tool that is not separated and installed independently, all of which are included in one project. Multiple projects need to include framework code independently.</p>
         <pre><code>
@@ -218,7 +232,7 @@
 └── xmake.lua                     XMake configuration
         </code></pre>
 
-        <h3 id="Install">Paozhu install</h3>
+        <h3 id="Install">Paozhu Install</h3>
         <p>Download from GitHub</p> 
         <p><a href="https://github.com/hggq/paozhu" target="_blank">https://github.com/hggq/paozhu</a></p>
         <ul>
