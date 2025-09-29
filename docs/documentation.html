@@ -180,6 +180,41 @@
         <li><code>RockyLinux</code> <code>AlmaLinux</code> 必须是9.1以上</li>
         <li><code>Windows</code> 必须是Win10 编译器最好19.25以上。</li>
         </ul>
+
+        <h3 id="Structure"><strong>结构简述</strong></h3>
+        <p>paozhu未分离命令行工具独立安装，全部包括在一个项目里面，多个项目需要独立包括框架代码。</p>
+        <pre><code>
+        .
+        ├── asio                            asio库文件，框架自带一个asio.zip可以解压出来
+        ├── asio.zip
+        ├── bin                             编译后的执行文件
+        ├── build
+        ├── cache                           框架运行时候缓存一些文件，比如已经压缩好的html、js文件
+        ├── CMakeLists.txt                  CMake的配置文件
+        ├── common                          框架使用的公共文件，比如注解函数，编译常量等
+        ├── conf                            框架配置文件比如 server.conf 服务器配置 orm.conf 数据库配置 ssl证书
+        ├── controller                      路由器代码入口，可以存放业务代码，如果后端代码多可以配合libs目录
+        ├── docs
+        ├── libs                            自己业务代码库存放
+        ├── LICENSE
+        ├── log                             框架访问和出错日志
+        ├── models                          ORM 对象业务代码
+        ├── module                          可插拔SO存放的地方
+        ├── orm                             ORM 和数据库表实体映射的类
+        ├── README_CN.md
+        ├── README_EN.md
+        ├── README.md 
+        ├── startup                         框架main函数入口，区分了调试 产品 和docker编译等
+        ├── temp                            框架接受上传文件临时存放地方
+        ├── vcpkg-configuration.json
+        ├── vcpkg.json
+        ├── vendor                          框架主程序文件和第三方包存放
+        ├── view                            框架视图文件，主要是html模板存放
+        ├── viewsrc                         框架编译好的视图文件
+        ├── websockets                      websocket程序对象存放处
+        ├── www
+        └── xmake.lua                       XMake配置
+        </code></pre>
     </div>
     <div class="container">
         <h3 id="Install">paozhu安装</h3>
