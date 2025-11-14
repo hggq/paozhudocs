@@ -145,14 +145,18 @@
     void theme_view(const std::string &a);
           </code></pre> 
 <p>Example of usage, using in annotated functions</p>
-    <pre><code class="language-C++"> 
+    <pre><code class="language-C++">
+namespace aaa
+{           
 //@urlpath(null,articles)
 std::string front_article(std::shared_ptr&lt;httppeer&gt; peer)
 {
   unsigned int userid=peer-&gtget_siteid();
   peer-&gttheme_view("front/articlelist");
 }
+}
           </code></pre> 
+          <p>Note: namespace aaa, the aaa namespace name is<code>aaa. com</code>the part before the dot</p>
           <p><code>peer-&gttheme_view("front/articlelist");</code> We set it up earlier <code>themes=cn</code> theme_view Use the <code>view/cn/front/articlelist.html</code> view file</p>
      
           <p>Main feature 1:<code>controller/src</code> Create the <code>aaa.com</code> directory, which cannot be used without the <code>alias_domain=aaa.com</code> setting, to facilitate the use of large projects</p>
