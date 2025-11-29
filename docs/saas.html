@@ -147,6 +147,8 @@
           </code></pre> 
 <p>使用方法例子，在注解函数中使用</p>
     <pre><code class="language-C++">
+namespace http
+{
 namespace aaa
 {         
 //@urlpath(null,articles)
@@ -155,7 +157,8 @@ std::string front_article(std::shared_ptr&lt;httppeer&gt; peer)
   unsigned int userid=peer-&gtget_siteid();
   peer-&gttheme_view("front/articlelist");
 }
-}
+}// namespace aaa
+}//namespace http
           </code></pre>
           <p>注意： namespace aaa 命名空间，aaa命名空间名称是<code>aaa.com</code>点号前面部分</p>
           <p><code>peer-&gttheme_view("front/articlelist");</code> 前面我们设置了 <code>themes=cn</code> theme_view 使用<code>view/cn/front/articlelist.html</code>视图文件</p>
