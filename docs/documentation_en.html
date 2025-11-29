@@ -181,15 +181,15 @@
         <h3>Paozhu Framework technology architecture principle</h3>
         <p>The framework uses the M:N concurrency model</p>
         <pre><code>
-                           +-------------------+   +----------------------------+
-                           | asio spawn thread |   | thread pool(business code) |
-                           +-------------------+   +----------------------------+
-+-----------------------+  +-------------------+   +----------------------------+
-| thread accept(80 443) |  | asio spawn thread |   | thread pool(business code) |
-+-----------------------+  +-------------------+   +----------------------------+
-                           +-------------------+   +----------------------------+
-                           | asio spawn thread |   | thread pool(business code) |
-                           +-------------------+   +----------------------------+
+                           +-----------------------+   +----------------------------+
+                           | asio coroutine thread |   | thread pool(business code) |
+                           +-----------------------+   +----------------------------+
++-----------------------+  +-----------------------+   +----------------------------+
+| thread accept(80 443) |  | asio coroutine thread |   | thread pool(business code) |
++-----------------------+  +-----------------------+   +----------------------------+
+                           +-----------------------+   +----------------------------+
+                           | asio coroutine thread |   | thread pool(business code) |
+                           +-----------------------+   +----------------------------+
         </code></pre>
 
         <p>The Paozhu framework uses ASIO's thread pool, which is specifically designed for IO usage, such as network sending and receiving. The framework also has a built-in business thread pool, which is dedicated to running business code.</p>
