@@ -191,6 +191,37 @@
         <p>Open Browser</p>
         <p>http://localhost</p>
         <p>http port see <code>conf/server.conf</code> file</p>   
+        <p>Now, you have successfully completed compiling the Paozhu project and can start learning the Hello World tutorial</p>
+        <p> </p>
+        <h3>Additional reading:</h3>
+        <h3>Compile using Ninja</h3>
+        <p>brew install ninja</p>
+        <p>Compile project</p>
+        <pre><code>
+        # cd paozhu
+        # unzip asio.zip 
+        # mkdir build
+        
+        # cd build
+        # cmake .. -G Ninja
+        # ninja 
+        # cd ..
+        # ./bin/paozhu
+        </code></pre>  
+        <p>Resolve Cmake error: generator: Ninja issue, need to remove compilation cache</p>
+        <pre><code>
+    CMake Error: Error: generator : Ninja
+    Does not match the generator used previously: Unix Makefiles
+    Either remove the CMakeCache.txt file and CMakeFiles directory or choose a different binary directory.
+        </code></pre> 
+        <p>build&gt;rm CMakeCache.txt</p> 
+        <p>build&gt;cmake .. -G Ninja</p> 
+        <p>build&gt;ninja</p>
+        <h3>Compiling project issues on USB or portable hard drives</h3> 
+        <p>Recursively delete all hidden files in the current directory</p>
+        <p>paozhu-main&gt;find . -name ".*" | xargs rm -f</p>
+
+
 <p><a href="documentation_en.html">Docs</a></p>
 </div>
 </body>

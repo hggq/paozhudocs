@@ -190,6 +190,36 @@
         <p>Open Browser</p>
         <p>http://localhost</p>
         <p>http port see <code>conf/server.conf</code> file</p>      
+        <p>到此为止你已经成功完成编译paozhu项目，可以开始学习hello world教程</p>
+        <p> </p>
+        <h3>附加阅读：</h3>
+        <h3>如果使用Ninja编译</h3>
+        <p>brew install ninja</p>
+        <p>编译项目</p>
+        <pre><code>
+        # cd paozhu
+        # unzip asio.zip 
+        # mkdir build
+        
+        # cd build
+        # cmake .. -G Ninja
+        # ninja 
+        # cd ..
+        # ./bin/paozhu
+        </code></pre>  
+        <p>解决 Cmake error :generator: Ninja 问题，需要删除编译缓存</p>
+        <pre><code>
+    CMake Error: Error: generator : Ninja
+    Does not match the generator used previously: Unix Makefiles
+    Either remove the CMakeCache.txt file and CMakeFiles directory or choose a different binary directory.
+        </code></pre> 
+        <p>build&gt;rm CMakeCache.txt</p> 
+        <p>build&gt;cmake .. -G Ninja</p> 
+        <p>build&gt;ninja</p>
+        <h3>在U盘或移动硬盘编译问题</h3> 
+        <p>递归删除当前目录下所有文隐藏文件</p>
+        <p>paozhu-main&gt;find . -name ".*" | xargs rm -f</p>
+
 <p><a href="documentation.html">Docs</a></p>
 </div>
 </body>
