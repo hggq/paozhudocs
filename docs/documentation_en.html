@@ -1649,6 +1649,9 @@
         make -j8
         </code></pre>
         <p>Need to install <code>gdb</code> and <code>coredumpctl</code></p>
+        <pre><code class="language-shell">
+        sudo apt install systemd-coredump gdb  # Debian/Ubuntu
+        </code></pre>
         <p>The framework will be checked every minute, at <code>log</code> directory have a <code>restart_server</code> file</p>
         <p>If we need to retrieve a sample of the process stack, we can <code>touch log/start_Server</code> so that the process can restart</p>
         <p>have access to <code>pstree -aup</code> view process status</p>
