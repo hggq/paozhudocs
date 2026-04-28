@@ -1710,6 +1710,16 @@
           #2  0x00000000005a990c in http::httpparse::procssxformurlencoded (this=0x7fd9b400d370) at /www/paozhu/vendor/httpserver/src/http_parse.cpp:389
           #3  0x00000000005b1bfa in http::httpparse::process (this=0x7fd9b400d370, buffer=0x2e223c0 &quot;POST /public/static/lib/webuploader/0.1.5/server/preview.php HTTP/1.1\r\nHost: www. paozhu.org\r\nUser-Agent: Mozilla/5.0 AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0\r\nAccept-Encoding: gzip, deflate&quot;..., buffersize=964) at /www/paozhu/vendor/httpserver/src/http_parse.cpp:2823
           </code></pre>
+
+          <p>log/error.log 有错误 Too many open files</p>  
+          <p>是系统限制了socket 打开数量，默认是1024个，可以使用 <code>ulimit -n</code> 查看，也可以使用 <code>sudo ls -l /proc/49121(pid)/fd</code>或<code>sudo ls -l /proc/49121(pid)/fd | wc -l</code>查看进程49121已经打开的fd </p>  
+          <p>修改系统默认fd数量，<code>sudo vim /etc/security/limits.conf</code></p>  
+          <pre><code>
+            # 格式: 用户/组    类型    资源    数值
+            *               soft    nofile  65535
+            *               hard    nofile  65535
+          </code></pre>
+          <p>重启系统可以看到改变了。</p>
           <h3 id="docsmemo">后记</h3>
           <p>最后提示，平时写代码应该注意写法，不能用直接使用new和delete，建议使用智能指针，用自带STL也够用了，老一代程序员喜欢榨干CPU性能，其实很多时候编译器给你优化了，所以业务代码应该开开心心使用。</p>
           <p>Web开发本来就是重视业务流程，很多C++喜欢在业务代码写元编译，各种模板代码，这个需要禁止的，不是炫耀技术，怀疑是在写垃圾代码动机，入库可以使用元编译，模板代码。</p>
