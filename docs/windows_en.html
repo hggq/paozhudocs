@@ -193,6 +193,7 @@ PS C:\Users\a\paozhu> C:\Users\a\paozhu\bin\Debug\paozhu.exe
 
         <p>Install ninja <a href="https://github.com/ninja-build/ninja/releases" target="_blank">https://github.com/ninja-build/ninja/releases</a> </p>
         <p>Compile project CMAKE_TOOLCHAIN_FILE is vcpkg install localtion path</p>
+        <p>If there are any CMake remnants, you need to delete the build directory first</p>
         <pre><code>
             unzip asio.zip
             cmake . -B . -DENABLE_WIN_VCPKG=ON -DENABLE_VCPKG=ON -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_BUILD_TYPE=Debug -G Ninja

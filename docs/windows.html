@@ -194,6 +194,7 @@
 
         <p>Install ninja <a href="https://github.com/ninja-build/ninja/releases" target="_blank">https://github.com/ninja-build/ninja/releases</a> </p>
         <p>Compile project CMAKE_TOOLCHAIN_FILE is vcpkg install localtion path</p>
+        <p>如果有CMake残留需要先删除build目录</p>
         <pre><code>
             unzip asio.zip
             cmake . -B . -DENABLE_WIN_VCPKG=ON -DENABLE_VCPKG=ON -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_BUILD_TYPE=Debug -G Ninja
