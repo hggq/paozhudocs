@@ -1691,6 +1691,51 @@
         *               hard    nofile  65535
         </code></pre>
         <p>Restart the system to see the changes.</p>
+        <p>Linux Out-Of-Memory killer issue</p>
+        <p>When there is a sudden increase in access volume, a large amount of memory is used, and the process exhausts all system memory. The system will then activate the cleanup program, so the system log "/var/log/messages" will display error messages like "Out of Memory: Kill process 1416222(paozhu)".</p>
+        <pre><code>
+        Confirm the specific time point when the Out-Of-Memory (OOM) error occurred. 'paozhu' is the process name.
+        sudo dmesg -T | grep -C 5 "paozhu"
+        OR
+        dmesg -T | grep -i "killed process" | grep paozhu
+        </code></pre>
+        <p>Information similar to the following</p>
+        <pre><code>
+        __vm_enough_memory: pid: 1416222, comm: paozhu, not enough memory for the allocation  
+        </code></pre>
+        <p>Solution: Increase Swap space</p>
+        <pre><code>
+        #Check the existing Swap space 
+        #sudo swapon --show 
+        NAME      TYPE SIZE   USED PRIO
+        /swap.img file   4G 672.3M   -2
+
+        #Increase the Swap space to 8G or 16G
+        # 1. Close the existing Swap file
+        sudo swapoff /swap.img
+
+        # 2. Delete the old Swap file
+        sudo rm /swap.img
+
+        # 3. Create a new Swap file (taking 8G as an example)
+        sudo fallocate -l 8G /swap.img
+
+        # 4. Set security permissions
+        sudo chmod 600 /swap.img
+
+        # 5. Format and enable
+        sudo mkswap /swap.img
+        sudo swapon /swap.img
+
+        #6. Verify the results
+        sudo swapon --show
+        </code></pre>
+        <p>Check the automatic mount configuration at startup. If Swap space was not used before, it may not be present and needs to be added.</p>
+        <pre><code>
+        cat /etc/fstab    
+        echo '/swap.img none swap sw 0 0' | sudo tee -a /etc/fstab    
+        </code></pre>
+        
 
         <h3 id="docsmemo">Postscripts</h3>
         <p>Finally, it should be noted that when writing code, one should pay attention to the writing style and not use new and delete directly, using the built-in STL is also sufficient. It is recommended to use smart pointers. Older programmers like to squeeze CPU performance, but in fact, compilers often optimize it for you, so business code should be used happily.</p>

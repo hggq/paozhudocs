@@ -1719,7 +1719,50 @@
             *               soft    nofile  65535
             *               hard    nofile  65535
           </code></pre>
-          <p>重启系统可以看到改变了。</p>
+          <p>Linux OOM问题 (Out-Of-Memory killer)</p>
+          <p>当突然访问量增加，那么会大量使用内存，然后进程把系统内存耗尽，系统会启用清除程序，所以系统日志「/var/log/messages」会发现「Out of Memory: Kill process 1416222(paozhu)」类似的错误信息。</p>
+          <pre><code>
+          确认 OOM 发生的具体时间点，`paozhu` 是进程名称。
+          sudo dmesg -T | grep -C 5 "paozhu"
+          OR
+          dmesg -T | grep -i "killed process" | grep paozhu
+          </code></pre>
+          <p>类似下面这些信息</p>
+          <pre><code>
+          __vm_enough_memory: pid: 1416222, comm: paozhu, not enough memory for the allocation  
+          </code></pre>
+          <p>解决方式: 加大Swap空间</p>
+          <pre><code>
+        #查看现有的 Swap 空间  
+        #sudo swapon --show 
+        NAME      TYPE SIZE   USED PRIO
+        /swap.img file   4G 672.3M   -2
+
+        #加大 Swap 空间到8G或16G
+        # 1. 关闭现有的 Swap 文件
+        sudo swapoff /swap.img
+
+        # 2. 删除旧的 Swap 文件
+        sudo rm /swap.img
+
+        # 3. 创建新的 Swap 文件（以 8G 为例）
+        sudo fallocate -l 8G /swap.img
+
+        # 4. 设置安全权限
+        sudo chmod 600 /swap.img
+
+        # 5. 格式化并启用
+        sudo mkswap /swap.img
+        sudo swapon /swap.img
+
+        # 6. 验证结果
+        sudo swapon --show
+          </code></pre>
+        <p>检查开机自动挂载配置，如果之前没有使用Swap空间，那么可能没有，需要加上。</p>
+        <pre><code>
+        cat /etc/fstab    
+        echo '/swap.img none swap sw 0 0' | sudo tee -a /etc/fstab    
+        </code></pre>
           <h3 id="docsmemo">后记</h3>
           <p>最后提示，平时写代码应该注意写法，不能用直接使用new和delete，建议使用智能指针，用自带STL也够用了，老一代程序员喜欢榨干CPU性能，其实很多时候编译器给你优化了，所以业务代码应该开开心心使用。</p>
           <p>Web开发本来就是重视业务流程，很多C++喜欢在业务代码写元编译，各种模板代码，这个需要禁止的，不是炫耀技术，怀疑是在写垃圾代码动机，入库可以使用元编译，模板代码。</p>
