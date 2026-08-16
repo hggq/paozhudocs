@@ -1022,7 +1022,7 @@ make</code></pre>
                         <div class="feature-icon">🗄️</div>
                         <div class="feature-text">
                             <strong><span class="zh">内置 ORM</span><span class="en">Built-in ORM</span></strong>
-                            <span><span class="zh">自研 MySQL 协议，支持协程模式</span><span class="en">Custom MySQL protocol with coroutine support</span></span>
+                            <span><span class="zh">自研 MySQL PostgreSQL 协议，支持协程模式</span><span class="en">Custom MySQL PostgreSQL protocol with coroutine support</span></span>
                         </div>
                     </div>
                     <div class="feature">
@@ -1053,6 +1053,60 @@ make</code></pre>
                             <span><span class="zh">内置 FastCGI 支持 PHP</span><span class="en">Built-in FastCGI for PHP support</span></span>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- SSL Auto-Renewal Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">🔐 SSL 证书自动续期</span>
+                    <span class="en">🔐 SSL Certificate Auto-Renewal</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">内置 ACME 协议支持，自动申请与续期 SSL 证书，HTTPS 永不过期</span>
+                    <span class="en">Built-in ACME protocol for automatic SSL certificate issuance and renewal</span>
+                </p>
+                <div class="requirements-grid">
+                    <div class="req-card">
+                        <div class="req-icon">🔄</div>
+                        <h4><span class="zh">ACME 自动续期</span><span class="en">ACME Auto-Renewal</span></h4>
+                        <p><span class="zh">证书到期前自动更新，全程无需人工干预</span><span class="en">Renews certificates before expiry, fully automated</span></p>
+                    </div>
+                    <div class="req-card">
+                        <div class="req-icon">🛡️</div>
+                        <h4><span class="zh">OCSP Stapling</span><span class="en">OCSP Stapling</span></h4>
+                        <p><span class="zh">自动 OCSP 装订，提升握手性能与隐私</span><span class="en">Automatic OCSP stapling for faster, private handshakes</span></p>
+                    </div>
+                    <div class="req-card">
+                        <div class="req-icon">🌐</div>
+                        <h4><span class="zh">ZeroSSL 支持</span><span class="en">ZeroSSL Support</span></h4>
+                        <p><span class="zh">内置 ZeroSSL DV 接口，支持 EAB 认证</span><span class="en">Built-in ZeroSSL DV endpoint with EAB auth</span></p>
+                    </div>
+                    <div class="req-card">
+                        <div class="req-icon">⏰</div>
+                        <h4><span class="zh">智能续期时机</span><span class="en">Smart Renewal Timing</span></h4>
+                        <p><span class="zh">可配置到期前天数与每日执行时刻</span><span class="en">Configurable days-before-expiry and run time</span></p>
+                    </div>
+                </div>
+                <div class="structure-showcase">
+                    <pre class="structure-code"><code>
+; conf/server.conf <span class="comment"><span class="zh">ACME 配置</span><span class="en">ACME settings</span></span>
+acme_auto = 0             <span class="comment"><span class="zh">自动 SSL 证书更新</span><span class="en">Auto SSL certificate renewal</span></span>
+acme_every_day = 7        <span class="comment"><span class="zh">每天几点执行 ACME</span><span class="en">Daily hour to run ACME</span></span>
+ocsp_intv_time = 14400    <span class="comment"><span class="zh">OCSP 更新间隔（秒）</span><span class="en">OCSP update interval (seconds)</span></span>
+
+; conf/acme.conf <span class="comment"><span class="zh">ACME 证书配置</span><span class="en">ACME certificate config</span></span>
+[info]
+acme_path = ./acme        <span class="comment"><span class="zh">ACME 工作目录</span><span class="en">ACME working directory</span></span>
+cert_path = ./conf        <span class="comment"><span class="zh">证书存储目录</span><span class="en">Certificate storage directory</span></span>
+email = your@email.com    <span class="comment"><span class="zh">邮箱（必须）</span><span class="en">Email (mandatory)</span></span>
+days_remain = 10          <span class="comment"><span class="zh">提前多少天更新证书</span><span class="en">Renew days before expiry</span></span>
+
+[zerossl]
+server_url = https://acme.zerossl.com/v2/DV90  <span class="comment"><span class="zh">ZeroSSL 接口</span><span class="en">ZeroSSL endpoint</span></span>
+eab_kid =                 <span class="comment"><span class="zh">EAB Key ID</span><span class="en">EAB Key ID</span></span>
+eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</span><span class="en">EAB HMAC Key</span></span>
+                    </code></pre>
                 </div>
             </section>
 
