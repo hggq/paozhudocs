@@ -1116,6 +1116,30 @@ if (ulink->begin_commit())
         💡 建议：<code>maxpool</code> 值设置为业务线程数的 2-3 倍较为合适，具体数值需要根据实际业务场景和数据库承载能力进行调整。
     </div>
 
+    <h2 id="db-migration">数据库迁移</h2>
+    <p>使用 CLI 工具在数据库类型之间迁移数据（如 MySQL/CMS 迁移到 PostgreSQL），目标库的表会被自动创建：</p>
+    <pre><code># 从 cms 迁移到 pg
+./bin/paozhu_cli dbconver cms pg
+
+# 强制迁移（覆盖已有表）
+./bin/paozhu_cli dbconver cms pg force</code></pre>
+    <div class="tip-box">
+        💡 提示：迁移前请确认目标数据库已存在且连接配置正确（<code>orm.conf</code>）。不带 <code>force</code> 时，如果目标表已存在会跳过，避免误覆盖数据。
+    </div>
+
+    <h2 id="sql-export">SQL 导出</h2>
+    <p>将数据库结构或数据导出为 SQL 文件，可用于备份、迁移或分发：</p>
+    <pre><code># 导出表结构
+./bin/paozhu_cli dbtable cms ./schema.sql
+./bin/paozhu_cli dbtable cms ./pg.sql -target=pg      # 导出为 PG 语法
+
+# 导出结构+数据
+./bin/paozhu_cli dbexport cms ./dump.sql
+./bin/paozhu_cli dbexport cms ./mysql.sql -target=mysql</code></pre>
+    <div class="tip-box">
+        💡 提示：默认导出当前数据源的 SQL 方言，也可通过 <code>-target=pg</code> / <code>-target=mysql</code> 指定目标数据库语法，方便在不同数据库之间迁移。
+    </div>
+
     <a href="index.html" class="back-to-index">← 返回首页</a>
     `;
 
@@ -1835,6 +1859,30 @@ if (ulink->begin_commit())
     </ul>
     <div class="tip-box">
         💡 Recommendation: Set <code>maxpool</code> to 2-3 times the number of business threads. The exact value should be adjusted based on your actual business scenarios and database capacity.
+    </div>
+
+    <h2 id="db-migration">Database Migration</h2>
+    <p>Use the CLI tool to migrate data between database types (e.g., from MySQL/CMS to PostgreSQL). Target tables are created automatically:</p>
+    <pre><code># Migrate from cms to pg
+./bin/paozhu_cli dbconver cms pg
+
+# Force migration (overwrite existing tables)
+./bin/paozhu_cli dbconver cms pg force</code></pre>
+    <div class="tip-box">
+        💡 Tip: Before migrating, make sure the target database exists and the connection settings in <code>orm.conf</code> are correct. Without <code>force</code>, existing target tables are skipped to avoid accidentally overwriting data.
+    </div>
+
+    <h2 id="sql-export">SQL Export</h2>
+    <p>Export database schema or data to SQL files for backup, migration, or distribution:</p>
+    <pre><code># Export table schema
+./bin/paozhu_cli dbtable cms ./schema.sql
+./bin/paozhu_cli dbtable cms ./pg.sql -target=pg      # Export as PG syntax
+
+# Export schema + data
+./bin/paozhu_cli dbexport cms ./dump.sql
+./bin/paozhu_cli dbexport cms ./mysql.sql -target=mysql</code></pre>
+    <div class="tip-box">
+        💡 Tip: By default, the SQL dialect of the current data source is used. You can specify the target database syntax with <code>-target=pg</code> / <code>-target=mysql</code> to facilitate migration between different databases.
     </div>
 
     <a href="index.html" class="back-to-index">← Back to Home</a>

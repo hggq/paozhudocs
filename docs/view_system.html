@@ -329,6 +329,17 @@
             <strong>💡 提示：</strong> Paozhu 支持原生 HTML 模板，模板文件存放在 <code>view/</code> 目录下，使用 <code>&lt;%c ... %&gt;</code> 标签嵌入 C++ 代码实现变量输出、条件判断、循环等逻辑，并在编译期生成对应的 C++ 视图方法。
         </div>
 
+        <h2 id="generate_view">视图生成方法</h2>
+        <p>Paozhu 将 <code>view/</code> 目录下的 HTML 模板视为源代码：编辑模板后需运行 CLI 工具将其编译生成对应的 C++ 视图方法（编译产物位于 <code>viewsrc/</code>），之后即可在控制器中调用渲染。</p>
+        <pre><code># 编译修改过的视图（增量编译）
+./bin/paozhu_cli view
+
+# 强制重新编译所有视图（全量编译）
+./bin/paozhu_cli view force</code></pre>
+        <div class="note-box">
+            <strong>⚙️ 工作流程：</strong> ① 在 <code>view/</code> 目录下创建/编辑 HTML 模板 → ② 使用 <code>&lt;%c ... %&gt;</code> 标签嵌入 C++ 逻辑 → ③ 运行 <code>./bin/paozhu_cli view</code> 生成视图方法 → ④ 在控制器中通过 <code>peer->view()</code> 调用渲染。
+        </div>
+
         <h2 id="call_view">调用视图渲染</h2>
         <p>在控制器中调用视图非常简单，只需使用 <code>peer->view()</code> 方法指定模板路径即可：</p>
         <pre><code>//@urlpath(null, testloginview)
@@ -586,6 +597,17 @@ std::string api_users(std::shared_ptr<httppeer> peer)
         <p>Paozhu's view system provides flexible template rendering capabilities, supporting multiple template engines and multi-module view management. With the view system, you can completely separate business logic from the presentation layer, writing cleaner and more maintainable code.</p>
         <div class="note-box">
             <strong>💡 Tip:</strong> Paozhu supports native HTML templates stored in the <code>view/</code> directory. Use the <code>&lt;%c ... %&gt;</code> tags to embed C++ code for variable output, conditionals, loops, and other logic. Templates are compiled into C++ view methods at build time.
+        </div>
+
+        <h2 id="generate_view">View Generation</h2>
+        <p>Paozhu treats HTML templates in the <code>view/</code> directory as source code: after editing a template, run the CLI tool to compile it into the corresponding C++ view method (compiled artifacts live under <code>viewsrc/</code>), ready to be invoked from controllers.</p>
+        <pre><code># Compile modified views (incremental)
+./bin/paozhu_cli view
+
+# Force recompile all views (full compilation)
+./bin/paozhu_cli view force</code></pre>
+        <div class="note-box">
+            <strong>⚙️ Workflow:</strong> ① Create/edit an HTML template under <code>view/</code> → ② Embed C++ logic with <code>&lt;%c ... %&gt;</code> tags → ③ Run <code>./bin/paozhu_cli view</code> to generate the view method → ④ Render it from a controller via <code>peer->view()</code>.
         </div>
 
         <h2 id="call_view">Calling View Rendering</h2>

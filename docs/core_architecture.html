@@ -459,7 +459,7 @@ const cnFullContent = `
               ▼                         ▼
 ┌─────────────────────┐     ┌─────────────────────────────────────┐
 │   数据层 (ORM)      │     │        视图层 (View)                │
-│   MySQL 协议封装    │     │   视图方法集中注册                   │
+│   MySQL 协议封装    │     │   视图生成方法                       │
 │   协程/同步双模式   │     │   控制器通过名称渲染页面             │
 │   连接池管理        │     │   多模块支持 (admin/cms/superadmin)  │
 └─────────────────────┘     └─────────────────────────────────────┘
@@ -475,7 +475,7 @@ const cnFullContent = `
     <div class="layer-card">
         <div class="icon">🖼️</div>
         <h4>视图层</h4>
-        <p>视图方法集中注册，控制器通过名称渲染页面。支持多模块视图</p>
+        <p>视图模板编译生成视图方法，控制器通过名称渲染页面。支持多模块视图</p>
     </div>
     <div class="layer-card">
         <div class="icon">💾</div>
@@ -597,8 +597,13 @@ asio::awaitable<std::string> coroutine_example(
 
 <h3 id="view-rendering">3. 视图渲染系统</h3>
 
-<h4>视图方法集中注册</h4>
-<p>所有视图方法在编译后集中注册到 <code>regviewmethod.hpp</code> 中，控制器通过字符串键名调用对应渲染函数。</p>
+<h4>视图生成方法</h4>
+<p>在 <code>view/</code> 目录下编辑 HTML 模板文件后，运行 CLI 工具将模板编译生成对应的 C++ 视图方法，并集中注册到 <code>regviewmethod.hpp</code> 中，控制器通过字符串键名调用对应渲染函数。</p>
+<pre><code># 编译修改过的视图（增量编译）
+./bin/paozhu_cli view
+
+# 强制重新编译所有视图（全量编译）
+./bin/paozhu_cli view force</code></pre>
 <pre><code>// viewsrc/include/regviewmethod.hpp
 namespace http {
     void _initview_method_regto(VIEW_REG& _viewmetholdreg)
@@ -980,7 +985,7 @@ const enFullContent = `
               ▼                         ▼
 ┌─────────────────────┐     ┌─────────────────────────────────────┐
 │   Data Layer (ORM)  │     │       View Layer                     │
-│   MySQL protocol    │     │   Centralized view registration     │
+│   MySQL protocol    │     │   View generation methods            │
 │   Coroutine/Sync    │     │   Controller renders by name         │
 │   Connection pool   │     │   Multi-module (admin/cms/etc.)      │
 └─────────────────────┘     └─────────────────────────────────────┘
@@ -996,7 +1001,7 @@ const enFullContent = `
     <div class="layer-card">
         <div class="icon">🖼️</div>
         <h4>View</h4>
-        <p>View methods are centrally registered. Controllers render pages by name. Supports multi-module views</p>
+        <p>View templates are compiled into view generation methods. Controllers render pages by name. Supports multi-module views</p>
     </div>
     <div class="layer-card">
         <div class="icon">💾</div>
@@ -1118,8 +1123,13 @@ asio::awaitable<std::string> coroutine_example(
 
 <h3 id="view-rendering">3. View Rendering System</h3>
 
-<h4>Centralized View Registration</h4>
-<p>All view methods are centrally registered into <code>regviewmethod.hpp</code> after compilation. Controllers invoke the corresponding rendering function via string keys.</p>
+<h4>View Generation Methods</h4>
+<p>After editing HTML template files under the <code>view/</code> directory, run the CLI tool to compile them into C++ view generation methods, which are centrally registered into <code>regviewmethod.hpp</code>. Controllers invoke the corresponding rendering function via string keys.</p>
+<pre><code># Compile modified views (incremental)
+./bin/paozhu_cli view
+
+# Force recompile all views (full compilation)
+./bin/paozhu_cli view force</code></pre>
 <pre><code>// viewsrc/include/regviewmethod.hpp
 namespace http {
     void _initview_method_regto(VIEW_REG& _viewmetholdreg)
