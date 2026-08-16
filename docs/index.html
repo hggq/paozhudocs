@@ -1,325 +1,1526 @@
-<!doctype html>
-<html lang="en" data-bs-theme="auto">
-  <head><script src="./js/color-modes.js"></script>
-
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
-    <meta name="generator" content="Hugo 0.118.2">
-    <title>PaoZhu C++ Web Frameworks</title>
-
-
-<link href="./styles/bootstrap.min.css" rel="stylesheet">
-
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu C++ Web Framework · 入门完整简介</title>
     <style>
-      .bd-placeholder-img {
-        font-size: 1.125rem;
-        text-anchor: middle;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        user-select: none;
-      }
-
-      @media (min-width: 768px) {
-        .bd-placeholder-img-lg {
-          font-size: 3.5rem;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-      }
 
-      .b-example-divider {
-        width: 100%;
-        height: 3rem;
-        background-color: rgba(0, 0, 0, .1);
-        border: solid rgba(0, 0, 0, .15);
-        border-width: 1px 0;
-        box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
-      }
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+            --card-bg: #ffffff;
+            --card-shadow: rgba(0,0,0,0.06);
+            --card-hover-shadow: rgba(0,0,0,0.12);
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --gradient-5: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --gradient-6: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
 
-      .b-example-vr {
-        flex-shrink: 0;
-        width: 1.5rem;
-        height: 100vh;
-      }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+                --card-bg: #1e293b;
+                --card-shadow: rgba(0,0,0,0.2);
+                --card-hover-shadow: rgba(0,0,0,0.4);
+            }
+        }
 
-      .bi {
-        vertical-align: -.125em;
-        fill: currentColor;
-      }
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.6;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
 
-      .nav-scroller {
-        position: relative;
-        z-index: 2;
-        height: 2.75rem;
-        overflow-y: hidden;
-      }
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
 
-      .nav-scroller .nav {
-        display: flex;
-        flex-wrap: nowrap;
-        padding-bottom: 1rem;
-        margin-top: -1px;
-        overflow-x: auto;
-        text-align: center;
-        white-space: nowrap;
-        -webkit-overflow-scrolling: touch;
-      }
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 1.5rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
 
-      .btn-bd-primary {
-        --bd-violet-bg: #712cf9;
-        --bd-violet-rgb: 112.520718, 44.062154, 249.437846;
+        .sidebar-header {
+            padding: 0.5rem 0 1rem;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 1rem;
+        }
 
-        --bs-btn-font-weight: 600;
-        --bs-btn-color: var(--bs-white);
-        --bs-btn-bg: var(--bd-violet-bg);
-        --bs-btn-border-color: var(--bd-violet-bg);
-        --bs-btn-hover-color: var(--bs-white);
-        --bs-btn-hover-bg: #6528e0;
-        --bs-btn-hover-border-color: #6528e0;
-        --bs-btn-focus-shadow-rgb: var(--bd-violet-rgb);
-        --bs-btn-active-color: var(--bs-btn-hover-color);
-        --bs-btn-active-bg: #5a23c8;
-        --bs-btn-active-border-color: #5a23c8;
-      }
+        .sidebar-header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-      .bd-mode-toggle {
-        z-index: 1500;
-      }
+        .sidebar-header p {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
 
-      .bd-mode-toggle .dropdown-menu .active .bi {
-        display: block !important;
-      }
-      html:not(.dark) .accent[data-v-1ba72d52], .dark .tagline[data-v-1ba72d52] {
-	background: -webkit-linear-gradient(315deg,#42d392 25%,#647eff);
-	background-clip: text;
-	-webkit-background-clip: text;
-	-webkit-text-fill-color: transparent;
-	padding-right:20px;
-    }
+        .lang-switch {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: var(--bg-body);
+            border-radius: 8px;
+        }
+
+        .lang-btn {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--text-color);
+        }
+
+        .lang-btn.active {
+            background: var(--gradient-1);
+            color: white;
+        }
+
+        .lang-btn:hover:not(.active) {
+            background: var(--nav-hover-bg);
+        }
+
+        .nav-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .nav-group-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem;
+        }
+
+        .nav-group-title .en { display: none; }
+        .lang-en .nav-group-title .zh { display: none; }
+        .lang-en .nav-group-title .en { display: inline; }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            margin: 0.15rem 0;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .nav-item:hover {
+            background: var(--nav-hover-bg);
+            color: var(--link-color);
+        }
+
+        .nav-icon {
+            margin-right: 0.6rem;
+            font-size: 1rem;
+            width: 1.2rem;
+            text-align: center;
+        }
+
+        .nav-item .en { display: none; }
+        .lang-en .nav-item .zh { display: none; }
+        .lang-en .nav-item .en { display: inline; }
+
+        .nav-item.external::after {
+            content: "↗";
+            margin-left: auto;
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 3rem 4rem;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 3rem 1rem 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .hero-logo {
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-logo img {
+            height: 150px;
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .hero .subtitle {
+            font-size: 1.15rem;
+            color: #64748b;
+            max-width: 680px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .hero-subtitle .en { display: none; }
+        .lang-en .hero-subtitle .zh { display: none; }
+        .lang-en .hero-subtitle .en { display: block; }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 2rem;
+            background: transparent;
+            color: var(--link-color);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid var(--link-color);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            background: var(--link-color);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 2rem;
+            background: transparent;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid var(--border-light);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--card-shadow);
+            border-color: var(--link-color);
+            color: var(--link-color);
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--heading-border);
+        }
+
+        .section-desc {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        /* Framework Intro Styles */
+        .framework-intro {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            border: 1px solid var(--border-light);
+            margin-top: 1rem;
+        }
+
+        .intro-text {
+            margin-bottom: 1rem;
+            line-height: 1.8;
+            color: var(--text-color);
+        }
+
+        .intro-text:last-child {
+            margin-bottom: 0;
+        }
+
+        .intro-text .en { display: none; }
+        .lang-en .intro-text .zh { display: none; }
+        .lang-en .intro-text .en { display: block; }
+
+        /* Requirements Styles */
+        .requirements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .req-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border-light);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .req-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--card-shadow);
+            border-color: var(--link-color);
+        }
+
+        .req-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .req-card h4 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .req-card p {
+            font-size: 0.85rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .req-card h4 .en,
+        .req-card p .en { display: none; }
+        .lang-en .req-card h4 .zh,
+        .lang-en .req-card p .zh { display: none; }
+        .lang-en .req-card h4 .en,
+        .lang-en .req-card p .en { display: inline; }
+
+        .deps-info {
+            background: var(--code-bg);
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .deps-info p {
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .deps-info .en { display: none; }
+        .lang-en .deps-info .zh { display: none; }
+        .lang-en .deps-info .en { display: inline; }
+
+        /* Architecture Styles */
+        .arch-diagram {
+            background: var(--code-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .arch-code {
+            font-family: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-color);
+            white-space: pre;
+        }
+
+        .arch-desc {
+            margin-top: 1rem;
+        }
+
+        /* Structure Styles */
+        .structure-showcase {
+            background: var(--code-bg);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .structure-code {
+            font-family: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-color);
+            white-space: pre;
+        }
+
+        .structure-code .comment {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .structure-code .en { display: none; }
+        .lang-en .structure-code .zh { display: none; }
+        .lang-en .structure-code .en { display: inline; }
+
+        .section-title .en,
+        .section-desc .en { display: none; }
+        .lang-en .section-title .zh,
+        .lang-en .section-desc .zh { display: none; }
+        .lang-en .section-title .en,
+        .lang-en .section-desc .en { display: inline; }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.75rem;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 2px 8px var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px var(--card-hover-shadow);
+            border-color: var(--link-color);
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .card-icon.gradient-1 { background: var(--gradient-1); }
+        .card-icon.gradient-2 { background: var(--gradient-2); }
+        .card-icon.gradient-3 { background: var(--gradient-3); }
+        .card-icon.gradient-4 { background: var(--gradient-4); }
+        .card-icon.gradient-5 { background: var(--gradient-5); }
+        .card-icon.gradient-6 { background: var(--gradient-6); }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-title .en { display: none; }
+        .lang-en .card-title .zh { display: none; }
+        .lang-en .card-title .en { display: block; }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .card-desc .en { display: none; }
+        .lang-en .card-desc .zh { display: none; }
+        .lang-en .card-desc .en { display: block; }
+
+        .card-arrow {
+            margin-top: auto;
+            padding-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--link-color);
+            font-weight: 500;
+        }
+
+        .card-arrow .en { display: none; }
+        .lang-en .card-arrow .zh { display: none; }
+        .lang-en .card-arrow .en { display: inline; }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .feature-text strong {
+            display: block;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .feature-text strong .en { display: none; }
+        .lang-en .feature-text strong .zh { display: none; }
+        .lang-en .feature-text strong .en { display: inline; }
+
+        .feature-text span {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .feature-text span .en { display: none; }
+        .lang-en .feature-text span .zh { display: none; }
+        .lang-en .feature-text span .en { display: inline; }
+
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .platform-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+            text-decoration: none;
+            color: var(--text-color);
+            transition: all 0.2s;
+        }
+
+        .platform-card:hover {
+            border-color: var(--link-color);
+            background: var(--nav-hover-bg);
+        }
+
+        .platform-icon {
+            font-size: 1.8rem;
+        }
+
+        .platform-info strong {
+            display: block;
+            font-size: 0.95rem;
+        }
+
+        .platform-info span {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .platform-info strong .en,
+        .platform-info span .en { display: none; }
+        .lang-en .platform-info strong .zh,
+        .lang-en .platform-info span .zh { display: none; }
+        .lang-en .platform-info strong .en,
+        .lang-en .platform-info span .en { display: inline; }
+
+        .link-en { display: none; }
+        .lang-en .link-zh { display: none; }
+        .lang-en .link-en { display: flex; }
+
+        .code-showcase {
+            background: var(--code-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            overflow-x: auto;
+        }
+
+        .code-showcase pre {
+            font-family: 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .code-showcase .comment { color: #6a9955; }
+        .code-showcase .keyword { color: #569cd6; }
+        .code-showcase .string { color: #ce9178; }
+        .code-showcase .function { color: #dcdcaa; }
+        .code-showcase .type { color: #4ec9b0; }
+        .code-showcase .preprocessor { color: #c586c0; }
+
+        .code-hint .en { display: none; }
+        .lang-en .code-hint .zh { display: none; }
+        .lang-en .code-hint .en { display: block; }
+
+        .footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--border-light);
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .footer .en { display: none; }
+        .lang-en .footer .zh { display: none; }
+        .lang-en .footer .en { display: block; }
+
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 200;
+            background: var(--gradient-1);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-1);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 99;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .hero {
+                padding-top: 4rem;
+            }
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--scroll-thumb);
+            border-radius: 4px;
+        }
     </style>
-    <link href="./styles/blog.css" rel="stylesheet">
-  </head>
-  <body>
-  <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-  <symbol id="bootstrap" viewBox="0 0 118 94">
-    <title>Bootstrap</title>
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M24.509 0c-6.733 0-11.715 5.893-11.492 12.284.214 6.14-.064 14.092-2.066 20.577C8.943 39.365 5.547 43.485 0 44.014v5.972c5.547.529 8.943 4.649 10.951 11.153 2.002 6.485 2.28 14.437 2.066 20.577C12.794 88.106 17.776 94 24.51 94H93.5c6.733 0 11.714-5.893 11.491-12.284-.214-6.14.064-14.092 2.066-20.577 2.009-6.504 5.396-10.624 10.943-11.153v-5.972c-5.547-.529-8.934-4.649-10.943-11.153-2.002-6.484-2.28-14.437-2.066-20.577C105.214 5.894 100.233 0 93.5 0H24.508zM80 57.863C80 66.663 73.436 72 62.543 72H44a2 2 0 01-2-2V24a2 2 0 012-2h18.437c9.083 0 15.044 4.92 15.044 12.474 0 5.302-4.01 10.049-9.119 10.88v.277C75.317 46.394 80 51.21 80 57.863zM60.521 28.34H49.948v14.934h8.905c6.884 0 10.68-2.772 10.68-7.727 0-4.643-3.264-7.207-9.012-7.207zM49.948 49.2v16.458H60.91c7.167 0 10.964-2.876 10.964-8.281 0-5.406-3.903-8.178-11.425-8.178H49.948z"></path>
-  </symbol>
-  <symbol id="home" viewBox="0 0 16 16">
-    <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4H2.5z"/>
-  </symbol>
-  <symbol id="speedometer2" viewBox="0 0 16 16">
-    <path d="M8 4a.5.5 0 0 1 .5.5V6a.5.5 0 0 1-1 0V4.5A.5.5 0 0 1 8 4zM3.732 5.732a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707zM2 10a.5.5 0 0 1 .5-.5h1.586a.5.5 0 0 1 0 1H2.5A.5.5 0 0 1 2 10zm9.5 0a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H12a.5.5 0 0 1-.5-.5zm.754-4.246a.389.389 0 0 0-.527-.02L7.547 9.31a.91.91 0 1 0 1.302 1.258l3.434-4.297a.389.389 0 0 0-.029-.518z"/>
-    <path fill-rule="evenodd" d="M0 10a8 8 0 1 1 15.547 2.661c-.442 1.253-1.845 1.602-2.932 1.25C11.309 13.488 9.475 13 8 13c-1.474 0-3.31.488-4.615.911-1.087.352-2.49.003-2.932-1.25A7.988 7.988 0 0 1 0 10zm8-7a7 7 0 0 0-6.603 9.329c.203.575.923.876 1.68.63C4.397 12.533 6.358 12 8 12s3.604.532 4.923.96c.757.245 1.477-.056 1.68-.631A7 7 0 0 0 8 3z"/>
-  </symbol>
-  <symbol id="table" viewBox="0 0 16 16">
-    <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h3a1 1 0 0 0 1-1v-2zm-5 3v-3H6v3h4zm-5 0v-3H1v2a1 1 0 0 0 1 1h3zm-4-4h4V8H1v3zm0-4h4V4H1v3zm5-3v3h4V4H6zm4 4H6v3h4V8z"/>
-  </symbol>
-  <symbol id="people-circle" viewBox="0 0 16 16">
-    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-    <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
-  </symbol>
-  <symbol id="collection" viewBox="0 0 16 16">
-    <path d="M2.5 3.5a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-11zm2-2a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1h-7zM0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zm1.5.5A.5.5 0 0 1 1 13V6a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-13z"/>
-  </symbol>
-  <symbol id="calendar3" viewBox="0 0 16 16">
-    <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857V3.857z"/>
-    <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-  </symbol>
-  <symbol id="cpu-fill" viewBox="0 0 16 16">
-    <path d="M6.5 6a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"/>
-    <path d="M5.5.5a.5.5 0 0 0-1 0V2A2.5 2.5 0 0 0 2 4.5H.5a.5.5 0 0 0 0 1H2v1H.5a.5.5 0 0 0 0 1H2v1H.5a.5.5 0 0 0 0 1H2v1H.5a.5.5 0 0 0 0 1H2A2.5 2.5 0 0 0 4.5 14v1.5a.5.5 0 0 0 1 0V14h1v1.5a.5.5 0 0 0 1 0V14h1v1.5a.5.5 0 0 0 1 0V14h1v1.5a.5.5 0 0 0 1 0V14a2.5 2.5 0 0 0 2.5-2.5h1.5a.5.5 0 0 0 0-1H14v-1h1.5a.5.5 0 0 0 0-1H14v-1h1.5a.5.5 0 0 0 0-1H14v-1h1.5a.5.5 0 0 0 0-1H14A2.5 2.5 0 0 0 11.5 2V.5a.5.5 0 0 0-1 0V2h-1V.5a.5.5 0 0 0-1 0V2h-1V.5a.5.5 0 0 0-1 0V2h-1V.5zm1 4.5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5v-3A1.5 1.5 0 0 1 6.5 5z"/>
-  </symbol>
-  <symbol id="gear-fill" viewBox="0 0 16 16">
-    <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
-  </symbol>
-  <symbol id="speedometer" viewBox="0 0 16 16">
-    <path d="M8 2a.5.5 0 0 1 .5.5V4a.5.5 0 0 1-1 0V2.5A.5.5 0 0 1 8 2zM3.732 3.732a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707zM2 8a.5.5 0 0 1 .5-.5h1.586a.5.5 0 0 1 0 1H2.5A.5.5 0 0 1 2 8zm9.5 0a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H12a.5.5 0 0 1-.5-.5zm.754-4.246a.389.389 0 0 0-.527-.02L7.547 7.31A.91.91 0 1 0 8.85 8.569l3.434-4.297a.389.389 0 0 0-.029-.518z"/>
-    <path fill-rule="evenodd" d="M6.664 15.889A8 8 0 1 1 9.336.11a8 8 0 0 1-2.672 15.78zm-4.665-4.283A11.945 11.945 0 0 1 8 10c2.186 0 4.236.585 6.001 1.606a7 7 0 1 0-12.002 0z"/>
-  </symbol>
-  <symbol id="toggles2" viewBox="0 0 16 16">
-    <path d="M9.465 10H12a2 2 0 1 1 0 4H9.465c.34-.588.535-1.271.535-2 0-.729-.195-1.412-.535-2z"/>
-    <path d="M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 1a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm.535-10a3.975 3.975 0 0 1-.409-1H4a1 1 0 0 1 0-2h2.126c.091-.355.23-.69.41-1H4a2 2 0 1 0 0 4h2.535z"/>
-    <path d="M14 4a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>
-  </symbol>
-  <symbol id="tools" viewBox="0 0 16 16">
-    <path d="M1 0L0 1l2.2 3.081a1 1 0 0 0 .815.419h.07a1 1 0 0 1 .708.293l2.675 2.675-2.617 2.654A3.003 3.003 0 0 0 0 13a3 3 0 1 0 5.878-.851l2.654-2.617.968.968-.305.914a1 1 0 0 0 .242 1.023l3.356 3.356a1 1 0 0 0 1.414 0l1.586-1.586a1 1 0 0 0 0-1.414l-3.356-3.356a1 1 0 0 0-1.023-.242L10.5 9.5l-.96-.96 2.68-2.643A3.005 3.005 0 0 0 16 3c0-.269-.035-.53-.102-.777l-2.14 2.141L12 4l-.364-1.757L13.777.102a3 3 0 0 0-3.675 3.68L7.462 6.46 4.793 3.793a1 1 0 0 1-.293-.707v-.071a1 1 0 0 0-.419-.814L1 0zm9.646 10.646a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708zM3 11l.471.242.529.026.287.445.445.287.026.529L5 13l-.242.471-.026.529-.445.287-.287.445-.529.026L3 15l-.471-.242L2 14.732l-.287-.445L1.268 14l-.026-.529L1 13l.242-.471.026-.529.445-.287.287-.445.529-.026L3 11z"/>
-  </symbol>
-  <symbol id="chevron-right" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-  </symbol>
-  <symbol id="geo-fill" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" d="M4 4a4 4 0 1 1 4.5 3.969V13.5a.5.5 0 0 1-1 0V7.97A4 4 0 0 1 4 3.999zm2.493 8.574a.5.5 0 0 1-.411.575c-.712.118-1.28.295-1.655.493a1.319 1.319 0 0 0-.37.265.301.301 0 0 0-.057.09V14l.002.008a.147.147 0 0 0 .016.033.617.617 0 0 0 .145.15c.165.13.435.27.813.395.751.25 1.82.414 3.024.414s2.273-.163 3.024-.414c.378-.126.648-.265.813-.395a.619.619 0 0 0 .146-.15.148.148 0 0 0 .015-.033L12 14v-.004a.301.301 0 0 0-.057-.09 1.318 1.318 0 0 0-.37-.264c-.376-.198-.943-.375-1.655-.493a.5.5 0 1 1 .164-.986c.77.127 1.452.328 1.957.594C12.5 13 13 13.4 13 14c0 .426-.26.752-.544.977-.29.228-.68.413-1.116.558-.878.293-2.059.465-3.34.465-1.281 0-2.462-.172-3.34-.465-.436-.145-.826-.33-1.116-.558C3.26 14.752 3 14.426 3 14c0-.599.5-1 .961-1.243.505-.266 1.187-.467 1.957-.594a.5.5 0 0 1 .575.411z"/>
-  </symbol>
-</svg>
-
-    <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-      <symbol id="check2" viewBox="0 0 16 16">
-        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-      </symbol>
-      <symbol id="circle-half" viewBox="0 0 16 16">
-        <path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
-      </symbol>
-      <symbol id="moon-stars-fill" viewBox="0 0 16 16">
-        <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
-        <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
-      </symbol>
-      <symbol id="sun-fill" viewBox="0 0 16 16">
-        <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
-      </symbol>
-    </svg>
-
-    <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
-      <button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center"
-              id="bd-theme"
-              type="button"
-              aria-expanded="false"
-              data-bs-toggle="dropdown"
-              aria-label="Toggle theme (auto)">
-        <svg class="bi my-1 theme-icon-active" width="1em" height="1em"><use href="#circle-half"></use></svg>
-        <span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
-        <li>
-          <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
-            <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#sun-fill"></use></svg>
-            Light
-            <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
-          </button>
-        </li>
-        <li>
-          <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
-            <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#moon-stars-fill"></use></svg>
-            Dark
-            <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
-          </button>
-        </li>
-        <li>
-          <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="auto" aria-pressed="true">
-            <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em"><use href="#circle-half"></use></svg>
-            Auto
-            <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
-          </button>
-        </li>
-      </ul>
-    </div>
-
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
     
-<svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-  <symbol id="aperture" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-    <circle cx="12" cy="12" r="10"/>
-    <path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83m13.79-4l-5.74 9.94"/>
-  </symbol>
-  <symbol id="cart" viewBox="0 0 16 16">
-    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l.84 4.479 9.144-.459L13.89 4H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-  </symbol>
-  <symbol id="chevron-right" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-  </symbol>
-</svg>
+    <div class="docs-wrapper">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>Paozhu</h1>
+                <p class="zh">C++ 全栈 Web 框架</p>
+                <p class="en">Full-stack Web Framework for C++</p>
+            </div>
 
-<div class="container">
-  <header class="pt-3 pb-3">
-<div class="d-flex flex-column flex-md-row align-items-center">
-      <a href="./" class="d-flex align-items-center link-body-emphasis text-decoration-none">
-        <img src="./images/headerlogo.svg" />
-        <span class="fs-2">PaoZhu</span>
-      </a>
+            <div class="lang-switch">
+                <button class="lang-btn active" onclick="switchLang('zh')">🇨🇳 中文</button>
+                <button class="lang-btn" onclick="switchLang('en')">🇬🇧 English</button>
+            </div>
 
-      <nav class="d-inline-flex mt-2 mt-md-0 ms-md-auto">
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="./">Home</a>
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="#">Download</a>
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="documentation.html">Documentation</a>
-        <a class="me-3 py-2 link-body-emphasis text-decoration-none" href="#">Blog</a>
-        <a class="py-2 link-body-emphasis text-decoration-none" href="about.html">About</a>
-      </nav>
+            <nav>
+                <div class="nav-group">
+                    <div class="nav-group-title">
+                        <span class="zh">📖 入门指南</span>
+                        <span class="en">📖 Getting Started</span>
+                    </div>
+                    <a href="project_overview.html" class="nav-item link-zh">
+                        <span class="nav-icon">📋</span>
+                        <span class="zh">项目概述</span>
+                    </a>
+                    <a href="project_overview.html#english" class="nav-item link-en">
+                        <span class="nav-icon">📋</span>
+                        <span class="en">Project Overview</span>
+                    </a>
+                    <a href="core_architecture.html" class="nav-item link-zh">
+                        <span class="nav-icon">🏗️</span>
+                        <span class="zh">核心架构</span>
+                    </a>
+                    <a href="core_architecture.html#english" class="nav-item link-en">
+                        <span class="nav-icon">🏗️</span>
+                        <span class="en">Core Architecture</span>
+                    </a>
+                    <a href="quick_start.html" class="nav-item link-zh">
+                        <span class="nav-icon">🚀</span>
+                        <span class="zh">快速开始</span>
+                    </a>
+                    <a href="quick_start.html#english" class="nav-item link-en">
+                        <span class="nav-icon">🚀</span>
+                        <span class="en">Quick Start</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">
+                        <span class="zh">🛠️ 开发指南</span>
+                        <span class="en">🛠️ Development</span>
+                    </div>
+                    <a href="controller_guide.html" class="nav-item link-zh">
+                        <span class="nav-icon">🎮</span>
+                        <span class="zh">控制器开发</span>
+                    </a>
+                    <a href="controller_guide.html#english" class="nav-item link-en">
+                        <span class="nav-icon">🎮</span>
+                        <span class="en">Controller</span>
+                    </a>
+                    <a href="orm_guide.html" class="nav-item link-zh">
+                        <span class="nav-icon">🗄️</span>
+                        <span class="zh">ORM 数据访问</span>
+                    </a>
+                    <a href="orm_guide.html#english" class="nav-item link-en">
+                        <span class="nav-icon">🗄️</span>
+                        <span class="en">ORM Data Access</span>
+                    </a>
+                    <a href="view_system.html" class="nav-item link-zh">
+                        <span class="nav-icon">🎨</span>
+                        <span class="zh">视图系统</span>
+                    </a>
+                    <a href="view_system.html#english" class="nav-item link-en">
+                        <span class="nav-icon">🎨</span>
+                        <span class="en">View System</span>
+                    </a>
+                    <a href="websocket_guide.html" class="nav-item link-zh">
+                        <span class="nav-icon">🔌</span>
+                        <span class="zh">WebSocket</span>
+                    </a>
+                    <a href="websocket_guide.html#english" class="nav-item link-en">
+                        <span class="nav-icon">🔌</span>
+                        <span class="en">WebSocket</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">
+                        <span class="zh">💻 平台安装</span>
+                        <span class="en">💻 Platform Setup</span>
+                    </div>
+                    <a href="macos.html" class="nav-item external link-zh">
+                        <span class="nav-icon">🍎</span>
+                        <span class="zh">macOS 安装</span>
+                    </a>
+                    <a href="macos_en.html" class="nav-item external link-en">
+                        <span class="nav-icon">🍎</span>
+                        <span class="en">macOS Setup</span>
+                    </a>
+                    <a href="linux.html" class="nav-item external link-zh">
+                        <span class="nav-icon">🐧</span>
+                        <span class="zh">Linux 安装</span>
+                    </a>
+                    <a href="linux_en.html" class="nav-item external link-en">
+                        <span class="nav-icon">🐧</span>
+                        <span class="en">Linux Setup</span>
+                    </a>
+                    <a href="ubuntu.html" class="nav-item external link-zh">
+                        <span class="nav-icon">🟠</span>
+                        <span class="zh">Ubuntu 安装</span>
+                    </a>
+                    <a href="ubuntu_en.html" class="nav-item external link-en">
+                        <span class="nav-icon">🟠</span>
+                        <span class="en">Ubuntu Setup</span>
+                    </a>
+                    <a href="windows.html" class="nav-item external link-zh">
+                        <span class="nav-icon">🪟</span>
+                        <span class="zh">Windows 安装</span>
+                    </a>
+                    <a href="windows_en.html" class="nav-item external link-en">
+                        <span class="nav-icon">🪟</span>
+                        <span class="en">Windows Setup</span>
+                    </a>
+                    <a href="saas.html" class="nav-item external link-zh">
+                        <span class="nav-icon">☁️</span>
+                        <span class="zh">SAAS 模式</span>
+                    </a>
+                    <a href="saas_en.html" class="nav-item external link-en">
+                        <span class="nav-icon">☁️</span>
+                        <span class="en">SAAS Mode</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">
+                        <span class="zh">📚 参考文档</span>
+                        <span class="en">📚 Reference</span>
+                    </div>
+                    <a href="api_reference.html" class="nav-item link-zh">
+                        <span class="nav-icon">📖</span>
+                        <span class="zh">API 参考</span>
+                    </a>
+                    <a href="api_reference.html#english" class="nav-item link-en">
+                        <span class="nav-icon">📖</span>
+                        <span class="en">API Reference</span>
+                    </a>
+                    <a href="advanced_modules.html" class="nav-item link-zh">
+                        <span class="nav-icon">🔗</span>
+                        <span class="zh">高级模块</span>
+                    </a>
+                    <a href="advanced_modules.html#english" class="nav-item link-en">
+                        <span class="nav-icon">🔗</span>
+                        <span class="en">Advanced Modules</span>
+                    </a>
+                    <a href="deployment_guide.html" class="nav-item link-zh">
+                        <span class="nav-icon">⚡</span>
+                        <span class="zh">性能与部署</span>
+                    </a>
+                    <a href="deployment_guide.html#english" class="nav-item link-en">
+                        <span class="nav-icon">⚡</span>
+                        <span class="en">Performance & Deploy</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">
+                        <span class="zh">📄 原文文档</span>
+                        <span class="en">📄 Original Docs</span>
+                    </div>
+                    <a href="documentation.html" class="nav-item external link-zh">
+                        <span class="nav-icon">📝</span>
+                        <span class="zh">完整文档 (中)</span>
+                    </a>
+                    <a href="documentation_en.html" class="nav-item external link-en">
+                        <span class="nav-icon">📝</span>
+                        <span class="en">Full Docs (EN)</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-logo">
+                    <img src="images/logo.svg" alt="Paozhu Logo">
+                </div>
+                <h1>Paozhu</h1>
+                <p class="subtitle hero-subtitle">
+                    <span class="zh">为 C++ Web 快速开发而生的全栈框架</span>
+                    <span class="en">A Full-stack Framework for Rapid C++ Web Development</span>
+                </p>
+                <div class="hero-buttons">
+                    <a href="project_overview.html" class="btn-primary">
+                        <span class="zh">📖 开始学习</span>
+                        <span class="en">📖 Get Started</span>
+                    </a>
+                    <a href="quick_start.html" class="btn-secondary">
+                        <span class="zh">🚀 快速上手</span>
+                        <span class="en">🚀 Quick Start</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Framework Introduction Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">📚 框架简介</span>
+                    <span class="en">📚 Framework Introduction</span>
+                </h2>
+                <div class="framework-intro">
+                    <p class="intro-text">
+                        <span class="zh">paozhu (🧨) 是一款 C++ Web 开发框架，内置 HTTP/1、HTTP/2、C++ ORM，可以轻松优雅地编写 Web 程序，打破以往 C++ 写 Web 程序不方便的问题。</span>
+                        <span class="en">Paozhu (🧨) is a C++ web development framework with built-in HTTP/1, HTTP/2, C++ ORM, making it easy and elegant to write web programs, breaking the previous inconvenience of writing web programs in C++.</span>
+                    </p>
+                    <p class="intro-text">
+                        <span class="zh">paozhu 编写了 Web 开发底层设施，比如多域名绑定、SSL 证书管理、Cookie、Session、HTML 表单管理、URL 处理、文件上传下载、HttpClient 客户端、数据库连接 ORM、WebSocket、日志、HTML 模板，涵盖 Web 开发基础。</span>
+                        <span class="en">Paozhu has developed the underlying infrastructure for web development, such as multi-domain binding, SSL certificate management, Cookie, Session, HTML form management, URL routing, file upload/download, HttpClient, database ORM, WebSocket, logging, and HTML templates, covering the basics of web development.</span>
+                    </p>
+                    <p class="intro-text">
+                        <span class="zh">框架基于 C++20 标准，开启了 ASAN 和完整错误提示，方便开发阶段发现问题。压力测试可发现多线程数据竞争问题，运行时可结合 coredumpctl 查看内存栈。配合智能指针基本杜绝内存泄露和越界问题。</span>
+                        <span class="en">The framework is based on C++20, enabling ASAN and comprehensive error hints (-Wall) to identify problems during development. Stress testing can detect multi-threaded data race issues. Combined with smart pointers, the framework has essentially eliminated memory leaks and buffer overflow issues.</span>
+                    </p>
+                    <p class="intro-text">
+                        <span class="zh">paozhu 使用 C++，主要考虑接入大模型（CUDA、文件存储、网络、内存操作）。对比 Go、Java、Rust，各有不足，C++ 更适合 AI 深度整合。ASAN 和 coredumpctl 两个工具可保证 C++ 质量。</span>
+                        <span class="en">Paozhu uses C++ mainly for large model integration (CUDA, file storage, network, memory operations). Compared to Go, Java, and Rust, C++ is better suited for deep AI integration. ASAN and coredumpctl tools help ensure C++ code quality.</span>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Code Example Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">💻 Hello World 示例</span>
+                    <span class="en">💻 Hello World Example</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">仅需几行代码即可创建一个 Web 接口 testhello.cpp 文件 放在 <code>controller/src</code> 目录下面</span>
+                    <span class="en">Create a web endpoint with just a few lines of code, testhello.cpp in <code>controller/src</code> directory</span>
+                </p>
+                <div class="code-showcase">
+<pre><span class="preprocessor">#include</span> <span class="string">"httppeer.h"</span>
+<span class="preprocessor">#include</span> <span class="string">"testhello.h"</span>
+
+<span class="keyword">namespace</span> <span class="type">http</span>
+{
+<span class="comment">//@urlpath(null,hello)</span>
+<span class="type">std</span>::<span class="type">string</span> <span class="function">testhello</span>(<span class="type">std</span>::<span class="type">shared_ptr</span><httppeer> peer)
+{
+    httppeer &client = peer-><span class="function">get_peer</span>();
+    client << <span class="string">" Hello world! Paozhu c++ web framework "</span>;
+    <span class="keyword">return</span> <span class="string">""</span>;
+}
+}// <span class="comment">namespace http</span></pre>
+                </div>
+                <p class="code-hint" style="margin-top: 1rem; font-size: 0.9rem; color: #64748b;">
+                    <span class="zh">无需编写 testhello.h 文件，框架自动生成这个文件，直接编译</span>
+                    <span class="en">No need to write the testhello.h file, the framework will automatically generate it, Directly compile by running</span>
+                </p>
+                           <div class="code-showcase">
+                <pre class="arch-code"><code>mkdir build
+cd build 
+cmake ..
+make</code></pre>   
+                </div> 
+                <p class="code-hint" style="margin-top: 1rem; font-size: 0.9rem; color: #64748b;">
+                    <span class="zh">📁 控制器文件必须放在 <code>controller/src</code> 目录下面</span>
+                    <span class="en">📁 Controller files must be placed in the <code>controller/src</code> directory</span>
+                </p>
+                <p class="code-hint" style="margin-top: 0.5rem; font-size: 0.9rem; color: #64748b;">
+                    <span class="zh">//@urlpath 注解自动将函数映射到 /hello 路径</span>
+                    <span class="en">//@urlpath annotation auto-maps function to /hello path</span>
+                </p>
+            </section>
+
+            <!-- Core Features Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">✨ 核心特色</span>
+                    <span class="en">✨ Core Features</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">强大的内置功能，助你快速构建高性能 Web 应用</span>
+                    <span class="en">Powerful built-in features to help you build high-performance web apps</span>
+                </p>
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">⚡</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">支持 HTTP/2</span><span class="en">HTTP/2 Support</span></strong>
+                            <span><span class="zh">新一代 HTTP 协议支持</span><span class="en">Next-gen HTTP protocol</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🗄️</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">内置 ORM</span><span class="en">Built-in ORM</span></strong>
+                            <span><span class="zh">自研 MySQL 协议，支持协程模式</span><span class="en">Custom MySQL protocol with coroutine support</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">☁️</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">多域名与 SAAS</span><span class="en">Multi-domain & SAAS</span></strong>
+                            <span><span class="zh">多域名管理、SAAS 模式支持</span><span class="en">Multi-domain and SAAS mode support</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🔄</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">IO 与业务线程分离</span><span class="en">IO/Business Thread Separation</span></strong>
+                            <span><span class="zh">IO 线程和业务线程分开</span><span class="en">Dedicated IO and business thread pools</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">📊</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">内置微型对象</span><span class="en">Built-in Micro Objects</span></strong>
+                            <span><span class="zh">JSON 导入导出，类似脚本语言变量</span><span class="en">JSON import/export like scripting languages</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🐘</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">FastCGI 支持</span><span class="en">FastCGI for PHP</span></strong>
+                            <span><span class="zh">内置 FastCGI 支持 PHP</span><span class="en">Built-in FastCGI for PHP support</span></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Requirements Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">💻 需求环境</span>
+                    <span class="en">💻 System Requirements</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">框架基于 C++20，确保你的系统支持相应的编译器</span>
+                    <span class="en">Built on C++20, ensure your compiler supports C++20 standard</span>
+                </p>
+                <div class="requirements-grid">
+                    <div class="req-card">
+                        <div class="req-icon">🍎</div>
+                        <h4><span class="zh">macOS</span><span class="en">macOS</span></h4>
+                        <p><span class="zh">macOS 11 BigSur 以上，推荐 macOS 14 Sonoma</span><span class="en">macOS 11 BigSur+, recommended macOS 14 Sonoma</span></p>
+                    </div>
+                    <div class="req-card">
+                        <div class="req-icon">🐧</div>
+                        <h4><span class="zh">Ubuntu</span><span class="en">Ubuntu</span></h4>
+                        <p><span class="zh">Ubuntu 22.04 以上</span><span class="en">Ubuntu 22.04 or higher</span></p>
+                    </div>
+                    <div class="req-card">
+                        <div class="req-icon">🐢</div>
+                        <h4><span class="zh">RockyLinux/AlmaLinux</span><span class="en">RockyLinux/AlmaLinux</span></h4>
+                        <p><span class="zh">9.1 以上版本</span><span class="en">9.1 or higher</span></p>
+                    </div>
+                    <div class="req-card">
+                        <div class="req-icon">🪟</div>
+                        <h4><span class="zh">Windows</span><span class="en">Windows</span></h4>
+                        <p><span class="zh">Win10，编译器 19.25 以上</span><span class="en">Win10 with compiler 19.25+</span></p>
+                    </div>
+                </div>
+                <div class="deps-info">
+                    <p><span class="zh"><strong>依赖第三方开发包：</strong> OpenSSL、Zlib、Brotli、ASIO</span><span class="en"><strong>Required dependencies:</strong> OpenSSL, Zlib, Brotli, ASIO</span></p>
+                </div>
+            </section>
+
+            <!-- Architecture Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">🏗️ 技术架构</span>
+                    <span class="en">🏗️ Technical Architecture</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">框架使用 M:N 并发模型，IO 线程与业务线程分离</span>
+                    <span class="en">Uses M:N concurrency model with separated IO and business threads</span>
+                </p>
+                <div class="arch-diagram">
+                    <pre class="arch-code"><code>
++-----------------------+  +-----------------------+   +----------------------------+
+| thread accept(80 443) |  | asio coroutine thread |   | thread pool(business code) |
++-----------------------+  +-----------------------+   +----------------------------+
+                    </code></pre>
+                </div>
+                <div class="arch-desc">
+                    <p class="intro-text">
+                        <span class="zh">框架使用 ASIO 的线程池做 IO 处理（网络收发），内置业务线程池运行业务代码。HTTP/HTTPS 监听连接到来，协程函数直接运行，普通函数丢到业务线程池。静态文件直接发送，不走业务线程。</span>
+                        <span class="en">ASIO thread pool handles IO (network send/receive), while built-in business thread pool runs application code. HTTP/HTTPS listeners accept connections; coroutine functions run directly, regular functions go to business thread pool. Static files are served directly without business thread involvement.</span>
+                    </p>
+                    <p class="intro-text">
+                        <span class="zh">C++ 协程具有传染性，在协程注册函数中需使用 ORM 协程方法。普通函数中无法发起协程函数，只能使用 ORM 普通函数。建议一个连接一个线程的经典模式。</span>
+                        <span class="en">C++ coroutines are contagious — coroutine handler functions must use async ORM methods, while regular handlers use sync ORM methods. The classic one-connection-per-thread pattern is recommended.</span>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Structure Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">📂 项目结构</span>
+                    <span class="en">📂 Project Structure</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">框架未分离命令行工具独立安装，全部包含在一个项目内</span>
+                    <span class="en">Framework and CLI are bundled in a single project</span>
+                </p>
+                <div class="structure-showcase">
+                    <pre class="structure-code"><code>
+.
+├── asio                    <span class="comment"><span class="zh">asio 库文件</span><span class="en">ASIO library files</span></span>
+├── bin                     <span class="comment"><span class="zh">编译后的执行文件</span><span class="en">Compiled executables</span></span>
+├── cache                   <span class="comment"><span class="zh">缓存压缩文件</span><span class="en">Cache compressed files</span></span>
+├── conf                    <span class="comment"><span class="zh">配置文件 (server.conf, orm.conf)</span><span class="en">Config files (server.conf, orm.conf)</span></span>
+├── controller              <span class="comment"><span class="zh">路由器代码入口</span><span class="en">Router code entry</span></span>
+├── libs                    <span class="comment"><span class="zh">业务代码库</span><span class="en">Business code library</span></span>
+├── log                     <span class="comment"><span class="zh">日志目录</span><span class="en">Log directory</span></span>
+├── models                  <span class="comment"><span class="zh">ORM 业务代码</span><span class="en">ORM business code</span></span>
+├── module                  <span class="comment"><span class="zh">可插拔 SO 存放</span><span class="en">Pluggable SO storage</span></span>
+├── orm                     <span class="comment"><span class="zh">ORM 实体映射类</span><span class="en">ORM entity mapping classes</span></span>
+├── startup                 <span class="comment"><span class="zh">框架 main 入口</span><span class="en">Framework main entry</span></span>
+├── temp                    <span class="comment"><span class="zh">临时文件</span><span class="en">Temporary files</span></span>
+├── vendor                  <span class="comment"><span class="zh">主程序与第三方包</span><span class="en">Main program and third-party packages</span></span>
+├── view                    <span class="comment"><span class="zh">HTML 模板</span><span class="en">HTML templates</span></span>
+├── viewsrc                 <span class="comment"><span class="zh">编译好的视图</span><span class="en">Compiled views</span></span>
+├── websockets              <span class="comment"><span class="zh">WebSocket 程序</span><span class="en">WebSocket programs</span></span>
+└── www                     <span class="comment"><span class="zh">静态文件目录</span><span class="en">Static file directory</span></span>
+                    </code></pre>
+                </div>
+            </section>
+
+            <!-- Features Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">🎯 核心特性</span>
+                    <span class="en">🎯 Core Features</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">强大的内置功能，助你快速构建高性能 Web 应用</span>
+                    <span class="en">Powerful built-in features to help you build high-performance web apps</span>
+                </p>
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">⚡</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">高性能 I/O</span><span class="en">High-Performance I/O</span></strong>
+                            <span><span class="zh">基于 ASIO 协程调度</span><span class="en">Based on ASIO coroutine scheduling</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🎯</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">注解驱动</span><span class="en">Annotation-Driven</span></strong>
+                            <span><span class="zh">//@urlpath 自动路由</span><span class="en">//@urlpath auto routing</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🗄️</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">内置 ORM</span><span class="en">Built-in ORM</span></strong>
+                            <span><span class="zh">MySQL / PostgreSQL 支持</span><span class="en">MySQL / PostgreSQL support</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🔌</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">WebSocket</span><span class="en">WebSocket</span></strong>
+                            <span><span class="zh">原生客户端与服务端</span><span class="en">Native client & server</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🎨</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">视图系统</span><span class="en">View System</span></strong>
+                            <span><span class="zh">灵活模板渲染</span><span class="en">Flexible template rendering</span></span>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">📄</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">Office 处理</span><span class="en">Office Processing</span></strong>
+                            <span><span class="zh">PDF / Excel / Word</span><span class="en">PDF / Excel / Word</span></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tutorials Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">📖 入门完整简介</span>
+                    <span class="en">📖 Complete Introduction</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">从零开始，系统学习 Paozhu 框架</span>
+                    <span class="en">Systematically learn Paozhu from scratch</span>
+                </p>
+                <div class="cards-grid">
+                    <a href="project_overview.html" class="card link-zh">
+                        <div class="card-icon gradient-1">📋</div>
+                        <h3 class="card-title"><span class="zh">项目概述</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">了解框架设计理念、核心特性和技术栈</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="project_overview.html#english" class="card link-en">
+                        <div class="card-icon gradient-1">📋</div>
+                        <h3 class="card-title"><span class="en">Project Overview</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Learn the design philosophy, core features and tech stack</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="core_architecture.html" class="card link-zh">
+                        <div class="card-icon gradient-2">🏗️</div>
+                        <h3 class="card-title"><span class="zh">核心架构</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">深入理解 MVC 分层、I/O 模型和组件协作</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="core_architecture.html#english" class="card link-en">
+                        <div class="card-icon gradient-2">🏗️</div>
+                        <h3 class="card-title"><span class="en">Core Architecture</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Deep dive into MVC, I/O model and component collaboration</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="quick_start.html" class="card link-zh">
+                        <div class="card-icon gradient-3">🚀</div>
+                        <h3 class="card-title"><span class="zh">快速开始</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">30 分钟完成环境搭建并运行 Hello World</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="quick_start.html#english" class="card link-en">
+                        <div class="card-icon gradient-3">🚀</div>
+                        <h3 class="card-title"><span class="en">Quick Start</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Set up environment and run Hello World in 30 minutes</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="controller_guide.html" class="card link-zh">
+                        <div class="card-icon gradient-4">🎮</div>
+                        <h3 class="card-title"><span class="zh">控制器开发</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">学习注解路由、参数处理、Session 管理</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="controller_guide.html#english" class="card link-en">
+                        <div class="card-icon gradient-4">🎮</div>
+                        <h3 class="card-title"><span class="en">Controller Development</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Learn annotation routing, parameter handling, session</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="orm_guide.html" class="card link-zh">
+                        <div class="card-icon gradient-5">🗄️</div>
+                        <h3 class="card-title"><span class="zh">ORM 数据访问</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">使用内置 ORM 操作数据库，支持事务和连接池</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="orm_guide.html#english" class="card link-en">
+                        <div class="card-icon gradient-5">🗄️</div>
+                        <h3 class="card-title"><span class="en">ORM Data Access</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Built-in ORM with transactions and connection pooling</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="view_system.html" class="card link-zh">
+                        <div class="card-icon gradient-6">🎨</div>
+                        <h3 class="card-title"><span class="zh">视图系统</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">模板渲染、变量传递、JSON 响应</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="view_system.html#english" class="card link-en">
+                        <div class="card-icon gradient-6">🎨</div>
+                        <h3 class="card-title"><span class="en">View System</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Template rendering, variable passing, JSON responses</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="websocket_guide.html" class="card link-zh">
+                        <div class="card-icon gradient-1">🔌</div>
+                        <h3 class="card-title"><span class="zh">WebSocket 教程</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">实时通信、协程 WebSocket、客户端与服务端</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="websocket_guide.html#english" class="card link-en">
+                        <div class="card-icon gradient-1">🔌</div>
+                        <h3 class="card-title"><span class="en">WebSocket Guide</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Real-time communication, coroutine WebSocket</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="api_reference.html" class="card link-zh">
+                        <div class="card-icon gradient-2">📖</div>
+                        <h3 class="card-title"><span class="zh">API 参考</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">完整的 API 文档，涵盖 httppeer、ORM、PDF 等</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="api_reference.html#english" class="card link-en">
+                        <div class="card-icon gradient-2">📖</div>
+                        <h3 class="card-title"><span class="en">API Reference</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Complete API docs: httppeer, ORM, PDF, Excel, etc.</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="advanced_modules.html" class="card link-zh">
+                        <div class="card-icon gradient-3">🔗</div>
+                        <h3 class="card-title"><span class="zh">高级模块</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">PDF 生成、Excel 读写、短信、支付等内置模块</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="advanced_modules.html#english" class="card link-en">
+                        <div class="card-icon gradient-3">🔗</div>
+                        <h3 class="card-title"><span class="en">Advanced Modules</span></h3>
+                        <p class="card-desc">
+                            <span class="en">PDF generation, Excel, SMS, payment integration</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="deployment_guide.html" class="card link-zh">
+                        <div class="card-icon gradient-4">⚡</div>
+                        <h3 class="card-title"><span class="zh">性能与部署</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">性能优化、生产部署、故障排查</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="deployment_guide.html#english" class="card link-en">
+                        <div class="card-icon gradient-4">⚡</div>
+                        <h3 class="card-title"><span class="en">Performance & Deployment</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Performance tuning, production deployment, troubleshooting</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Platform Installation Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">💻 平台安装指南</span>
+                    <span class="en">💻 Platform Installation</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">选择你的平台，查看详细的安装步骤</span>
+                    <span class="en">Choose your platform and view detailed installation steps</span>
+                </p>
+                <div class="platform-grid">
+                    <a href="macos.html" target="_blank" class="platform-card link-zh">
+                        <span class="platform-icon">🍎</span>
+                        <div class="platform-info">
+                            <strong><span class="zh">macOS</span></strong>
+                            <span><span class="zh">Apple Silicon / Intel</span></span>
+                        </div>
+                    </a>
+                    <a href="macos_en.html" target="_blank" class="platform-card link-en">
+                        <span class="platform-icon">🍎</span>
+                        <div class="platform-info">
+                            <strong><span class="en">macOS</span></strong>
+                            <span><span class="en">Apple Silicon / Intel</span></span>
+                        </div>
+                    </a>
+                    <a href="linux.html" target="_blank" class="platform-card link-zh">
+                        <span class="platform-icon">🐧</span>
+                        <div class="platform-info">
+                            <strong><span class="zh">Linux</span></strong>
+                            <span><span class="zh">通用 Linux 发行版</span></span>
+                        </div>
+                    </a>
+                    <a href="linux_en.html" target="_blank" class="platform-card link-en">
+                        <span class="platform-icon">🐧</span>
+                        <div class="platform-info">
+                            <strong><span class="en">Linux</span></strong>
+                            <span><span class="en">General Linux distros</span></span>
+                        </div>
+                    </a>
+                    <a href="ubuntu.html" target="_blank" class="platform-card link-zh">
+                        <span class="platform-icon">🟠</span>
+                        <div class="platform-info">
+                            <strong><span class="zh">Ubuntu</span></strong>
+                            <span><span class="zh">Debian 系发行版</span></span>
+                        </div>
+                    </a>
+                    <a href="ubuntu_en.html" target="_blank" class="platform-card link-en">
+                        <span class="platform-icon">🟠</span>
+                        <div class="platform-info">
+                            <strong><span class="en">Ubuntu</span></strong>
+                            <span><span class="en">Debian-based distros</span></span>
+                        </div>
+                    </a>
+                    <a href="windows.html" target="_blank" class="platform-card link-zh">
+                        <span class="platform-icon">🪟</span>
+                        <div class="platform-info">
+                            <strong><span class="zh">Windows</span></strong>
+                            <span><span class="zh">10/11 x64</span></span>
+                        </div>
+                    </a>
+                    <a href="windows_en.html" target="_blank" class="platform-card link-en">
+                        <span class="platform-icon">🪟</span>
+                        <div class="platform-info">
+                            <strong><span class="en">Windows</span></strong>
+                            <span><span class="en">10/11 x64</span></span>
+                        </div>
+                    </a>
+                    <a href="saas.html" target="_blank" class="platform-card link-zh">
+                        <span class="platform-icon">☁️</span>
+                        <div class="platform-info">
+                            <strong><span class="zh">SAAS 模式</span></strong>
+                            <span><span class="zh">多租户 SaaS 部署</span></span>
+                        </div>
+                    </a>
+                    <a href="saas_en.html" target="_blank" class="platform-card link-en">
+                        <span class="platform-icon">☁️</span>
+                        <div class="platform-info">
+                            <strong><span class="en">SAAS Mode</span></strong>
+                            <span><span class="en">Multi-tenant SaaS</span></span>
+                        </div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <p class="zh">© 2024 Paozhu Framework. All rights reserved.</p>
+                <p class="en">© 2024 Paozhu Framework. All rights reserved.</p>
+            </footer>
+        </main>
     </div>
 
-  </header>
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑</button>
 
- 
-</div>
+    <script>
+        function switchLang(lang) {
+            document.body.classList.toggle('lang-en', lang === 'en');
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            localStorage.setItem('paozhu-lang', lang);
+        }
 
-<main class="container">
-  <div class="p-4 p-md-5 mb-4 rounded text-body-emphasis" style="background-color:#DFD2B94D">
-    <div class="col-lg-12 px-0">
-      <h1 class="display-3 fst-italic" style="color:#D2691E;font-weight: 900;">Paozhu C++ <span class="accent" data-v-1ba72d52="">Web框架 </span></h1>
-      <p class="lead my-3 text-success">快速开发Web应用强大的C++生态框架，提供HTTP2、ORM、HttpClient全栈支持。</p>
-      <p class="lead mb-0"><a href="documentation.html" type="button" class="btn btn-primary">开始学习</a>
- <a href="./release/paozhu-last.zip" target="_blank" class="btn btn-link">下载安装</a></p>
-    </div>
-  </div>
-  
-    <div class="container px-4 py-5" id="icon-grid">
-    <h2 class="pb-2 border-bottom">框架特性</h2>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+        }
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 py-5">
-      <div class="col d-flex align-items-start">
-        <svg class="bi text-body-secondary flex-shrink-0 me-3" width="1.75em" height="1.75em"><use xlink:href="#bootstrap"/></svg>
-        <div>
-          <h3 class="fw-bold mb-0 fs-4 text-body-emphasis">HTTP/2协议</h3>
-          <p>HTTP头部压缩、流量控制，更多并发</p>
-        </div>
-      </div>
-      <div class="col d-flex align-items-start">
-        <svg class="bi text-body-secondary flex-shrink-0 me-3" width="1.75em" height="1.75em"><use xlink:href="#cpu-fill"/></svg>
-        <div>
-          <h3 class="fw-bold mb-0 fs-4 text-body-emphasis">WebSocket服务</h3>
-          <p>长链接服务，服务器推送、二进制数据传输</p>
-        </div>
-      </div>
-      <div class="col d-flex align-items-start">
-        <svg class="bi text-body-secondary flex-shrink-0 me-3" width="1.75em" height="1.75em"><use xlink:href="#calendar3"/></svg>
-        <div>
-          <h3 class="fw-bold mb-0 fs-4 text-body-emphasis">HttpClient</h3>
-          <p>业务代码使用HTTP客户端，跟第三方交互</p>
-        </div>
-      </div>
-      <div class="col d-flex align-items-start">
-        <svg class="bi text-body-secondary flex-shrink-0 me-3" width="1.75em" height="1.75em"><use xlink:href="#home"/></svg>
-        <div>
-          <h3 class="fw-bold mb-0 fs-4 text-body-emphasis">ORM数据库接口</h3>
-          <p>简明易懂主从、分表设计，支持协程模式，屏蔽数据库连接差异，干爽清洁代码，免写SQL代码</p>
-        </div>
-      </div>
-      <div class="col d-flex align-items-start">
-        <svg class="bi text-body-secondary flex-shrink-0 me-3" width="1.75em" height="1.75em"><use xlink:href="#speedometer2"/></svg>
-        <div>
-          <h3 class="fw-bold mb-0 fs-4 text-body-emphasis">多域名 HTTPS</h3>
-          <p>多域名支持，让你更加方便隔离业务，方便集群</p>
-        </div>
-      </div>
-      <div class="col d-flex align-items-start">
-        <svg class="bi text-body-secondary flex-shrink-0 me-3" width="1.75em" height="1.75em"><use xlink:href="#toggles2"/></svg>
-        <div>
-          <h3 class="fw-bold mb-0 fs-4 text-body-emphasis">商业闭环</h3>
-          <p>集成邮件、短信发送，更方便与用户交流，集成支付模块方便业务闭环 QR二维码生成方便与手机交互</p>
-        </div>
-      </div>
-      <div class="col d-flex align-items-start">
-        <svg class="bi text-body-secondary flex-shrink-0 me-3" width="1.75em" height="1.75em"><use xlink:href="#geo-fill"/></svg>
-        <div>
-          <h3 class="fw-bold mb-0 fs-4 text-body-emphasis">JSON</h3>
-          <p>结构体与JSON互换，JSON模块，方便与页面前端交互</p>
-        </div>
-      </div>
-      <div class="col d-flex align-items-start">
-        <svg class="bi text-body-secondary flex-shrink-0 me-3" width="1.75em" height="1.75em"><use xlink:href="#tools"/></svg>
-        <div>
-          <h3 class="fw-bold mb-0 fs-4 text-body-emphasis">PHP-FPM</h3>
-          <p>Fast-CGI支持，方便你的旧PHP业务代码运行，地址自动区分C++还是PHP请求</p>
-        </div>
-      </div>
-    </div>
-  </div>
+        window.addEventListener('scroll', () => {
+            const backToTop = document.getElementById('backToTop');
+            if (window.scrollY > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
 
-</main>
-
-<footer class="pt-5 my-5 text-center text-body-secondary border-top">
-  Created by the <a href="https://github.com/hggq/paozhu" target="_blank">Paozhu</a> and <a href="https://getbootstrap.com/" target="_blank">Bootstrap</a>  &copy 2023
-</footer>
-</div>
-<script src="./js/bootstrap.bundle.min.js"></script>
-
-    </body>
+        document.addEventListener('DOMContentLoaded', () => {
+            const hashLang = window.location.hash;
+            const savedLang = localStorage.getItem('paozhu-lang');
+            if (hashLang === '#english' || hashLang === '#en') {
+                switchLang('en');
+            } else if (hashLang === '#chinese' || hashLang === '#zh') {
+                switchLang('zh');
+            } else if (savedLang === 'en') {
+                switchLang('en');
+            }
+        });
+    </script>
+</body>
 </html>

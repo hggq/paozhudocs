@@ -1,0 +1,92 @@
+### MacOS bigsur C++20
+
+Open terminal
+
+Using Terminal Command
+
+```
+# xcode-select --install
+
+# /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+**In China see**
+
+`https://mirrors.tuna.tsinghua.edu.cn/help/homebrew/`
+
+```
+brew install asio
+brew install cmake
+brew install openssl
+brew install zlib
+brew install brotli
+
+[option] brew install gd
+[option] brew install qrencode
+```
+
+https://dev.mysql.com/downloads/mysql/
+
+MySQL Community Server 8
+
+#mysql -u root -p 
+
+>create database cppcms default character set utf8mb4 collate utf8mb4_general_ci;
+>use cppcms; 
+>source /root/paozhu/conf/cppcms.sql;
+
+>use mysql;
+
+>create user 'cppcms'@'localhost' identified by 'H3fHeRlVbwU@4456';
+
+>GRANT ALL PRIVILEGES ON `cppcms`.* TO 'cppcms'@'localhost'; ALTER USER 'cppcms'@'localhost' ; 
+
+>select host,user,authentication_string from user;
+
+>exit;
+
+Config system
+
+```
+#vim conf/server.conf
+```
+
+Replace `/Users/hzq/paozhu` to your project path
+
+``` 
+#vim paozhu/conf/orm.conf 
+```
+
+```
+[cms]
+type=main
+host=127.0.0.1
+port=3306
+dbname=cppcms
+user=cppcms
+password=H3fHeRlVbwU@4456
+pretable=
+maxpool=5
+dbtype=mysql
+
+type=second
+host=127.0.0.1
+port=3306
+dbname=cppcms
+user=cppcms
+password=H3fHeRlVbwU@4456
+pretable=
+maxpool=20
+dbtype=mysql
+```
+
+
+```
+# cd paozhu
+# unzip asio.zip 
+# mkdir build
+
+# cd build
+# cmake ..
+# make 
+```

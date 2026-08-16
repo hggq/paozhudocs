@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu 视图系统教程 · View System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-tree li {
+            margin: 0.2rem 0;
+            list-style: none;
+        }
+        .nav-tree .tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .nav-tree a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.88rem;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+            opacity: 0.85;
+            flex: 1;
+        }
+        .nav-tree a:hover {
+            background-color: var(--nav-hover-bg);
+            opacity: 1;
+            color: var(--link-color);
+        }
+        .nav-tree a.active-link {
+            background-color: var(--link-color);
+            color: white;
+            opacity: 1;
+        }
+        .nav-tree .level-1 > a {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+        .nav-tree .level-2 {
+            padding-left: 1.3rem;
+        }
+        .nav-tree .level-3 {
+            padding-left: 2.2rem;
+        }
+        .no-bullet {
+            list-style: none;
+        }
+        .sidebar-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin: 1rem 0 0.5rem 0.5rem;
+        }
+
+        .content-panel {
+            display: none;
+            animation: fade 0.2s ease;
+        }
+        .content-panel.active-lang {
+            display: block;
+        }
+        @keyframes fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            border: 1px solid var(--border-light);
+            position: relative;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 0.88em;
+            line-height: 1.6;
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        h1, h2, h3, h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+        img, svg { max-width: 100%; }
+
+        .note-box {
+            background: var(--code-bg);
+            border-left: 4px solid var(--link-color);
+            padding: 1rem 1.2rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 1.2rem;
+            right: 1.2rem;
+            background: #475569;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: 0.2s;
+            z-index: 99;
+            font-weight: bold;
+        }
+        .scroll-top:hover {
+            opacity: 1;
+            background: var(--link-color);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.6rem 1.2rem;
+            background: var(--link-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .back-link:hover {
+            background: var(--link-hover);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">📖 视图系统教程</div>
+            <div id="dynamic-nav">加载中...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel active-lang"></div>
+        <div id="content-en" class="content-panel"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+    const cnFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🧨 Paozhu 视图系统</h1>
+        <p style="opacity: 0.8;">灵活的模板渲染能力 · 支持多种模板引擎 · 多模块视图管理</p>
+    </div>
+    <div id="cn_full_doc">
+        <h2 id="overview">视图系统概述</h2>
+        <p>Paozhu的视图系统提供了灵活的模板渲染能力，支持多种模板引擎和多模块视图管理。通过视图系统，你可以将业务逻辑与展示层完全分离，编写更清晰、更易维护的代码。</p>
+        <div class="note-box">
+            <strong>💡 提示：</strong> Paozhu 支持原生 HTML 模板，模板文件存放在 <code>view/</code> 目录下，使用 <code>&lt;%c ... %&gt;</code> 标签嵌入 C++ 代码实现变量输出、条件判断、循环等逻辑，并在编译期生成对应的 C++ 视图方法。
+        </div>
+
+        <h2 id="call_view">调用视图渲染</h2>
+        <p>在控制器中调用视图非常简单，只需使用 <code>peer->view()</code> 方法指定模板路径即可：</p>
+        <pre><code>//@urlpath(null, testloginview)
+std::string testloginview(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << " 视图测试 ";
+    
+    // 调用视图模板
+    peer->view("login/login");
+    return "";
+}</code></pre>
+        <p><code>peer->view("login/login")</code> 会自动查找 <code>view/login/login.html</code> 模板文件并进行渲染。</p>
+
+        <h2 id="pass_data">传递数据到视图</h2>
+        <p>通过 <code>client.val</code> 对象可以向模板传递各种类型的数据。</p>
+        
+        <h3 id="pass_simple">传递简单变量</h3>
+        <pre><code>// 设置模板变量
+client.val["username"] = "张三";
+client.val["userid"] = 100;</code></pre>
+
+        <h3 id="pass_object">传递对象数据</h3>
+        <pre><code>// 传递对象数据
+client.val["article"].set_object();
+client.val["article"]["title"] = "文章标题";
+client.val["article"]["content"] = "文章内容";</code></pre>
+
+        <h3 id="pass_array">传递列表数据</h3>
+        <pre><code>// 传递列表数据
+client.val["articles"].set_array();
+for (auto &article : articles)
+{
+    obj_val item;
+    item.set_object();
+    item["aid"] = article.getAid();
+    item["title"] = article.getTitle();
+    client.val["articles"].push(item);
+}</code></pre>
+
+        <h3 id="pass_pagination">传递分页信息</h3>
+        <pre><code>// 分页信息
+client.val["pageinfo"].set_object();
+client.val["pageinfo"]["min"] = bar_min;
+client.val["pageinfo"]["max"] = bar_max;
+client.val["pageinfo"]["current"] = current_page;
+client.val["pageinfo"]["total"] = total_page;</code></pre>
+
+        <h2 id="template_example">视图模板示例</h2>
+        <p>下面是一个完整的 HTML 模板示例，使用 <code>&lt;%c ... %&gt;</code> 标签嵌入 C++ 代码，实现变量输出、条件判断和循环列表等功能（参考真实项目 <code>view/techempower/fortunes.html</code>）：</p>
+        <pre><code>&lt;!-- view/login/login.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;&lt;%c echo&lt;&lt;obj["title"].to_string(); %&gt;&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;欢迎, &lt;%c echo&lt;&lt;obj["username"].to_string(); %&gt;&lt;/h1&gt;
+
+    &lt;!-- 条件判断 --&gt;
+    &lt;%c if(obj["islogin"].to_bool()){ %&gt;
+        &lt;p&gt;已登录&lt;/p&gt;
+    &lt;%c }else{ %&gt;
+        &lt;p&gt;请登录&lt;/p&gt;
+    &lt;%c } %&gt;
+
+    &lt;!-- 循环列表 --&gt;
+    &lt;%c for(auto &amp;article : obj["articles"].as_array()){ %&gt;
+        &lt;div class="article"&gt;
+            &lt;h3&gt;&lt;%c echo&lt;&lt;article["title"].to_string(); %&gt;&lt;/h3&gt;
+            &lt;p&gt;&lt;%c echo&lt;&lt;article["content"].to_string(); %&gt;&lt;/p&gt;
+        &lt;/div&gt;
+    &lt;%c } %&gt;
+
+    &lt;!-- 分页 --&gt;
+    &lt;div class="pagination"&gt;
+        &lt;%c echo&lt;&lt;obj["pageinfo"]["current"].to_string(); %&gt; / &lt;%c echo&lt;&lt;obj["pageinfo"]["total"].to_string(); %&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <h3 id="template_tags">模板语法说明</h3>
+        <p>Paozhu 视图模板支持以下核心语法（标签内为合法的 C++ 表达式或语句）：</p>
+        <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
+            <tr style="background:var(--code-bg);">
+                <th style="padding:0.6rem; text-align:left; border:1px solid var(--border-light);">语法</th>
+                <th style="padding:0.6rem; text-align:left; border:1px solid var(--border-light);">说明</th>
+                <th style="padding:0.6rem; text-align:left; border:1px solid var(--border-light);">示例</th>
+            </tr>
+            <tr>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c echo&lt;&lt;obj["key"]; %&gt;</code></td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);">输出变量值</td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c echo&lt;&lt;obj["username"].to_string(); %&gt;</code></td>
+            </tr>
+            <tr style="background:var(--code-bg);">
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c if(expr){ %&gt;...&lt;%c }else{ %&gt;...&lt;%c } %&gt;</code></td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);">条件判断（C++ 表达式）</td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c if(obj["islogin"].to_bool()){ %&gt;</code></td>
+            </tr>
+            <tr>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c for(...){ %&gt;...&lt;%c } %&gt;</code></td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);">循环遍历（C++ 循环语句）</td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c for(auto &amp;item : obj["list"].as_array()){ %&gt;</code></td>
+            </tr>
+            <tr style="background:var(--code-bg);">
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c include_sub("dir/file", obj); %&gt;</code></td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);">引入子模板</td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c include_sub("home/header", obj); %&gt;</code></td>
+            </tr>
+        </table>
+
+        <h2 id="multi_module">多模块视图</h2>
+        <p>Paozhu 支持多模块视图管理，可以为不同的业务模块（如 admin、cms、superadmin 等）维护独立的视图目录结构。</p>
+        <pre><code>view/
+├── admin/
+│   ├── login.html
+│   ├── dashboard.html
+│   └── user/
+│       ├── list.html
+│       └── edit.html
+├── cms/
+│   ├── index.html
+│   └── article/
+│       ├── list.html
+│       └── detail.html
+├── superadmin/
+│   ├── system.html
+│   └── config.html
+└── login/
+    └── login.html</code></pre>
+        <p>在控制器中通过不同的视图路径来调用对应模块的模板：</p>
+        <pre><code>// 调用 admin 模块视图
+peer->view("admin/dashboard");
+
+// 调用 cms 模块视图
+peer->view("cms/article/list");
+
+// 调用 superadmin 模块视图
+peer->view("superadmin/system");</code></pre>
+        <div class="note-box">
+            <strong>🏗️ 最佳实践：</strong> 建议按业务模块组织视图文件，每个模块有独立的目录，便于维护和权限控制。
+        </div>
+
+        <h2 id="json_response">JSON 响应</h2>
+        <p>当不需要使用视图渲染，而是直接返回 JSON 数据时，可以不调用 <code>peer->view()</code> 方法，直接设置输出内容：</p>
+        <pre><code>//@urlpath(null, api_example)
+std::string api_example(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    
+    // 设置响应类型为 JSON
+    peer->type("application/json");
+    
+    // 直接返回 JSON 字符串
+    client.output = R"({"code":0,"msg":"success","data":{}})";
+    
+    return "";
+}</code></pre>
+
+        <h3 id="json_obj">使用 obj_val 构建 JSON</h3>
+        <p>更推荐使用 <code>obj_val</code> 对象来构建 JSON 响应，代码更清晰、更安全：</p>
+        <pre><code>//@urlpath(null, api_users)
+std::string api_users(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    peer->type("application/json");
+    
+    obj_val result;
+    result.set_object();
+    result["code"] = 0;
+    result["msg"] = "success";
+    
+    // 数据列表
+    result["data"].set_array();
+    for (auto &user : users)
+    {
+        obj_val item;
+        item.set_object();
+        item["adminid"] = user.getAdminid();
+        item["name"] = user.getName();
+        item["email"] = user.getEmail();
+        result["data"].push(item);
+    }
+    
+    // 分页
+    result["pagination"].set_object();
+    result["pagination"]["current"] = current_page;
+    result["pagination"]["total"] = total_page;
+    
+    client.output = result.to_json();
+    return "";
+}</code></pre>
+
+        <h2 id="summary">小结</h2>
+        <p>Paozhu 的视图系统简洁而强大：</p>
+        <ul style="margin-left: 1.5rem; line-height: 2;">
+            <li>使用 <code>peer->view("path")</code> 调用视图模板</li>
+            <li>通过 <code>client.val</code> 向模板传递数据</li>
+            <li>模板支持变量输出、条件判断、循环等核心功能</li>
+            <li>支持多模块视图管理，按业务模块组织目录</li>
+            <li>API 接口可直接返回 JSON 响应</li>
+        </ul>
+        <a href="index.html" class="back-link">← 返回首页</a>
+    </div>
+    `;
+
+    const enFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🧨 Paozhu View System</h1>
+        <p style="opacity: 0.8;">Flexible template rendering · Multiple template engines · Multi-module view management</p>
+    </div>
+    <div id="en_full_doc">
+        <h2 id="overview">Overview</h2>
+        <p>Paozhu's view system provides flexible template rendering capabilities, supporting multiple template engines and multi-module view management. With the view system, you can completely separate business logic from the presentation layer, writing cleaner and more maintainable code.</p>
+        <div class="note-box">
+            <strong>💡 Tip:</strong> Paozhu supports native HTML templates stored in the <code>view/</code> directory. Use the <code>&lt;%c ... %&gt;</code> tags to embed C++ code for variable output, conditionals, loops, and other logic. Templates are compiled into C++ view methods at build time.
+        </div>
+
+        <h2 id="call_view">Calling View Rendering</h2>
+        <p>Calling a view in the controller is simple — just use the <code>peer->view()</code> method to specify the template path:</p>
+        <pre><code>//@urlpath(null, testloginview)
+std::string testloginview(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << " View Test ";
+    
+    // Call view template
+    peer->view("login/login");
+    return "";
+}</code></pre>
+        <p><code>peer->view("login/login")</code> automatically locates and renders the <code>view/login/login.html</code> template file.</p>
+
+        <h2 id="pass_data">Passing Data to Views</h2>
+        <p>Use the <code>client.val</code> object to pass various types of data to templates.</p>
+        
+        <h3 id="pass_simple">Passing Simple Variables</h3>
+        <pre><code>// Set template variables
+client.val["username"] = "Zhang San";
+client.val["userid"] = 100;</code></pre>
+
+        <h3 id="pass_object">Passing Object Data</h3>
+        <pre><code>// Pass object data
+client.val["article"].set_object();
+client.val["article"]["title"] = "Article Title";
+client.val["article"]["content"] = "Article Content";</code></pre>
+
+        <h3 id="pass_array">Passing List/Array Data</h3>
+        <pre><code>// Pass list data
+client.val["articles"].set_array();
+for (auto &article : articles)
+{
+    obj_val item;
+    item.set_object();
+    item["aid"] = article.getAid();
+    item["title"] = article.getTitle();
+    client.val["articles"].push(item);
+}</code></pre>
+
+        <h3 id="pass_pagination">Passing Pagination Info</h3>
+        <pre><code>// Pagination info
+client.val["pageinfo"].set_object();
+client.val["pageinfo"]["min"] = bar_min;
+client.val["pageinfo"]["max"] = bar_max;
+client.val["pageinfo"]["current"] = current_page;
+client.val["pageinfo"]["total"] = total_page;</code></pre>
+
+        <h2 id="template_example">View Template Example</h2>
+        <p>Below is a complete HTML template example using <code>&lt;%c ... %&gt;</code> tags to embed C++ code, implementing variable output, conditionals, and loops (based on the real <code>view/techempower/fortunes.html</code>):</p>
+        <pre><code>&lt;!-- view/login/login.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;&lt;%c echo&lt;&lt;obj["title"].to_string(); %&gt;&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Welcome, &lt;%c echo&lt;&lt;obj["username"].to_string(); %&gt;&lt;/h1&gt;
+
+    &lt;!-- Conditional check --&gt;
+    &lt;%c if(obj["islogin"].to_bool()){ %&gt;
+        &lt;p&gt;Logged in&lt;/p&gt;
+    &lt;%c }else{ %&gt;
+        &lt;p&gt;Please login&lt;/p&gt;
+    &lt;%c } %&gt;
+
+    &lt;!-- Loop through list --&gt;
+    &lt;%c for(auto &amp;article : obj["articles"].as_array()){ %&gt;
+        &lt;div class="article"&gt;
+            &lt;h3&gt;&lt;%c echo&lt;&lt;article["title"].to_string(); %&gt;&lt;/h3&gt;
+            &lt;p&gt;&lt;%c echo&lt;&lt;article["content"].to_string(); %&gt;&lt;/p&gt;
+        &lt;/div&gt;
+    &lt;%c } %&gt;
+
+    &lt;!-- Pagination --&gt;
+    &lt;div class="pagination"&gt;
+        &lt;%c echo&lt;&lt;obj["pageinfo"]["current"].to_string(); %&gt; / &lt;%c echo&lt;&lt;obj["pageinfo"]["total"].to_string(); %&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <h3 id="template_tags">Template Syntax Reference</h3>
+        <p>Paozhu view templates support the following core syntax (the content inside tags is valid C++ expressions or statements):</p>
+        <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
+            <tr style="background:var(--code-bg);">
+                <th style="padding:0.6rem; text-align:left; border:1px solid var(--border-light);">Syntax</th>
+                <th style="padding:0.6rem; text-align:left; border:1px solid var(--border-light);">Description</th>
+                <th style="padding:0.6rem; text-align:left; border:1px solid var(--border-light);">Example</th>
+            </tr>
+            <tr>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c echo&lt;&lt;obj["key"]; %&gt;</code></td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);">Output variable value</td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c echo&lt;&lt;obj["username"].to_string(); %&gt;</code></td>
+            </tr>
+            <tr style="background:var(--code-bg);">
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c if(expr){ %&gt;...&lt;%c }else{ %&gt;...&lt;%c } %&gt;</code></td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);">Conditional (C++ expression)</td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c if(obj["islogin"].to_bool()){ %&gt;</code></td>
+            </tr>
+            <tr>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c for(...){ %&gt;...&lt;%c } %&gt;</code></td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);">Loop iteration (C++ loop statement)</td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c for(auto &amp;item : obj["list"].as_array()){ %&gt;</code></td>
+            </tr>
+            <tr style="background:var(--code-bg);">
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c include_sub("dir/file", obj); %&gt;</code></td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);">Include sub-template</td>
+                <td style="padding:0.6rem; border:1px solid var(--border-light);"><code>&lt;%c include_sub("home/header", obj); %&gt;</code></td>
+            </tr>
+        </table>
+
+        <h2 id="multi_module">Multi-Module Views</h2>
+        <p>Paozhu supports multi-module view management, allowing you to maintain independent view directory structures for different business modules (admin, cms, superadmin, etc.).</p>
+        <pre><code>view/
+├── admin/
+│   ├── login.html
+│   ├── dashboard.html
+│   └── user/
+│       ├── list.html
+│       └── edit.html
+├── cms/
+│   ├── index.html
+│   └── article/
+│       ├── list.html
+│       └── detail.html
+├── superadmin/
+│   ├── system.html
+│   └── config.html
+└── login/
+    └── login.html</code></pre>
+        <p>Call templates for corresponding modules through different view paths in the controller:</p>
+        <pre><code>// Call admin module view
+peer->view("admin/dashboard");
+
+// Call cms module view
+peer->view("cms/article/list");
+
+// Call superadmin module view
+peer->view("superadmin/system");</code></pre>
+        <div class="note-box">
+            <strong>🏗️ Best Practice:</strong> Organize view files by business module, with each module having its own directory for easier maintenance and permission control.
+        </div>
+
+        <h2 id="json_response">JSON Response</h2>
+        <p>When you don't need view rendering and want to return JSON data directly, skip calling <code>peer->view()</code> and set the output content directly:</p>
+        <pre><code>//@urlpath(null, api_example)
+std::string api_example(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    
+    // Set response type to JSON
+    peer->type("application/json");
+    
+    // Return JSON string directly
+    client.output = R"({"code":0,"msg":"success","data":{}})";
+    
+    return "";
+}</code></pre>
+
+        <h3 id="json_obj">Building JSON with obj_val</h3>
+        <p>Using the <code>obj_val</code> object to build JSON responses is recommended — it produces cleaner and safer code:</p>
+        <pre><code>//@urlpath(null, api_users)
+std::string api_users(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    peer->type("application/json");
+    
+    obj_val result;
+    result.set_object();
+    result["code"] = 0;
+    result["msg"] = "success";
+    
+    // Data list
+    result["data"].set_array();
+    for (auto &user : users)
+    {
+        obj_val item;
+        item.set_object();
+        item["adminid"] = user.getAdminid();
+        item["name"] = user.getName();
+        item["email"] = user.getEmail();
+        result["data"].push(item);
+    }
+    
+    // Pagination
+    result["pagination"].set_object();
+    result["pagination"]["current"] = current_page;
+    result["pagination"]["total"] = total_page;
+    
+    client.output = result.to_json();
+    return "";
+}</code></pre>
+
+        <h2 id="summary">Summary</h2>
+        <p>Paozhu's view system is simple yet powerful:</p>
+        <ul style="margin-left: 1.5rem; line-height: 2;">
+            <li>Use <code>peer->view("path")</code> to invoke view templates</li>
+            <li>Pass data to templates through <code>client.val</code></li>
+            <li>Templates support variable output, conditionals, loops, and more</li>
+            <li>Supports multi-module view management organized by business module</li>
+            <li>API endpoints can return JSON responses directly</li>
+        </ul>
+        <a href="index.html" class="back-link">← Back to Home</a>
+    </div>
+    `;
+
+    document.getElementById('content-cn').innerHTML = cnFullContent;
+    document.getElementById('content-en').innerHTML = enFullContent;
+
+    function buildHierarchyNav(lang) {
+        const container = document.getElementById('dynamic-nav');
+        const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+        if (!contentDiv) {
+            container.innerHTML = '<p>Content not found</p>';
+            return;
+        }
+        const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+        if (headings.length === 0) {
+            container.innerHTML = '<p style="padding: 1rem;">No navigation structure</p>';
+            return;
+        }
+
+        const root = { children: [] };
+        let stack = [root];
+        
+        headings.forEach(heading => {
+            let level = parseInt(heading.tagName[1]);
+            const id = heading.id;
+            let title = heading.innerText.trim();
+            if (!title) title = heading.textContent.trim() || "Section";
+            const node = { level, id, title, children: [] };
+            while (stack.length > 0 && stack[stack.length-1].level >= level) {
+                stack.pop();
+            }
+            const parent = stack[stack.length-1];
+            parent.children.push(node);
+            stack.push(node);
+        });
+
+        function renderTree(nodes, levelClass = 'level-1') {
+            if (!nodes.length) return '';
+            let html = '<ul class="nav-tree no-bullet">';
+            nodes.forEach(node => {
+                const hasChildren = node.children.length > 0;
+                const liClass = `level-${node.level}`;
+                html += `<li class="${liClass}">`;
+                html += `<div class="tree-item"><a href="#${node.id}" data-id="${node.id}" class="nav-link">${escapeHtml(node.title)}</a></div>`;
+                if (hasChildren) {
+                    html += renderTree(node.children, `level-${node.level+1}`);
+                }
+                html += `</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        const navHtml = renderTree(root.children);
+        container.innerHTML = navHtml || '<p>No navigation data</p>';
+        
+        attachNavEvents(contentDiv);
+    }
+
+    function attachNavEvents(contentDiv) {
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            link.removeEventListener('click', navClickHandler);
+            link.addEventListener('click', navClickHandler);
+        });
+        function navClickHandler(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-id');
+            const targetElem = contentDiv.querySelector(`#${targetId}`);
+            if (targetElem) {
+                targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                history.pushState(null, null, `#${targetId}`);
+            }
+            if (window.innerWidth <= 860) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active-link'));
+            this.classList.add('active-link');
+        }
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    if (id) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active-link');
+                            if (link.getAttribute('data-id') === id) {
+                                link.classList.add('active-link');
+                            }
+                        });
+                    }
+                }
+            });
+        }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+        
+        const allHeadings = contentDiv.querySelectorAll('[id]');
+        allHeadings.forEach(el => observer.observe(el));
+    }
+
+    let currentLang = 'cn';
+    function switchLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+        if (lang === 'cn') {
+            document.getElementById('content-cn').classList.add('active-lang');
+        } else {
+            document.getElementById('content-en').classList.add('active-lang');
+        }
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        buildHierarchyNav(lang);
+        window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang) switchLanguage(lang);
+        });
+    });
+    
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+    
+    const topBtn = document.getElementById('scrollTopBtn');
+    topBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    
+    // URL hash 检测语言切换
+    const hashLang = window.location.hash;
+    if (hashLang === '#english' || hashLang === '#en') {
+        switchLanguage('en');
+    } else if (hashLang === '#chinese' || hashLang === '#zh') {
+        switchLanguage('cn');
+    } else {
+        buildHierarchyNav('cn');
+    }
+</script>
+</body>
+</html>

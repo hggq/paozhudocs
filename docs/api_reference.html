@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu C++ Web Framework · API Reference</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-tree li {
+            margin: 0.2rem 0;
+            list-style: none;
+        }
+        .nav-tree .tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .nav-tree a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.88rem;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+            opacity: 0.85;
+            flex: 1;
+        }
+        .nav-tree a:hover {
+            background-color: var(--nav-hover-bg);
+            opacity: 1;
+            color: var(--link-color);
+        }
+        .nav-tree a.active-link {
+            background-color: var(--link-color);
+            color: white;
+            opacity: 1;
+        }
+        .nav-tree .level-1 > a {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+        .nav-tree .level-2 {
+            padding-left: 1.3rem;
+        }
+        .nav-tree .level-3 {
+            padding-left: 2.2rem;
+        }
+        .no-bullet {
+            list-style: none;
+        }
+        .sidebar-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin: 1rem 0 0.5rem 0.5rem;
+        }
+
+        .content-panel {
+            display: none;
+            animation: fade 0.2s ease;
+        }
+        .content-panel.active-lang {
+            display: block;
+        }
+        @keyframes fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            border: 1px solid var(--border-light);
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        h1, h2, h3, h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+        img, svg { max-width: 100%; }
+
+        .api-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.2rem 0;
+            font-size: 0.92rem;
+        }
+        .api-table th {
+            background-color: var(--code-bg);
+            text-align: left;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-light);
+            font-weight: 600;
+        }
+        .api-table td {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-light);
+        }
+        .api-table tr:hover td {
+            background-color: var(--nav-hover-bg);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.6rem 1.2rem;
+            background-color: var(--link-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .back-link:hover {
+            background-color: var(--link-hover);
+            transform: translateY(-1px);
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 1.2rem;
+            right: 1.2rem;
+            background: #475569;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: 0.2s;
+            z-index: 99;
+            font-weight: bold;
+        }
+        .scroll-top:hover {
+            opacity: 1;
+            background: var(--link-color);
+        }
+    </style>
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">📖 API 参考导航</div>
+            <div id="dynamic-nav">加载中...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel active-lang"></div>
+        <div id="content-en" class="content-panel"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+    const cnFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">Paozhu API 参考</h1>
+        <p style="opacity: 0.8;">🧨 Paozhu C++ Web Framework · 完整 API 参考手册</p>
+    </div>
+    <div id="cn_api_doc">
+        <h2 id="httppeer">httppeer API</h2>
+        <p><code>httppeer</code> 是框架的核心请求对象，封装了 HTTP 请求/响应的全部操作。</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>方法/属性</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>get_peer()</code></td><td>获取底层客户端对象</td></tr>
+                <tr><td><code>view(name)</code></td><td>调用视图渲染</td></tr>
+                <tr><td><code>type(content_type)</code></td><td>设置响应类型</td></tr>
+                <tr><td><code>output</code></td><td>设置响应输出</td></tr>
+                <tr><td><code>pathinfos</code></td><td>URL 路径信息数组</td></tr>
+                <tr><td><code>get</code></td><td>GET 参数集合</td></tr>
+                <tr><td><code>post</code></td><td>POST 参数集合</td></tr>
+                <tr><td><code>session</code></td><td>Session 数据</td></tr>
+                <tr><td><code>val</code></td><td>模板变量</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="httppeer_client">httppeer_client API</h2>
+        <p><code>httppeer_client</code> 提供了更丰富的客户端操作接口。</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>方法/属性</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>operator<<</code></td><td>输出内容</td></tr>
+                <tr><td><code>get[key]</code></td><td>获取 GET 参数</td></tr>
+                <tr><td><code>post[key]</code></td><td>获取 POST 参数</td></tr>
+                <tr><td><code>session[key]</code></td><td>获取/设置 Session</td></tr>
+                <tr><td><code>save_session()</code></td><td>保存 Session</td></tr>
+                <tr><td><code>goto_url(url)</code></td><td>跳转 URL</td></tr>
+                <tr><td><code>goto_url(url, delay, msg)</code></td><td>延迟跳转并显示消息</td></tr>
+                <tr><td><code>get_hosturl()</code></td><td>获取主机 URL</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="obj_val">obj_val API</h2>
+        <p><code>obj_val</code> 是框架内置的动态 JSON 对象，支持对象/数组操作与类型转换。</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>方法/属性</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>set_object()</code></td><td>设置为对象类型</td></tr>
+                <tr><td><code>set_array()</code></td><td>设置为数组类型</td></tr>
+                <tr><td><code>push(value)</code></td><td>添加数组元素</td></tr>
+                <tr><td><code>operator[key]</code></td><td>访问/设置对象属性</td></tr>
+                <tr><td><code>to_string()</code></td><td>转为字符串</td></tr>
+                <tr><td><code>to_int()</code></td><td>转为整数</td></tr>
+                <tr><td><code>to_double()</code></td><td>转为浮点数</td></tr>
+                <tr><td><code>from_json(json_str)</code></td><td>从 JSON 字符串解析</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="orm">orm API</h2>
+        <p>ORM 模型通过 <code>./bin/paozhu_cli orm <标签></code> 自动生成，使用前需 <code>#include "orm.h"</code>。ORM 提供了简洁的数据库操作接口，支持链式调用与分页查询。</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>方法</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">🔍 查询条件方法</td></tr>
+                <tr><td><code>where(field, value)</code></td><td>添加 WHERE 条件（支持运算符 >, <, >=, <=, !=）</td></tr>
+                <tr><td><code>whereAnd(field, value)</code></td><td>添加 AND 条件</td></tr>
+                <tr><td><code>whereLike(field, keyword)</code></td><td>LIKE 模糊查询</td></tr>
+                <tr><td><code>whereBT(field, value)</code></td><td>大于 (>) 条件</td></tr>
+                <tr><td><code>whereBE(field, value)</code></td><td>大于等于 (>=) 条件</td></tr>
+                <tr><td><code>whereIn(field, values)</code></td><td>IN 条件查询</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">📊 查询执行方法</td></tr>
+                <tr><td><code>fetch()</code></td><td>查询多条记录</td></tr>
+                <tr><td><code>fetch_one()</code></td><td>查询单条记录</td></tr>
+                <tr><td><code>fetch_to(result)</code></td><td>查询到自定义结构体</td></tr>
+                <tr><td><code>count()</code></td><td>统计记录数</td></tr>
+                <tr><td><code>page(current, page_size, bar_size)</code></td><td>分页查询</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">🔄 链式查询方法</td></tr>
+                <tr><td><code>order("field desc")</code></td><td>排序</td></tr>
+                <tr><td><code>asc(field)</code></td><td>升序排序</td></tr>
+                <tr><td><code>desc(field)</code></td><td>降序排序</td></tr>
+                <tr><td><code>select("field1,field2")</code></td><td>选择指定字段</td></tr>
+                <tr><td><code>limit(count)</code></td><td>限制查询数量</td></tr>
+                <tr><td><code>limit(offset, count)</code></td><td>偏移量 + 数量限制</td></tr>
+                <tr><td><code>group(field)</code></td><td>分组查询</td></tr>
+                <tr><td><code>lock_conn()</code></td><td>锁定连接复用</td></tr>
+                <tr><td><code>unlock_conn()</code></td><td>解锁连接</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">✏️ 数据操作方法</td></tr>
+                <tr><td><code>save()</code></td><td>插入记录，返回 [影响行数, 自增ID]</td></tr>
+                <tr><td><code>update()</code></td><td>更新所有字段（需设置主键或 where 条件）</td></tr>
+                <tr><td><code>update("field1,field2")</code></td><td>更新指定字段</td></tr>
+                <tr><td><code>update_col(field, value)</code></td><td>字段自增/自减（正数增，负数减）</td></tr>
+                <tr><td><code>replace_col(field, old, new)</code></td><td>替换字段内容</td></tr>
+                <tr><td><code>remove(id)</code></td><td>根据主键删除记录</td></tr>
+                <tr><td><code>remove()</code></td><td>根据 where 条件删除</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">🔑 字段访问方法</td></tr>
+                <tr><td><code>getFieldName()</code></td><td>获取字段值（如 getTitle()）</td></tr>
+                <tr><td><code>setFieldName(value)</code></td><td>设置字段值（如 setTitle()）</td></tr>
+                <tr><td><code>getPK()</code></td><td>获取主键值</td></tr>
+                <tr><td><code>setPK(id)</code></td><td>设置主键值</td></tr>
+                <tr><td><code>record[i].field</code></td><td>直接访问记录数组</td></tr>
+                <tr><td><code>data.field</code></td><td>直接访问数据结构</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">⚡ 异步方法（协程中使用）</td></tr>
+                <tr><td><code>async_fetch()</code></td><td>异步查询所有匹配记录</td></tr>
+                <tr><td><code>async_fetch_one()</code></td><td>异步查询单条记录</td></tr>
+                <tr><td><code>async_fetch_append()</code></td><td>异步查询并追加到结果集</td></tr>
+                <tr><td><code>async_count()</code></td><td>异步统计匹配记录数</td></tr>
+                <tr><td><code>async_save()</code></td><td>异步插入记录</td></tr>
+                <tr><td><code>async_update()</code></td><td>异步更新记录</td></tr>
+                <tr><td><code>async_remove()</code></td><td>异步删除记录</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">🔒 事务处理（db_conn）</td></tr>
+                <tr><td><code>orm::db_conn(tag)</code></td><td>创建独立数据库连接（tag 对应 orm.conf 配置）</td></tr>
+                <tr><td><code>begin_commit()</code></td><td>开始事务，返回 bool 表示是否成功</td></tr>
+                <tr><td><code>edit_query(sql)</code></td><td>执行写操作（INSERT/UPDATE/DELETE）</td></tr>
+                <tr><td><code>edit_query(sql, result)</code></td><td>执行查询操作，结果存入结构体</td></tr>
+                <tr><td><code>commit()</code></td><td>提交事务</td></tr>
+                <tr><td><code>rollback()</code></td><td>回滚事务</td></tr>
+                <tr><td><code>iserror</code></td><td>判断最近一次操作是否出错</td></tr>
+                <tr><td><code>error_msg</code></td><td>获取错误信息</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">📝 ORM SQL 生成方法</td></tr>
+                <tr><td><code>commit_insert()</code></td><td>生成 INSERT SQL 语句</td></tr>
+                <tr><td><code>commit_update(fields)</code></td><td>生成 UPDATE SQL 语句（指定字段）</td></tr>
+                <tr><td><code>commit_remove()</code></td><td>生成 DELETE SQL 语句</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="webpdf">webpdf API</h2>
+        <p><code>webpdf</code> 模块提供 HTML 转 PDF 的能力，可用于生成报表、发票等。</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>方法</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>AddPage()</code></td><td>添加页面</td></tr>
+                <tr><td><code>AddFont(name, style, file, dir)</code></td><td>添加字体</td></tr>
+                <tr><td><code>SetFont(name, style, size)</code></td><td>设置字体</td></tr>
+                <tr><td><code>WriteHTML(html)</code></td><td>写入 HTML 内容</td></tr>
+                <tr><td><code>Output(mode, path)</code></td><td>输出 PDF（F=文件，D=下载）</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="pzexcel">pzexcel API</h2>
+        <p><code>pzexcel</code> 模块支持 Excel 文件的读取、写入与样式操作。</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>方法</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>read(file)</code></td><td>读取 Excel 文件</td></tr>
+                <tr><td><code>write(file)</code></td><td>写入 Excel 文件</td></tr>
+                <tr><td><code>setCell(cell, value)</code></td><td>设置单元格值</td></tr>
+                <tr><td><code>getCell<T>(cell)</code></td><td>获取单元格值</td></tr>
+                <tr><td><code>setCellColor(cell, color)</code></td><td>设置单元格颜色</td></tr>
+                <tr><td><code>addSheet(name)</code></td><td>添加工作表</td></tr>
+                <tr><td><code>setActiveSheet(index)</code></td><td>设置当前工作表</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="pzword">pzword API</h2>
+        <p><code>pzword</code> 模块支持 Word 文件的读取、写入及 HTML 转换。</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>方法</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>read(file)</code></td><td>读取 Word 文件</td></tr>
+                <tr><td><code>write(file)</code></td><td>写入 Word 文件</td></tr>
+                <tr><td><code>read_html(html_file)</code></td><td>读取 HTML 转 Word</td></tr>
+                <tr><td><code>to_html()</code></td><td>转为 HTML</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="pzzip">pzzip API</h2>
+        <p><code>pzzip</code> 模块提供 ZIP 压缩/解压操作支持。</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>方法</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>open_zipfile(path)</code></td><td>打开 ZIP 文件</td></tr>
+                <tr><td><code>create_zipfile(path)</code></td><td>创建 ZIP 文件</td></tr>
+                <tr><td><code>add_file(disk, stored)</code></td><td>添加文件</td></tr>
+                <tr><td><code>extract_all(dest)</code></td><td>解压所有文件</td></tr>
+                <tr><td><code>files_list()</code></td><td>获取文件列表</td></tr>
+            </tbody>
+        </table>
+
+        <div style="text-align: center; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+            <a href="index.html" class="back-link">← 返回首页</a>
+        </div>
+    </div>
+    `;
+
+    const enFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">Paozhu API Reference</h1>
+        <p style="opacity: 0.8;">🧨 Paozhu C++ Web Framework · Complete API Reference Manual</p>
+    </div>
+    <div id="en_api_doc">
+        <h2 id="httppeer">httppeer API</h2>
+        <p><code>httppeer</code> is the core request object that encapsulates all HTTP request/response operations.</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>Method / Property</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>get_peer()</code></td><td>Get the underlying client object</td></tr>
+                <tr><td><code>view(name)</code></td><td>Invoke view rendering</td></tr>
+                <tr><td><code>type(content_type)</code></td><td>Set response content type</td></tr>
+                <tr><td><code>output</code></td><td>Set response output</td></tr>
+                <tr><td><code>pathinfos</code></td><td>URL path info array</td></tr>
+                <tr><td><code>get</code></td><td>GET parameters collection</td></tr>
+                <tr><td><code>post</code></td><td>POST parameters collection</td></tr>
+                <tr><td><code>session</code></td><td>Session data</td></tr>
+                <tr><td><code>val</code></td><td>Template variables</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="httppeer_client">httppeer_client API</h2>
+        <p><code>httppeer_client</code> provides a richer set of client operation interfaces.</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>Method / Property</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>operator<<</code></td><td>Output content</td></tr>
+                <tr><td><code>get[key]</code></td><td>Get GET parameter</td></tr>
+                <tr><td><code>post[key]</code></td><td>Get POST parameter</td></tr>
+                <tr><td><code>session[key]</code></td><td>Get / set Session</td></tr>
+                <tr><td><code>save_session()</code></td><td>Save Session</td></tr>
+                <tr><td><code>goto_url(url)</code></td><td>Redirect to URL</td></tr>
+                <tr><td><code>goto_url(url, delay, msg)</code></td><td>Delayed redirect with message</td></tr>
+                <tr><td><code>get_hosturl()</code></td><td>Get host URL</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="obj_val">obj_val API</h2>
+        <p><code>obj_val</code> is a built-in dynamic JSON object supporting object/array operations and type conversions.</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>Method / Property</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>set_object()</code></td><td>Set as object type</td></tr>
+                <tr><td><code>set_array()</code></td><td>Set as array type</td></tr>
+                <tr><td><code>push(value)</code></td><td>Add array element</td></tr>
+                <tr><td><code>operator[key]</code></td><td>Access / set object property</td></tr>
+                <tr><td><code>to_string()</code></td><td>Convert to string</td></tr>
+                <tr><td><code>to_int()</code></td><td>Convert to integer</td></tr>
+                <tr><td><code>to_double()</code></td><td>Convert to double</td></tr>
+                <tr><td><code>from_json(json_str)</code></td><td>Parse from JSON string</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="orm">orm API</h2>
+        <p>ORM models are auto-generated via <code>./bin/paozhu_cli orm <tag></code>. Include <code>#include "orm.h"</code> before use. ORM provides a clean database operation interface with chaining calls and pagination support.</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>Method</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">🔍 Query Condition Methods</td></tr>
+                <tr><td><code>where(field, value)</code></td><td>Add WHERE condition (supports operators >, <, >=, <=, !=)</td></tr>
+                <tr><td><code>whereAnd(field, value)</code></td><td>Add AND condition</td></tr>
+                <tr><td><code>whereLike(field, keyword)</code></td><td>LIKE fuzzy query</td></tr>
+                <tr><td><code>whereBT(field, value)</code></td><td>Greater than (>) condition</td></tr>
+                <tr><td><code>whereBE(field, value)</code></td><td>Greater than or equal (>=) condition</td></tr>
+                <tr><td><code>whereIn(field, values)</code></td><td>IN condition query</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">📊 Query Execution Methods</td></tr>
+                <tr><td><code>fetch()</code></td><td>Query multiple records</td></tr>
+                <tr><td><code>fetch_one()</code></td><td>Query single record</td></tr>
+                <tr><td><code>fetch_to(result)</code></td><td>Query to custom struct</td></tr>
+                <tr><td><code>count()</code></td><td>Count records</td></tr>
+                <tr><td><code>page(current, page_size, bar_size)</code></td><td>Paginated query</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">🔄 Chain Query Methods</td></tr>
+                <tr><td><code>order("field desc")</code></td><td>Sorting</td></tr>
+                <tr><td><code>asc(field)</code></td><td>Ascending sort</td></tr>
+                <tr><td><code>desc(field)</code></td><td>Descending sort</td></tr>
+                <tr><td><code>select("field1,field2")</code></td><td>Select specified fields</td></tr>
+                <tr><td><code>limit(count)</code></td><td>Limit query count</td></tr>
+                <tr><td><code>limit(offset, count)</code></td><td>Offset + count limit</td></tr>
+                <tr><td><code>group(field)</code></td><td>Group query</td></tr>
+                <tr><td><code>lock_conn()</code></td><td>Lock connection for reuse</td></tr>
+                <tr><td><code>unlock_conn()</code></td><td>Unlock connection</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">✏️ Data Operation Methods</td></tr>
+                <tr><td><code>save()</code></td><td>Insert record, returns [affected_rows, auto_id]</td></tr>
+                <tr><td><code>update()</code></td><td>Update all fields (requires primary key or where)</td></tr>
+                <tr><td><code>update("field1,field2")</code></td><td>Update specified fields</td></tr>
+                <tr><td><code>update_col(field, value)</code></td><td>Field increment/decrement (positive=increment, negative=decrement)</td></tr>
+                <tr><td><code>replace_col(field, old, new)</code></td><td>Replace field content</td></tr>
+                <tr><td><code>remove(id)</code></td><td>Delete record by primary key</td></tr>
+                <tr><td><code>remove()</code></td><td>Delete by where condition</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">🔑 Field Access Methods</td></tr>
+                <tr><td><code>getFieldName()</code></td><td>Get field value (e.g., getTitle())</td></tr>
+                <tr><td><code>setFieldName(value)</code></td><td>Set field value (e.g., setTitle())</td></tr>
+                <tr><td><code>getPK()</code></td><td>Get primary key value</td></tr>
+                <tr><td><code>setPK(id)</code></td><td>Set primary key value</td></tr>
+                <tr><td><code>record[i].field</code></td><td>Direct access to record array</td></tr>
+                <tr><td><code>data.field</code></td><td>Direct access to data structure</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">⚡ Async Methods (for coroutines)</td></tr>
+                <tr><td><code>async_fetch()</code></td><td>Async query all matching records</td></tr>
+                <tr><td><code>async_fetch_one()</code></td><td>Async query single record</td></tr>
+                <tr><td><code>async_fetch_append()</code></td><td>Async query and append to result set</td></tr>
+                <tr><td><code>async_count()</code></td><td>Async count matching records</td></tr>
+                <tr><td><code>async_save()</code></td><td>Async insert record</td></tr>
+                <tr><td><code>async_update()</code></td><td>Async update record</td></tr>
+                <tr><td><code>async_remove()</code></td><td>Async delete record</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">🔒 Transaction Handling (db_conn)</td></tr>
+                <tr><td><code>orm::db_conn(tag)</code></td><td>Create independent database connection (tag corresponds to orm.conf config)</td></tr>
+                <tr><td><code>begin_commit()</code></td><td>Start transaction, returns bool for success</td></tr>
+                <tr><td><code>edit_query(sql)</code></td><td>Execute write operations (INSERT/UPDATE/DELETE)</td></tr>
+                <tr><td><code>edit_query(sql, result)</code></td><td>Execute query, results stored in struct</td></tr>
+                <tr><td><code>commit()</code></td><td>Commit transaction</td></tr>
+                <tr><td><code>rollback()</code></td><td>Rollback transaction</td></tr>
+                <tr><td><code>iserror</code></td><td>Check if last operation had an error</td></tr>
+                <tr><td><code>error_msg</code></td><td>Get error message</td></tr>
+                <tr><td colspan="2" style="background:var(--code-bg);font-weight:600;">📝 ORM SQL Generation Methods</td></tr>
+                <tr><td><code>commit_insert()</code></td><td>Generate INSERT SQL statement</td></tr>
+                <tr><td><code>commit_update(fields)</code></td><td>Generate UPDATE SQL statement (specified fields)</td></tr>
+                <tr><td><code>commit_remove()</code></td><td>Generate DELETE SQL statement</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="webpdf">webpdf API</h2>
+        <p>The <code>webpdf</code> module provides HTML-to-PDF conversion for generating reports, invoices, etc.</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>Method</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>AddPage()</code></td><td>Add a page</td></tr>
+                <tr><td><code>AddFont(name, style, file, dir)</code></td><td>Add font</td></tr>
+                <tr><td><code>SetFont(name, style, size)</code></td><td>Set font</td></tr>
+                <tr><td><code>WriteHTML(html)</code></td><td>Write HTML content</td></tr>
+                <tr><td><code>Output(mode, path)</code></td><td>Output PDF (F=file, D=download)</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="pzexcel">pzexcel API</h2>
+        <p>The <code>pzexcel</code> module supports reading, writing and styling Excel files.</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>Method</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>read(file)</code></td><td>Read Excel file</td></tr>
+                <tr><td><code>write(file)</code></td><td>Write Excel file</td></tr>
+                <tr><td><code>setCell(cell, value)</code></td><td>Set cell value</td></tr>
+                <tr><td><code>getCell<T>(cell)</code></td><td>Get cell value</td></tr>
+                <tr><td><code>setCellColor(cell, color)</code></td><td>Set cell color</td></tr>
+                <tr><td><code>addSheet(name)</code></td><td>Add worksheet</td></tr>
+                <tr><td><code>setActiveSheet(index)</code></td><td>Set active worksheet</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="pzword">pzword API</h2>
+        <p>The <code>pzword</code> module supports reading, writing Word files and HTML conversion.</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>Method</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>read(file)</code></td><td>Read Word file</td></tr>
+                <tr><td><code>write(file)</code></td><td>Write Word file</td></tr>
+                <tr><td><code>read_html(html_file)</code></td><td>Read HTML to Word</td></tr>
+                <tr><td><code>to_html()</code></td><td>Convert to HTML</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="pzzip">pzzip API</h2>
+        <p>The <code>pzzip</code> module provides ZIP compression and decompression operations.</p>
+        <table class="api-table">
+            <thead>
+                <tr><th>Method</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>open_zipfile(path)</code></td><td>Open ZIP file</td></tr>
+                <tr><td><code>create_zipfile(path)</code></td><td>Create ZIP file</td></tr>
+                <tr><td><code>add_file(disk, stored)</code></td><td>Add file</td></tr>
+                <tr><td><code>extract_all(dest)</code></td><td>Extract all files</td></tr>
+                <tr><td><code>files_list()</code></td><td>Get file list</td></tr>
+            </tbody>
+        </table>
+
+        <div style="text-align: center; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+            <a href="index.html" class="back-link">← Back to Home</a>
+        </div>
+    </div>
+    `;
+
+    document.getElementById('content-cn').innerHTML = cnFullContent;
+    document.getElementById('content-en').innerHTML = enFullContent;
+
+    function buildHierarchyNav(lang) {
+        const container = document.getElementById('dynamic-nav');
+        const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+        if (!contentDiv) {
+            container.innerHTML = '<p>未找到内容</p>';
+            return;
+        }
+        const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+        if (headings.length === 0) {
+            container.innerHTML = '<p style="padding: 1rem;">无目录结构</p>';
+            return;
+        }
+
+        const root = { children: [] };
+        let stack = [root];
+
+        headings.forEach(heading => {
+            let level = parseInt(heading.tagName[1]);
+            const id = heading.id;
+            let title = heading.innerText.trim();
+            if (!title) title = heading.textContent.trim() || "章节";
+            const node = { level, id, title, children: [] };
+            while (stack.length > 0 && stack[stack.length-1].level >= level) {
+                stack.pop();
+            }
+            const parent = stack[stack.length-1];
+            parent.children.push(node);
+            stack.push(node);
+        });
+
+        function renderTree(nodes, levelClass = 'level-1') {
+            if (!nodes.length) return '';
+            let html = '<ul class="nav-tree no-bullet">';
+            nodes.forEach(node => {
+                const hasChildren = node.children.length > 0;
+                const liClass = `level-${node.level}`;
+                html += `<li class="${liClass}">`;
+                html += `<div class="tree-item"><a href="#${node.id}" data-id="${node.id}" class="nav-link">${escapeHtml(node.title)}</a></div>`;
+                if (hasChildren) {
+                    html += renderTree(node.children, `level-${node.level+1}`);
+                }
+                html += `</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        const navHtml = renderTree(root.children);
+        container.innerHTML = navHtml || '<p>无导航数据</p>';
+
+        attachNavEvents(contentDiv);
+    }
+
+    function attachNavEvents(contentDiv) {
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            link.removeEventListener('click', navClickHandler);
+            link.addEventListener('click', navClickHandler);
+        });
+        function navClickHandler(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-id');
+            const targetElem = contentDiv.querySelector(`#${targetId}`);
+            if (targetElem) {
+                targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                history.pushState(null, null, `#${targetId}`);
+            }
+            if (window.innerWidth <= 860) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active-link'));
+            this.classList.add('active-link');
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    if (id) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active-link');
+                            if (link.getAttribute('data-id') === id) {
+                                link.classList.add('active-link');
+                            }
+                        });
+                    }
+                }
+            });
+        }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+
+        const allHeadings = contentDiv.querySelectorAll('[id]');
+        allHeadings.forEach(el => observer.observe(el));
+    }
+
+    let currentLang = 'cn';
+    function switchLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+        if (lang === 'cn') {
+            document.getElementById('content-cn').classList.add('active-lang');
+        } else {
+            document.getElementById('content-en').classList.add('active-lang');
+        }
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        buildHierarchyNav(lang);
+        window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang) switchLanguage(lang);
+        });
+    });
+
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+
+    const topBtn = document.getElementById('scrollTopBtn');
+    topBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // URL hash 检测语言切换
+    const hashLang = window.location.hash;
+    if (hashLang === '#english' || hashLang === '#en') {
+        switchLanguage('en');
+    } else if (hashLang === '#chinese' || hashLang === '#zh') {
+        switchLanguage('cn');
+    } else {
+        buildHierarchyNav('cn');
+    }
+</script>
+</body>
+</html>

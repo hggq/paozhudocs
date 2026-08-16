@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu ORM 数据访问教程 · ORM Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-tree li {
+            margin: 0.2rem 0;
+            list-style: none;
+        }
+        .nav-tree .tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .nav-tree a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.88rem;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+            opacity: 0.85;
+            flex: 1;
+        }
+        .nav-tree a:hover {
+            background-color: var(--nav-hover-bg);
+            opacity: 1;
+            color: var(--link-color);
+        }
+        .nav-tree a.active-link {
+            background-color: var(--link-color);
+            color: white;
+            opacity: 1;
+        }
+        .nav-tree .level-1 > a {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+        .nav-tree .level-2 {
+            padding-left: 1.3rem;
+        }
+        .nav-tree .level-3 {
+            padding-left: 2.2rem;
+        }
+        .no-bullet {
+            list-style: none;
+        }
+        .sidebar-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin: 1rem 0 0.5rem 0.5rem;
+        }
+
+        .content-panel {
+            display: none;
+            animation: fade 0.2s ease;
+        }
+        .content-panel.active-lang {
+            display: block;
+        }
+        @keyframes fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            border: 1px solid var(--border-light);
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        h1, h2, h3, h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+        img, svg { max-width: 100%; }
+
+        .platform-link {
+            display: inline-block;
+            margin: 0.3rem 0;
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--link-color);
+            transition: all 0.15s;
+            font-size: 0.9rem;
+        }
+        .platform-link:hover {
+            background-color: var(--nav-hover-bg);
+            border-color: var(--link-color);
+        }
+
+        .back-to-index {
+            display: block;
+            margin-top: 3rem;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            background-color: var(--code-bg);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--link-color);
+            font-weight: 600;
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+        .back-to-index:hover {
+            background-color: var(--nav-hover-bg);
+            color: var(--link-hover);
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 1.2rem;
+            right: 1.2rem;
+            background: #475569;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: 0.2s;
+            z-index: 99;
+            font-weight: bold;
+        }
+        .scroll-top:hover {
+            opacity: 1;
+            background: var(--link-color);
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+            margin: 0.8rem 0;
+        }
+        li {
+            margin: 0.3rem 0;
+        }
+        .tip-box {
+            background-color: var(--code-bg);
+            border-left: 4px solid var(--link-color);
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+        .warn-box {
+            background-color: var(--code-bg);
+            border-left: 4px solid #f59e0b;
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+    </style>
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">🗄️ ORM 数据访问导航</div>
+            <div id="dynamic-nav">加载中...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel active-lang"></div>
+        <div id="content-en" class="content-panel"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+    const cnFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🗄️ Paozhu ORM 数据访问</h1>
+        <p style="opacity: 0.8;">完整的 ORM 使用教程，涵盖模型定义、CRUD 操作、事务处理和连接池管理</p>
+    </div>
+
+    <h2 id="orm-overview">ORM 概述</h2>
+    <p>Paozhu 内置的 ORM 系统，自研解析数据库协议，方便支持协程，支持 <code>MySQL</code> 和 <code>PostgreSQL</code> 数据库。通过配置文件 <code>orm.conf</code> 进行多数据源管理。</p>
+
+    <h3 id="built-in-client">内置数据库客户端</h3>
+    <ul>
+        <li>采用<strong>自研数据库连接协议</strong>，支持 MySQL 和 PostgreSQL，无需额外安装 MySQL Connector/C++ 或 libpq</li>
+        <li>支持 <strong>MySQL 8.0.4 以上版本</strong>（支持 <code>caching_sha2_password</code> 认证插件）</li>
+        <li>支持 <strong>MariaDB 12.1+</strong>（12.1 版本开始支持 <code>caching_sha2_password</code> 认证插件，与 MySQL 8.0 默认认证方式兼容）</li>
+        <li>自研协议同时支持 <strong>C++20 协程（异步）</strong>和<strong>同步</strong>两种调用方式，可在同一项目中混用</li>
+    </ul>
+
+    <h3 id="orm-features">ORM 核心特性</h3>
+    <ul>
+        <li>多数据源配置与切换</li>
+        <li>模型自动生成（<code>./bin/paozhu_cli orm <标签></code>）</li>
+        <li>链式查询构造器（where、whereAnd、fetch、fetch_one）</li>
+        <li>分页查询支持</li>
+        <li>事务处理</li>
+        <li>数据库连接池管理</li>
+        <li>SSL 加密连接支持</li>
+    </ul>
+
+    <h2 id="config-datasource">配置数据源</h2>
+    <p>在项目的 <code>conf/orm.conf</code> 文件中配置数据源。每个配置节（tag）下可以配置多个数据源：主库使用 <code>type = main</code>，从库使用 <code>type = second</code>。以下示例配置了 default 标签的主库与从库：</p>
+    <pre><code>[default]
+type = main
+host = 127.0.0.1
+port = 3306
+dbname = cppcms
+user = root
+password = 12345678
+pretable =
+maxpool = 5
+dbtype = mysql
+charset = utf8mb4
+
+type = second
+host = 127.0.0.1
+port = 3306
+dbname = cppcms
+user = root
+password = 12345678
+pretable =
+maxpool = 5
+dbtype = mysql
+charset = utf8mb4</code></pre>
+
+    <h3 id="config-params">配置参数说明</h3>
+    <h4>基础参数</h4>
+    <ul>
+        <li><code>type</code> — 数据库类型，可选值：<code>main</code>（主库）、<code>second</code>（从库）</li>
+        <li><code>host</code> — 数据库服务器地址</li>
+        <li><code>port</code> — 数据库服务器端口</li>
+        <li><code>dbname</code> — 数据库名称</li>
+        <li><code>user</code> — 数据库用户名</li>
+        <li><code>password</code> — 数据库密码</li>
+        <li><code>pretable</code> — 表前缀，用于区分不同业务模块的表</li>
+        <li><code>maxpool</code> — 连接池最大连接数</li>
+        <li><code>dbtype</code> — 数据库类型标识（如 <code>mysql</code>、<code>postgresql</code>）</li>
+        <li><code>charset</code> — 数据库字符集（如 <code>utf8</code>、<code>utf8mb4</code>）</li>
+    </ul>
+
+    <h4>SSL 加密参数</h4>
+    <ul>
+        <li><code>ssl</code> — 是否启用 SSL 连接，可选值：<code>ON</code>、<code>OFF</code>（默认）</li>
+        <li><code>sslverify</code> — 是否校验证书链，可选值：<code>ON</code>、<code>OFF</code>；启用后会校验服务器证书是否由可信 CA 签发（配合系统 CA 证书或 <code>SSL_CERT_FILE</code> 环境变量）</li>
+        <li><code>sslhost</code> — 证书域名（SNI + 域名校验）；为空时只验证证书链不校验域名；填值时会同时验证证书链和域名匹配</li>
+    </ul>
+
+    <div class="tip-box">
+        💡 提示：<code>[default]</code> 为默认数据源，使用时无需指定数据源名称。其他数据源需要通过命名空间（如 <code>orm::cms::Tablename()</code>）来访问。SSL 相关参数默认注释掉，需要时去掉注释并修改对应值。
+    </div>
+
+    <h4>SSL 配置示例</h4>
+    <pre><code>[cms]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+# 启用 SSL 并校验证书链和域名
+ssl      = ON
+sslverify = ON
+sslhost  = db.example.com</code></pre>
+
+    <h2 id="create-model">创建模型</h2>
+    <p>Paozhu 使用<strong>命令行工具自动生成</strong> ORM 模型文件，无需手动编写。通过 <code>paozhu_cli orm</code> 命令，根据 <code>orm.conf</code> 中的配置标签自动生成所有表的模型。</p>
+
+    <h3 id="cli-generate">使用 CLI 工具生成模型</h3>
+    <p>首先确保 <code>orm.conf</code> 中已配置好数据库连接标签（如 <code>[cms]</code>、<code>[docs]</code>、<code>[ph]</code>），然后运行：</p>
+    <pre><code># 为 cms 标签生成 ORM 模型（标签名对应 orm.conf 中的节）
+./bin/paozhu_cli orm cms
+
+# 为 default 标签生成 ORM 模型
+./bin/paozhu_cli orm default
+
+# 为 ph 标签（PostgreSQL）生成 ORM 模型
+./bin/paozhu_cli orm ph</code></pre>
+
+    <h3 id="generated-structure">生成的文件结构</h3>
+    <p>运行命令后，框架会在 <code>orm/</code> 目录下自动生成以下结构：</p>
+    <pre><code>orm/
+├── orm.h                    # 统一入口头文件
+├── cms/
+│   └── include/
+│       ├── article_base.h   # Article 模型基类（自动生成）
+│       ├── article_opsql.h  # Article 操作类（自动生成）
+│       ├── catalogue_base.h
+│       └── ...
+├── docs/
+│   └── include/
+│       └── ...
+└── ph/
+    └── include/
+        └── ...</code></pre>
+
+    <h3 id="use-model">使用生成的模型</h3>
+    <p>在控制器中使用生成的模型，只需 <code>#include "orm.h"</code>，然后通过命名空间创建模型实例：</p>
+    <pre><code>#include "orm.h"
+
+// 使用 cms 标签的 Article 模型
+auto articles = orm::cms::Article();
+
+// 使用 cms 标签的 Sysuser 模型
+auto users = orm::cms::Sysuser();
+
+// 使用 default 标签的模型（基准测试表 World/Fortune）
+auto worlds = orm::World();
+
+// 使用 ph (PostgreSQL) 标签的模型
+auto fortunes = orm::ph::Fortune();</code></pre>
+
+    <div class="tip-box">
+        💡 提示：模型文件由 CLI 工具自动生成，<strong>请勿手动修改</strong>。如果数据库表结构变更，只需重新运行 <code>./bin/paozhu_cli orm <标签></code> 命令即可更新模型。
+    </div>
+
+    <h3 id="model-features">模型特性</h3>
+    <ul>
+        <li>自动生成字段类型定义（<code>orm::cms::article_info::type::aid</code>）</li>
+        <li>内置 <code>meta</code> 结构体存储字段数据</li>
+        <li>支持 JSON 序列化（<code>to_json()</code>）</li>
+        <li>支持树形结构（<code>meta_tree</code>、<code>meta_tree_ptr</code>）</li>
+        <li>自动生成 SQL 语句（INSERT、UPDATE、DELETE）</li>
+        <li>支持 <code>obj_val</code> 与 <code>meta</code> 互相转换</li>
+    </ul>
+
+    <h2 id="query-data">查询数据</h2>
+    <p>Paozhu ORM 提供了丰富的查询方式，支持链式调用构造查询条件。</p>
+
+    <h3 id="query-all">获取所有记录</h3>
+    <pre><code>// 获取所有记录
+auto articles = orm::cms::Article();
+articles.where("isopen", 1).fetch();</code></pre>
+
+    <h3 id="query-conditional">条件查询</h3>
+    <pre><code>// 多条件查询
+articles.where("userid", 1).whereAnd("isopen", 1).fetch();</code></pre>
+
+    <h3 id="query-single">获取单条记录</h3>
+    <pre><code>// 获取单条记录
+users.where("name", username).whereAnd("password", md5string).fetch_one();</code></pre>
+
+    <h3 id="query-pagination">分页查询</h3>
+    <pre><code>// 分页查询
+auto [bar_min, bar_max, current_page, total_page] = articles.page(page, 10, 5);</code></pre>
+    <ul>
+        <li><code>page</code> — 当前页码</li>
+        <li><code>10</code> — 每页显示记录数</li>
+        <li><code>5</code> — 分页条显示的页码数量</li>
+    </ul>
+
+    <h3 id="query-order">排序查询</h3>
+    <pre><code>// 使用 order() 排序
+articles.order("aid desc").fetch();
+
+// 使用 asc() 升序
+articles.where("userid", 0).asc("addtime").fetch();
+
+// 使用 desc() 降序
+articles.desc("addtime").fetch();</code></pre>
+
+    <h3 id="query-select">选择指定字段</h3>
+    <pre><code>// 只查询需要的字段
+articles.select("aid,title,summary").where("userid", 0).fetch();</code></pre>
+
+    <h3 id="query-limit">限制查询数量</h3>
+    <pre><code>// 限制查询结果数量
+articles.where("userid", 1).limit(1).fetch_one();
+articles.limit(10).fetch();</code></pre>
+
+    <h3 id="query-count">计数查询</h3>
+    <pre><code>// 统计记录总数
+unsigned int total = articles.where("userid", userid).count();
+
+// 统计符合条件的记录数
+total = articles.where("userid", userid).where("addtime", ">", lastweek_time).count();</code></pre>
+
+    <h3 id="query-wherein">IN 条件查询</h3>
+    <pre><code>// 使用 whereIn 查询多个 ID
+std::string aid_sql_str = "1,2,3";
+articles.whereIn("aid", aid_sql_str).fetch();</code></pre>
+
+    <h3 id="query-operators">运算符查询</h3>
+    <pre><code>// 支持大于、小于等运算符
+articles.where("addtime", ">", lastweek_time).fetch();
+articles.where("readnum", "<", 100).fetch();
+articles.where("isopen", "!=", 0).fetch();</code></pre>
+
+    <h2 id="insert-data">插入数据</h2>
+    <p>使用模型的 setter 方法设置字段值，然后调用 <code>save()</code> 方法插入新记录：</p>
+    <pre><code>auto articles = orm::cms::Article();
+articles.setIsopen(1);
+articles.setCreatetime(get_date("%Y-%m-%d %X"));  // 格式化时间
+articles.setAddtime(timeid());                    // Unix 时间戳
+articles.setAddip(client.client_ip);               // 客户端IP
+articles.setTitle("新标题");
+articles.setContent("内容");
+
+// save() 返回 [影响行数, 自增ID]
+auto[effectnum, last_id] = articles.save();
+if (effectnum > 0)
+{
+    int new_id = articles.getAid();  // 获取新记录ID
+    client.goto_url("/cms/list", 3, "添加成功");
+}</code></pre>
+
+    <div class="tip-box">
+        💡 提示：<code>save()</code> 方法用于新增记录。插入成功后，可以通过 <code>getAid()</code> 等 getter 方法获取自增 ID。
+    </div>
+
+    <h2 id="update-data">更新数据</h2>
+    <p>先通过 setter 方法设置新值，再通过 <code>where()</code> 指定更新条件，最后调用 <code>update()</code> 方法并指定要更新的字段：</p>
+    <pre><code>auto articles = orm::cms::Article();
+articles.setTitle("修改后的标题");
+articles.setContent("修改后的内容");
+
+// 指定更新条件和要更新的字段
+articles.where("aid", aid);
+int effectnum = articles.update("title,content");
+
+if (effectnum > 0)
+{
+    client.goto_url("/cms/list", 3, "更新成功");
+}</code></pre>
+
+    <div class="tip-box">
+        💡 提示：<code>update()</code> 方法的参数指定要更新的字段名（用逗号分隔）。也可以不传参数 <code>update()</code>，此时会更新 <code>article.data</code> 中的<strong>所有</strong>字段，但必须先设置主键，否则会出错。建议配合 <code>where()</code> 条件使用。
+    </div>
+
+    <h2 id="delete-data">删除数据</h2>
+    <p>使用 <code>remove()</code> 方法删除记录：</p>
+    <pre><code>auto articles = orm::cms::Article();
+
+// 方式1：根据主键删除
+int effectnum = articles.remove(aid);
+
+// 方式2：配合 where 条件删除
+articles.where("aid", aid);
+int effectnum = articles.remove();
+
+// 方式3：批量删除
+articles.whereIn("aid", aid_sql_str).remove();</code></pre>
+
+    <div class="tip-box">
+        💡 提示：<code>remove(id)</code> 方法根据主键直接删除记录。也可以使用 <code>remove()</code> 配合 <code>where()</code> 条件进行条件删除或批量删除。
+    </div>
+
+    <h2 id="advanced-query">链式查询方法</h2>
+    <p>Paozhu ORM 支持丰富的链式调用方法，方便构造复杂查询：</p>
+
+    <h3 id="chain-like">LIKE 查询</h3>
+    <pre><code>// LIKE 查询
+model.whereLike("title", "keyword").fetch();</code></pre>
+
+    <h3 id="chain-operator">运算符查询</h3>
+    <pre><code>// 大于 >
+model.whereBT("price", 100).fetch();
+
+// 大于等于 >=
+model.whereBE("price", 100).fetch();
+
+// 直接使用运算符
+model.where("addtime", ">", lastweek_time).fetch();</code></pre>
+
+    <h3 id="chain-group">分组查询</h3>
+    <pre><code>// 分组
+model.group("category_id").fetch();</code></pre>
+
+    <h3 id="chain-limit">限制查询</h3>
+    <pre><code>// 限制数量
+model.limit(10).fetch();
+
+// 偏移量 + 数量
+model.limit(5, 10).fetch();  // 跳过5条，取10条</code></pre>
+
+    <h3 id="chain-aggregate">聚合查询</h3>
+    <pre><code>// 聚合函数使用自定义结构体
+namespace orm::cust
+{
+    struct SumStruct : orm::Base<SumStruct>
+    {
+        long long total;
+        ORM_NAMES(total);
+    };
+}
+
+std::vector<orm::cust::SumStruct> result;
+model.select("sum(price) as total");
+model.fetch_to(result);</code></pre>
+
+    <h3 id="chain-lock">锁定连接复用</h3>
+    <pre><code>// 连续批量操作时锁定连接复用（事务内使用）
+model.lock_conn();
+model.where("aid", 1).fetch_one();
+model.where("aid", 2).fetch_one();
+model.unlock_conn();</code></pre>
+
+    <h2 id="field-update">字段更新操作</h2>
+    <p>除了基本的 <code>update()</code> 方法，还有特殊的字段操作：</p>
+
+    <h3 id="field-inc">字段自增/自减</h3>
+    <pre><code>// 自增（正数）
+model.where("aid", id).update_col("readnum", 1);   // readnum + 1
+
+// 自减（负数）
+model.where("aid", id).update_col("stock", -1);    // stock - 1</code></pre>
+
+    <h3 id="field-replace">字段替换</h3>
+    <pre><code>// 替换字段内容中的指定字符串
+model.where("aid", id).replace_col("content", "old", "new");</code></pre>
+
+    <h2 id="data-access">数据访问方式</h2>
+
+    <h3 id="access-getter">使用 getter 方法</h3>
+    <pre><code>// 单条记录
+model.where("aid", id).fetch_one();
+std::string title = model.getTitle();
+int userid = model.getUserid();
+unsigned int pk = model.getPK();</code></pre>
+
+    <h3 id="access-record">遍历结果集</h3>
+    <pre><code>// 多条记录遍历
+model.where("userid", 1).fetch();
+for (auto &record : model.record)
+{
+    std::cout << record.aid << ": " << record.title << std::endl;
+}</code></pre>
+
+    <h3 id="access-data">直接访问 data 结构</h3>
+    <pre><code>// 直接访问 data 结构（setter/getter 之外）
+model.data.title = "新标题";
+model.data.content = "新内容";
+model.save();</code></pre>
+
+    <h2 id="async-orm">异步 ORM 操作</h2>
+    <p>在协程中使用异步 ORM 方法，所有异步方法均以 <code>async_</code> 开头：</p>
+
+    <h3 id="async-methods">可用的异步 ORM 方法</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>同步方法</th>
+                <th>异步方法</th>
+                <th>说明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><code>fetch()</code></td><td><code>async_fetch()</code></td><td>查询所有匹配记录</td></tr>
+            <tr><td><code>fetch_one()</code></td><td><code>async_fetch_one()</code></td><td>查询单条记录</td></tr>
+            <tr><td><code>fetch_append()</code></td><td><code>async_fetch_append()</code></td><td>查询并追加到现有结果集</td></tr>
+            <tr><td><code>count()</code></td><td><code>async_count()</code></td><td>统计匹配记录数</td></tr>
+            <tr><td><code>save()</code></td><td><code>async_save()</code></td><td>新增记录</td></tr>
+            <tr><td><code>update()</code></td><td><code>async_update()</code></td><td>更新记录</td></tr>
+            <tr><td><code>remove()</code></td><td><code>async_remove()</code></td><td>删除记录</td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="async-example">异步使用示例</h3>
+    <pre><code>// 在协程中使用异步 ORM
+#include "orm.h"
+
+asio::awaitable<void> handle_request()
+{
+    auto model = orm::cms::Article();
+    
+    // 异步查询
+    co_await model.async_fetch();
+    co_await model.async_count();
+    
+    // 异步操作
+    co_await model.async_save();
+    co_await model.async_update();
+    co_await model.async_remove();
+}</code></pre>
+
+    <h3 id="async-practical">实际应用示例（来自 techempower.cpp）</h3>
+
+    <h4>异步查询单条记录</h4>
+    <pre><code>// 随机查询一条 World 记录
+//@urlpath(null,db)
+asio::awaitable<std::string> techempowerdb(std::shared_ptr<httppeer> peer)
+{
+    peer->type("application/json; charset=UTF-8");
+    auto myworld = orm::World();
+    unsigned int rd_num = rand_range(1, 10000);
+    myworld.where("id", rd_num);
+    myworld.limit(1);
+    co_await myworld.async_fetch_one();  // 异步查询单条
+    
+    peer->output = myworld.data_tojson();
+    co_return "";
+}</code></pre>
+
+    <h4>异步批量查询（锁定连接复用）</h4>
+    <pre><code>// 多次查询时锁定连接，避免重复连接开销
+//@urlpath(null,queries)
+asio::awaitable<std::string> techempowerqueries(std::shared_ptr<httppeer> peer)
+{
+    unsigned int get_num = peer->get["queries"].to_int();
+    if (get_num == 0) get_num = 1;
+    else if (get_num > 500) get_num = 500;
+    
+    auto myworld = orm::World();
+    myworld.record.reserve(get_num);
+    myworld.lock_conn();  // 锁定连接
+    
+    for (unsigned int i = 0; i < get_num; i++)
+    {
+        myworld.wheresql.clear();
+        unsigned int rd_num = rand_range(1, 10000);
+        myworld.where("id", rd_num);
+        co_await myworld.async_fetch_append();  // 追加查询结果
+    }
+    
+    myworld.unlock_conn();  // 解锁连接
+    peer->output = myworld.to_json();
+    co_return "";
+}</code></pre>
+
+    <h4>异步查询所有记录</h4>
+    <pre><code>// 查询所有 Fortunes 并排序
+//@urlpath(null,fortunes)
+asio::awaitable<std::string> techempowerfortunes(std::shared_ptr<httppeer> peer)
+{
+    auto myfortune = orm::Fortune();
+    co_await myfortune.async_fetch();  // 异步查询所有
+    
+    myfortune.data.id = 0;
+    myfortune.data.message = "Additional fortune added at request time.";
+    myfortune.record.push_back(myfortune.data);
+    
+    // 排序
+    std::sort(myfortune.record.begin(), myfortune.record.end(), 
+              [](const auto &lhs, const auto &rhs) {
+                  return lhs.message < rhs.message;
+              });
+    
+    // 输出到视图
+    peer->val["list"].set_array();
+    for (auto &record : myfortune.record)
+    {
+        obj_val item;
+        item["id"] = record.id;
+        item["message"] = html_encode(record.message);
+        peer->val["list"].push(item);
+    }
+    peer->view("techempower/fortunes");
+    co_return "";
+}</code></pre>
+
+    <h4>异步更新操作</h4>
+    <pre><code>// 批量更新随机数
+//@urlpath(null,updates)
+asio::awaitable<std::string> techempowerupdates(std::shared_ptr<httppeer> peer)
+{
+    unsigned int get_num = peer->get["queries"].to_int();
+    if (get_num == 0) get_num = 1;
+    else if (get_num > 500) get_num = 500;
+    
+    auto myworld = orm::World();
+    myworld.record.clear();
+    myworld.record.reserve(get_num);
+    myworld.lock_conn();  // 锁定连接
+    
+    for (unsigned int i = 0; i < get_num; i++)
+    {
+        myworld.wheresql.clear();
+        myworld.where("id", rand_range(1, 10000));
+        co_await myworld.async_fetch_append();
+        
+        if (myworld.effect() > 0)
+        {
+            unsigned int j = myworld.record.size() - 1;
+            myworld.data.randomnumber = rand_range(1, 10000);
+            myworld.record[j].randomnumber = myworld.data.randomnumber;
+            co_await myworld.async_update("randomnumber");  // 异步更新指定字段
+        }
+    }
+    
+    myworld.unlock_conn();
+    peer->output = myworld.to_json();
+    co_return "";
+}</code></pre>
+
+    <h4>缓存 + 数据库联合查询</h4>
+    <pre><code>// 先查缓存，缓存未命中则查数据库
+//@urlpath(null,cached-db)
+asio::awaitable<std::string> techempowercached_db(std::shared_ptr<httppeer> peer)
+{
+    unsigned int get_num = peer->get["count"].to_int();
+    if (get_num == 0) get_num = 1;
+    else if (get_num > 500) get_num = 500;
+    
+    auto myworld = orm::World();
+    std::string mycacheid = "my" + std::to_string(get_num);
+    
+    // 获取缓存连接
+    pzcache<std::vector<orm::world_info::meta>> &temp_cache = 
+        pzcache<std::vector<orm::world_info::meta>>::conn();
+    
+    myworld.record.reserve(get_num);
+    
+    if (temp_cache.check(mycacheid) > -1)
+    {
+        // 命中缓存
+        myworld.record = temp_cache.get(mycacheid);
+    }
+    else
+    {
+        // 缓存未命中，查询数据库
+        std::vector<unsigned int> cacheid;
+        for (unsigned int i = 0; i < get_num; i++)
+        {
+            cacheid.push_back(rand_range(1, 10000));
+        }
+        
+        std::string sqlstr = array_to_sql(cacheid);
+        myworld.whereIn("id", sqlstr);
+        co_await myworld.async_fetch();  // 异步 IN 查询
+        
+        // 写入缓存
+        temp_cache.save(mycacheid, myworld.record, 360);
+    }
+    
+    peer->output = myworld.to_json();
+    co_return "";
+}</code></pre>
+
+    <div class="tip-box">
+        💡 注意：同步控制器（返回 <code>std::string</code>）和协程控制器（返回 <code>asio::awaitable<std::string></code>）可以在同一项目中混用。框架会根据函数签名自动选择正确的执行路径。
+    </div>
+
+    <h2 id="native-sql">原生 SQL 查询</h2>
+    <p>当需要执行复杂 SQL 或 ORM 不支持的查询时，使用 <code>orm::db_conn</code> 独立数据库连接：</p>
+    <pre><code>#include "orm.h"
+#include "orm_query.h"
+
+// 1. 定义返回结果结构体
+namespace orm::cust
+{
+    struct LocalusersqlStruct : orm::Base<LocalusersqlStruct>
+    {
+        unsigned int adminid;
+        std::string name;
+        std::string nickname;
+        ORM_NAMES(adminid, name, nickname);
+    };
+}
+
+// 2. 执行 SQL 查询
+std::vector<orm::cust::LocalusersqlStruct> loaduser;
+auto ulink = std::make_unique<orm::db_conn>("cms");
+
+std::string sqlstring = "SELECT adminid,name,nickname FROM sysuser where 1 limit 1";
+ulink->query(sqlstring, loaduser);
+
+// 3. 读取结果
+for (auto &row : loaduser)
+{
+    client << "adminid:" << row.adminid << ", name:" << row.name;
+}</code></pre>
+
+    <div class="tip-box">
+        💡 注意：SQL 中 SELECT 的字段必须与返回结构体的字段一一对应。
+    </div>
+
+    <h2 id="transaction">事务处理</h2>
+    <p>使用 <code>orm::db_conn</code> 独立数据库连接进行事务处理，确保多操作的原子性。</p>
+
+    <h3 id="transaction-basic">基本事务操作</h3>
+    <pre><code>#include "orm.h"
+#include "orm_query.h"
+
+// 1. 创建独立数据库连接（标签对应 orm.conf 配置）
+auto ulink = std::make_unique<orm::db_conn>("cms");
+
+// 2. 开始事务
+bool is_begin = ulink->begin_commit();
+
+if (is_begin)
+{
+    try
+    {
+        // 3. 执行多个数据库操作
+        ulink->edit_query("UPDATE sysuser SET nickname = '新名字' WHERE adminid = 10000");
+        if (ulink->iserror)
+        {
+            ulink->rollback();  // 出错回滚
+        }
+        else
+        {
+            ulink->edit_query("INSERT INTO sysuser (adminid, name) VALUES (10001, 'test')");
+            if (ulink->iserror)
+            {
+                ulink->rollback();  // 出错回滚
+            }
+            else
+            {
+                // 4. 提交事务
+                ulink->commit();
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        ulink->rollback();
+    }
+}</code></pre>
+
+    <h3 id="transaction-with-structure">带查询结果的事务</h3>
+    <pre><code>// 定义返回结果结构体
+namespace orm::cust
+{
+    struct UserStruct : orm::Base<UserStruct>
+    {
+        unsigned int adminid;
+        std::string name;
+        std::string nickname;
+        ORM_NAMES(adminid, name, nickname);
+    };
+}
+
+// 事务中查询并修改数据
+auto ulink = std::make_unique<orm::db_conn>("cms");
+orm::cust::UserStruct commit_data;
+
+if (ulink->begin_commit())
+{
+    try
+    {
+        // 更新操作
+        ulink->edit_query("UPDATE sysuser SET nickname = '好听名字' WHERE adminid = 10000");
+        if (!ulink->iserror)
+        {
+            // 插入操作
+            ulink->edit_query("INSERT INTO sysuser (adminid, name) VALUES (NULL, 'userroot')");
+            if (!ulink->iserror)
+            {
+                // 查询操作（使用同一连接）
+                ulink->edit_query(
+                    "SELECT adminid, name, nickname FROM sysuser WHERE adminid = 10000 LIMIT 1",
+                    commit_data  // 结果存入结构体
+                );
+                if (!ulink->iserror)
+                {
+                    ulink->commit();  // 提交
+                }
+                else
+                {
+                    ulink->rollback();
+                }
+            }
+            else
+            {
+                ulink->rollback();
+            }
+        }
+        else
+        {
+            ulink->rollback();
+        }
+    }
+    catch (const std::exception& e)
+    {
+        ulink->rollback();
+    }
+}
+
+// 读取结果
+if (commit_data.adminid != 0)
+{
+    std::cout << "adminid: " << commit_data.adminid 
+              << ", name: " << commit_data.name << std::endl;
+}</code></pre>
+
+    <h3 id="transaction-orm">使用 ORM 对象生成 SQL</h3>
+    <pre><code>// 推荐使用 ORM 对象方式生成 SQL，然后配合事务提交
+auto user_m = orm::cms::Sysuser();
+
+// 获取 INSERT SQL
+user_m.data.nickname = "新名字";
+std::string insert_sql = user_m.commit_insert();
+
+// 获取 UPDATE SQL
+user_m.where("adminid", 10005);
+std::string update_sql = user_m.commit_update("nickname");
+
+// 获取 DELETE SQL
+std::string delete_sql = user_m.commit_remove();
+
+// 然后使用 db_conn 执行这些 SQL 并提交事务
+auto ulink = std::make_unique<orm::db_conn>("cms");
+if (ulink->begin_commit())
+{
+    ulink->edit_query(insert_sql);
+    if (!ulink->iserror)
+    {
+        ulink->edit_query(update_sql);
+        if (!ulink->iserror)
+        {
+            ulink->commit();
+        }
+        else
+        {
+            ulink->rollback();
+        }
+    }
+    else
+    {
+        ulink->rollback();
+    }
+}</code></pre>
+
+    <div class="tip-box">
+        💡 提示：
+        <ul>
+            <li><code>begin_commit()</code> — 开始事务，返回 <code>bool</code> 表示是否成功</li>
+            <li><code>edit_query(sql)</code> — 执行写操作（INSERT/UPDATE/DELETE），通过 <code>iserror</code> 判断是否出错</li>
+            <li><code>edit_query(sql, result)</code> — 执行查询操作，结果存入结构体</li>
+            <li><code>commit()</code> — 提交事务</li>
+            <li><code>rollback()</code> — 回滚事务</li>
+        </ul>
+        事务处理对于需要保证数据一致性的场景非常重要，例如转账、订单处理等。如果事务中的任何操作失败，整个事务都会回滚。
+    </div>
+
+    <h2 id="connection-pool">数据库连接池</h2>
+    <p>Paozhu ORM 使用连接池管理数据库连接，通过 <code>orm.conf</code> 中的 <code>maxpool</code> 参数来控制每个数据源的最大连接数：</p>
+    <ul>
+        <li><code>maxpool</code> 值越大，能支持的并发请求越多</li>
+        <li>每个数据源独立管理自己的连接池</li>
+        <li>空闲连接会自动回收，避免资源浪费</li>
+        <li>连接池支持自动重连机制，网络异常后可自动恢复</li>
+    </ul>
+    <div class="tip-box">
+        💡 建议：<code>maxpool</code> 值设置为业务线程数的 2-3 倍较为合适，具体数值需要根据实际业务场景和数据库承载能力进行调整。
+    </div>
+
+    <a href="index.html" class="back-to-index">← 返回首页</a>
+    `;
+
+    const enFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🗄️ Paozhu ORM Data Access</h1>
+        <p style="opacity: 0.8;">Complete ORM tutorial covering model definition, CRUD operations, transaction handling, and connection pool management</p>
+    </div>
+
+    <h2 id="orm-overview">ORM Overview</h2>
+    <p>Paozhu's built-in ORM system, with self-developed database protocol parsing, facilitates support for coroutines, <code>MySQL</code> and <code>PostgreSQL</code> databases. Multiple data sources can be managed through the <code>orm.conf</code> configuration file.</p>
+
+    <h3 id="built-in-client">Built-in Database Client</h3>
+    <ul>
+        <li>Uses a <strong>self-developed database connection protocol</strong> supporting MySQL and PostgreSQL — no need to install MySQL Connector/C++ or libpq separately</li>
+        <li>Supports <strong>MySQL 8.0.4+</strong> (with <code>caching_sha2_password</code> authentication plugin)</li>
+        <li>Supports <strong>MariaDB 12.1+</strong> (version 12.1+ supports <code>caching_sha2_password</code> authentication plugin, compatible with MySQL 8.0 default authentication)</li>
+        <li>The self-developed protocol supports both <strong>C++20 coroutines (async)</strong> and <strong>synchronous</strong> invocation modes, which can be mixed in the same project</li>
+    </ul>
+
+    <h3 id="orm-features">Core ORM Features</h3>
+    <ul>
+        <li>Multi-data-source configuration and switching</li>
+        <li>Automatic model generation (<code>./bin/paozhu_cli orm <tag></code>)</li>
+        <li>Chained query builder (where, whereAnd, fetch, fetch_one)</li>
+        <li>Paginated queries</li>
+        <li>Transaction handling</li>
+        <li>Database connection pool management</li>
+        <li>SSL encrypted connection support</li>
+    </ul>
+
+    <h2 id="config-datasource">Configuring Data Sources</h2>
+    <p>Configure data sources in the <code>conf/orm.conf</code> file of your project. Each section (tag) can hold multiple data sources: use <code>type = main</code> for the primary and <code>type = second</code> for the replica. The example below configures both primary and replica for the default tag:</p>
+    <pre><code>[default]
+type = main
+host = 127.0.0.1
+port = 3306
+dbname = cppcms
+user = root
+password = 12345678
+pretable =
+maxpool = 5
+dbtype = mysql
+charset = utf8mb4
+
+type = second
+host = 127.0.0.1
+port = 3306
+dbname = cppcms
+user = root
+password = 12345678
+pretable =
+maxpool = 5
+dbtype = mysql
+charset = utf8mb4</code></pre>
+
+    <h3 id="config-params">Configuration Parameters</h3>
+    <h4>Basic Parameters</h4>
+    <ul>
+        <li><code>type</code> — Database role, options: <code>main</code> (primary), <code>second</code> (replica)</li>
+        <li><code>host</code> — Database server address</li>
+        <li><code>port</code> — Database server port</li>
+        <li><code>dbname</code> — Database name</li>
+        <li><code>user</code> — Database username</li>
+        <li><code>password</code> — Database password</li>
+        <li><code>pretable</code> — Table prefix for distinguishing tables from different business modules</li>
+        <li><code>maxpool</code> — Maximum number of connections in the pool</li>
+        <li><code>dbtype</code> — Database type identifier (e.g., <code>mysql</code>, <code>postgresql</code>)</li>
+        <li><code>charset</code> — Database character set (e.g., <code>utf8</code>, <code>utf8mb4</code>)</li>
+    </ul>
+
+    <h4>SSL Encryption Parameters</h4>
+    <ul>
+        <li><code>ssl</code> — Enable SSL connection, options: <code>ON</code>, <code>OFF</code> (default)</li>
+        <li><code>sslverify</code> — Verify certificate chain, options: <code>ON</code>, <code>OFF</code>; when enabled, verifies that the server certificate is signed by a trusted CA (uses system CA certificates or <code>SSL_CERT_FILE</code> environment variable)</li>
+        <li><code>sslhost</code> — Certificate domain (SNI + domain verification); when empty, only verifies the certificate chain without checking the domain name; when specified, verifies both the chain and domain match</li>
+    </ul>
+
+    <div class="tip-box">
+        💡 Tip: <code>[default]</code> is the default data source and can be used without specifying a data source name. Other data sources need to be accessed through their namespace (e.g., <code>orm::cms::Tablename()</code>). SSL parameters are commented out by default—uncomment and modify them when needed.
+    </div>
+
+    <h4>SSL Configuration Example</h4>
+    <pre><code>[cms]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+# Enable SSL with certificate chain and domain verification
+ssl      = ON
+sslverify = ON
+sslhost  = db.example.com</code></pre>
+
+    <h2 id="create-model">Creating Models</h2>
+    <p>Paozhu uses a <strong>command-line tool to automatically generate</strong> ORM model files—no manual coding required. Use the <code>paozhu_cli orm</code> command to auto-generate models for all tables based on the configuration tags in <code>orm.conf</code>.</p>
+
+    <h3 id="cli-generate">Generating Models with CLI</h3>
+    <p>First, make sure your database connection tags (e.g., <code>[cms]</code>, <code>[docs]</code>, <code>[ph]</code>) are configured in <code>orm.conf</code>, then run:</p>
+    <pre><code># Generate ORM models for the cms tag (tag name corresponds to the section in orm.conf)
+./bin/paozhu_cli orm cms
+
+# Generate ORM models for the default tag
+./bin/paozhu_cli orm default
+
+# Generate ORM models for the ph (PostgreSQL) tag
+./bin/paozhu_cli orm ph</code></pre>
+
+    <h3 id="generated-structure">Generated File Structure</h3>
+    <p>After running the command, the framework will automatically generate the following structure in the <code>orm/</code> directory:</p>
+    <pre><code>orm/
+├── orm.h                    # Unified entry header file
+├── cms/
+│   └── include/
+│       ├── article_base.h   # Article model base class (auto-generated)
+│       ├── article_opsql.h  # Article operation class (auto-generated)
+│       ├── catalogue_base.h
+│       └── ...
+├── docs/
+│   └── include/
+│       └── ...
+└── ph/
+    └── include/
+        └── ...</code></pre>
+
+    <h3 id="use-model">Using Generated Models</h3>
+    <p>To use the generated models in your controller, just <code>#include "orm.h"</code>, then create model instances through their namespace:</p>
+    <pre><code>#include "orm.h"
+
+// Use the Article model with the cms tag
+auto articles = orm::cms::Article();
+
+// Use the Sysuser model with the cms tag
+auto users = orm::cms::Sysuser();
+
+// Use the default tag models (benchmark tables World/Fortune)
+auto worlds = orm::World();
+
+// Use the Fortune model with the ph (PostgreSQL) tag
+auto fortunes = orm::ph::Fortune();</code></pre>
+
+    <div class="tip-box">
+        💡 Tip: Model files are auto-generated by the CLI tool. <strong>Do not manually modify them</strong>. If your database table structure changes, simply re-run <code>./bin/paozhu_cli orm <tag></code> to update the models.
+    </div>
+
+    <h3 id="model-features">Model Features</h3>
+    <ul>
+        <li>Auto-generated field type definitions (<code>orm::cms::article_info::type::aid</code>)</li>
+        <li>Built-in <code>meta</code> struct for storing field data</li>
+        <li>JSON serialization support (<code>to_json()</code>)</li>
+        <li>Tree structure support (<code>meta_tree</code>, <code>meta_tree_ptr</code>)</li>
+        <li>Auto-generated SQL statements (INSERT, UPDATE, DELETE)</li>
+        <li>Support for <code>obj_val</code> and <code>meta</code> interconversion</li>
+    </ul>
+
+    <h2 id="query-data">Querying Data</h2>
+    <p>Paozhu ORM provides various query methods and supports chained calls to construct query conditions.</p>
+
+    <h3 id="query-all">Retrieve All Records</h3>
+    <pre><code>// Retrieve all records
+auto articles = orm::cms::Article();
+articles.where("isopen", 1).fetch();</code></pre>
+
+    <h3 id="query-conditional">Conditional Query</h3>
+    <pre><code>// Multi-condition query
+articles.where("userid", 1).whereAnd("isopen", 1).fetch();</code></pre>
+
+    <h3 id="query-single">Retrieve a Single Record</h3>
+    <pre><code>// Retrieve a single record
+users.where("name", username).whereAnd("password", md5string).fetch_one();</code></pre>
+
+    <h3 id="query-pagination">Paginated Query</h3>
+    <pre><code>// Paginated query
+auto [bar_min, bar_max, current_page, total_page] = articles.page(page, 10, 5);</code></pre>
+    <ul>
+        <li><code>page</code> — Current page number</li>
+        <li><code>10</code> — Number of records per page</li>
+        <li><code>5</code> — Number of page numbers displayed in the pagination bar</li>
+    </ul>
+
+    <h2 id="insert-data">Inserting Data</h2>
+    <p>Use the model's setter methods to set field values, then call the <code>save()</code> method to insert a new record:</p>
+    <pre><code>auto articles = orm::cms::Article();
+articles.setIsopen(1);
+articles.setCreatetime(get_date("%Y-%m-%d %X"));  // Formatted time
+articles.setAddtime(timeid());                    // Unix timestamp
+articles.setAddip(client.client_ip);               // Client IP
+articles.setTitle("New Title");
+articles.setContent("Content");
+
+// save() returns [affected_rows, auto_increment_id]
+auto[effectnum, last_id] = articles.save();
+if (effectnum > 0)
+{
+    int new_id = articles.getAid();  // Get the new record ID
+    client.goto_url("/cms/list", 3, "Added successfully");
+}</code></pre>
+
+    <div class="tip-box">
+        💡 Tip: The <code>save()</code> method is used to insert new records. After successful insertion, you can use getter methods like <code>getAid()</code> to obtain the auto-increment ID.
+    </div>
+
+    <h2 id="update-data">Updating Data</h2>
+    <p>First set new values through setter methods, then specify update conditions via <code>where()</code>, and finally call the <code>update()</code> method with the fields to update:</p>
+    <pre><code>auto articles = orm::cms::Article();
+articles.setTitle("Updated Title");
+articles.setContent("Updated Content");
+
+// Specify update conditions and fields to update
+articles.where("aid", aid);
+int effectnum = articles.update("title,content");
+
+if (effectnum > 0)
+{
+    client.goto_url("/cms/list", 3, "Updated successfully");
+}</code></pre>
+
+    <div class="tip-box">
+        💡 Tip: The <code>update()</code> method parameter specifies which fields to update (comma-separated). You can also use <code>update()</code> without parameters to update <strong>all</strong> fields in <code>article.data</code>, but you must ensure the primary key is set, otherwise an error will occur. Always use <code>where()</code> or set the primary key before calling update.
+    </div>
+
+    <h2 id="delete-data">Deleting Data</h2>
+    <p>Use the <code>remove()</code> method to directly delete a record by its ID:</p>
+    <pre><code>auto articles = orm::cms::Article();
+
+// Delete a record by its ID
+int effectnum = articles.remove(aid);
+
+if (effectnum > 0)
+{
+    client.goto_url("/cms/list", 3, "Deleted successfully");
+}</code></pre>
+
+    <div class="tip-box">
+        💡 Tip: The <code>remove(id)</code> method deletes a record directly by its primary key. For conditional or batch deletions, call <code>remove()</code> together with <code>where()</code> or <code>whereIn()</code> conditions.
+    </div>
+
+    <h2 id="advanced-query">Advanced Query Methods</h2>
+
+    <h3 id="query-order">Sorting Queries</h3>
+    <pre><code>// Using order() for sorting
+articles.order("aid desc").fetch();
+
+// Using asc() for ascending
+articles.where("userid", 0).asc("addtime").fetch();
+
+// Using desc() for descending
+articles.desc("addtime").fetch();</code></pre>
+
+    <h3 id="query-select">Selecting Specific Fields</h3>
+    <pre><code>// Query only needed fields
+articles.select("aid,title,summary").where("userid", 0).fetch();</code></pre>
+
+    <h3 id="query-limit">Limiting Query Results</h3>
+    <pre><code>// Limit query results
+articles.where("userid", 1).limit(1).fetch_one();
+articles.limit(10).fetch();</code></pre>
+
+    <h3 id="query-count">Count Queries</h3>
+    <pre><code>// Count total records
+unsigned int total = articles.where("userid", userid).count();
+
+// Count records matching conditions
+total = articles.where("userid", userid).where("addtime", ">", lastweek_time).count();</code></pre>
+
+    <h3 id="query-wherein">IN Condition Queries</h3>
+    <pre><code>// Using whereIn to query multiple IDs
+std::string aid_sql_str = "1,2,3";
+articles.whereIn("aid", aid_sql_str).fetch();</code></pre>
+
+    <h3 id="query-operators">Operator Queries</h3>
+    <pre><code>// Supports operators like greater than, less than
+articles.where("addtime", ">", lastweek_time).fetch();
+articles.where("readnum", "<", 100).fetch();
+articles.where("isopen", "!=", 0).fetch();</code></pre>
+
+    <h2 id="field-update">Field Update Operations</h2>
+
+    <h3 id="field-inc">Field Increment/Decrement</h3>
+    <pre><code>// Increment (positive number)
+model.where("aid", id).update_col("readnum", 1);   // readnum + 1
+
+// Decrement (negative number)
+model.where("aid", id).update_col("stock", -1);    // stock - 1</code></pre>
+
+    <h3 id="field-replace">Field Replacement</h3>
+    <pre><code>// Replace specified string in field content
+model.where("aid", id).replace_col("content", "old", "new");</code></pre>
+
+    <h2 id="data-access">Data Access Methods</h2>
+
+    <h3 id="access-getter">Using Getter Methods</h3>
+    <pre><code>// Single record
+model.where("aid", id).fetch_one();
+std::string title = model.getTitle();
+int userid = model.getUserid();
+unsigned int pk = model.getPK();</code></pre>
+
+    <h3 id="access-record">Iterating Over Result Sets</h3>
+    <pre><code>// Multiple record iteration
+model.where("userid", 1).fetch();
+for (auto &record : model.record)
+{
+    std::cout << record.aid << ": " << record.title << std::endl;
+}</code></pre>
+
+    <h3 id="access-data">Direct Access to Data Structure</h3>
+    <pre><code>// Directly access data structure (besides setter/getter)
+model.data.title = "New Title";
+model.data.content = "New Content";
+model.save();</code></pre>
+
+    <h2 id="async-orm">Async ORM Operations</h2>
+    <p>Use async ORM methods in coroutines. All async methods are prefixed with <code>async_</code>:</p>
+
+    <h3 id="async-methods">Available Async ORM Methods</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Sync Method</th>
+                <th>Async Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><code>fetch()</code></td><td><code>async_fetch()</code></td><td>Query all matching records</td></tr>
+            <tr><td><code>fetch_one()</code></td><td><code>async_fetch_one()</code></td><td>Query a single record</td></tr>
+            <tr><td><code>fetch_append()</code></td><td><code>async_fetch_append()</code></td><td>Query and append to existing result set</td></tr>
+            <tr><td><code>count()</code></td><td><code>async_count()</code></td><td>Count matching records</td></tr>
+            <tr><td><code>save()</code></td><td><code>async_save()</code></td><td>Insert a new record</td></tr>
+            <tr><td><code>update()</code></td><td><code>async_update()</code></td><td>Update a record</td></tr>
+            <tr><td><code>remove()</code></td><td><code>async_remove()</code></td><td>Delete a record</td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="async-example">Async Usage Example</h3>
+    <pre><code>// Using async ORM in coroutines
+#include "orm.h"
+
+asio::awaitable<void> handle_request()
+{
+    auto model = orm::cms::Article();
+    
+    // Async queries
+    co_await model.async_fetch();
+    co_await model.async_count();
+    
+    // Async operations
+    co_await model.async_save();
+    co_await model.async_update();
+    co_await model.async_remove();
+}</code></pre>
+
+    <h3 id="async-practical">Practical Examples (from techempower.cpp)</h3>
+
+    <h4>Async Query Single Record</h4>
+    <pre><code>// Randomly query a World record
+//@urlpath(null,db)
+asio::awaitable<std::string> techempowerdb(std::shared_ptr<httppeer> peer)
+{
+    peer->type("application/json; charset=UTF-8");
+    auto myworld = orm::World();
+    unsigned int rd_num = rand_range(1, 10000);
+    myworld.where("id", rd_num);
+    myworld.limit(1);
+    co_await myworld.async_fetch_one();  // Async query single
+    
+    peer->output = myworld.data_tojson();
+    co_return "";
+}</code></pre>
+
+    <h4>Async Batch Query (Connection Lock Reuse)</h4>
+    <pre><code>// Lock connection for multiple queries to avoid reconnection overhead
+//@urlpath(null,queries)
+asio::awaitable<std::string> techempowerqueries(std::shared_ptr<httppeer> peer)
+{
+    unsigned int get_num = peer->get["queries"].to_int();
+    if (get_num == 0) get_num = 1;
+    else if (get_num > 500) get_num = 500;
+    
+    auto myworld = orm::World();
+    myworld.record.reserve(get_num);
+    myworld.lock_conn();  // Lock connection
+    
+    for (unsigned int i = 0; i < get_num; i++)
+    {
+        myworld.wheresql.clear();
+        unsigned int rd_num = rand_range(1, 10000);
+        myworld.where("id", rd_num);
+        co_await myworld.async_fetch_append();  // Append query result
+    }
+    
+    myworld.unlock_conn();  // Unlock connection
+    peer->output = myworld.to_json();
+    co_return "";
+}</code></pre>
+
+    <h4>Async Query All Records</h4>
+    <pre><code>// Query all Fortunes and sort
+//@urlpath(null,fortunes)
+asio::awaitable<std::string> techempowerfortunes(std::shared_ptr<httppeer> peer)
+{
+    auto myfortune = orm::Fortune();
+    co_await myfortune.async_fetch();  // Async query all
+    
+    myfortune.data.id = 0;
+    myfortune.data.message = "Additional fortune added at request time.";
+    myfortune.record.push_back(myfortune.data);
+    
+    // Sort
+    std::sort(myfortune.record.begin(), myfortune.record.end(), 
+              [](const auto &lhs, const auto &rhs) {
+                  return lhs.message < rhs.message;
+              });
+    
+    // Output to view
+    peer->val["list"].set_array();
+    for (auto &record : myfortune.record)
+    {
+        obj_val item;
+        item["id"] = record.id;
+        item["message"] = html_encode(record.message);
+        peer->val["list"].push(item);
+    }
+    peer->view("techempower/fortunes");
+    co_return "";
+}</code></pre>
+
+    <h4>Async Update Operation</h4>
+    <pre><code>// Batch update random numbers
+//@urlpath(null,updates)
+asio::awaitable<std::string> techempowerupdates(std::shared_ptr<httppeer> peer)
+{
+    unsigned int get_num = peer->get["queries"].to_int();
+    if (get_num == 0) get_num = 1;
+    else if (get_num > 500) get_num = 500;
+    
+    auto myworld = orm::World();
+    myworld.record.clear();
+    myworld.record.reserve(get_num);
+    myworld.lock_conn();  // Lock connection
+    
+    for (unsigned int i = 0; i < get_num; i++)
+    {
+        myworld.wheresql.clear();
+        myworld.where("id", rand_range(1, 10000));
+        co_await myworld.async_fetch_append();
+        
+        if (myworld.effect() > 0)
+        {
+            unsigned int j = myworld.record.size() - 1;
+            myworld.data.randomnumber = rand_range(1, 10000);
+            myworld.record[j].randomnumber = myworld.data.randomnumber;
+            co_await myworld.async_update("randomnumber");  // Async update specified field
+        }
+    }
+    
+    myworld.unlock_conn();
+    peer->output = myworld.to_json();
+    co_return "";
+}</code></pre>
+
+    <h4>Cache + Database Combined Query</h4>
+    <pre><code>// Check cache first, query database on cache miss
+//@urlpath(null,cached-db)
+asio::awaitable<std::string> techempowercached_db(std::shared_ptr<httppeer> peer)
+{
+    unsigned int get_num = peer->get["count"].to_int();
+    if (get_num == 0) get_num = 1;
+    else if (get_num > 500) get_num = 500;
+    
+    auto myworld = orm::World();
+    std::string mycacheid = "my" + std::to_string(get_num);
+    
+    // Get cache connection
+    pzcache<std::vector<orm::world_info::meta>> &temp_cache = 
+        pzcache<std::vector<orm::world_info::meta>>::conn();
+    
+    myworld.record.reserve(get_num);
+    
+    if (temp_cache.check(mycacheid) > -1)
+    {
+        // Cache hit
+        myworld.record = temp_cache.get(mycacheid);
+    }
+    else
+    {
+        // Cache miss, query database
+        std::vector<unsigned int> cacheid;
+        for (unsigned int i = 0; i < get_num; i++)
+        {
+            cacheid.push_back(rand_range(1, 10000));
+        }
+        
+        std::string sqlstr = array_to_sql(cacheid);
+        myworld.whereIn("id", sqlstr);
+        co_await myworld.async_fetch();  // Async IN query
+        
+        // Write to cache
+        temp_cache.save(mycacheid, myworld.record, 360);
+    }
+    
+    peer->output = myworld.to_json();
+    co_return "";
+}</code></pre>
+
+    <div class="tip-box">
+        💡 Note: Synchronous controllers (returning <code>std::string</code>) and coroutine controllers (returning <code>asio::awaitable<std::string></code>) can be mixed in the same project. The framework automatically selects the correct execution path based on the function signature.
+    </div>
+
+    <h2 id="native-sql">Native SQL Queries</h2>
+    <p>When you need to execute complex SQL or queries not supported by ORM, use the <code>orm::db_conn</code> independent database connection:</p>
+    <pre><code>#include "orm.h"
+#include "orm_query.h"
+
+// 1. Define the result structure
+namespace orm::cust
+{
+    struct LocalusersqlStruct : orm::Base<LocalusersqlStruct>
+    {
+        unsigned int adminid;
+        std::string name;
+        std::string nickname;
+        ORM_NAMES(adminid, name, nickname);
+    };
+}
+
+// 2. Execute SQL query
+std::vector<orm::cust::LocalusersqlStruct> loaduser;
+auto ulink = std::make_unique<orm::db_conn>("cms");
+
+std::string sqlstring = "SELECT adminid,name,nickname FROM sysuser where 1 limit 1";
+ulink->query(sqlstring, loaduser);
+
+// 3. Read results
+for (auto &row : loaduser)
+{
+    client << "adminid:" << row.adminid << ", name:" << row.name;
+}</code></pre>
+
+    <div class="tip-box">
+        💡 Note: The SELECT fields in SQL must correspond one-to-one with the returned struct fields.
+    </div>
+
+    <h2 id="transaction">Transaction Handling</h2>
+    <p>Use <code>orm::db_conn</code> independent database connections for transaction handling to ensure the atomicity of multiple operations.</p>
+
+    <h3 id="transaction-basic">Basic Transaction Operations</h3>
+    <pre><code>#include "orm.h"
+#include "orm_query.h"
+
+// 1. Create an independent database connection (tag corresponds to orm.conf config)
+auto ulink = std::make_unique<orm::db_conn>("cms");
+
+// 2. Start a transaction
+bool is_begin = ulink->begin_commit();
+
+if (is_begin)
+{
+    try
+    {
+        // 3. Execute multiple database operations
+        ulink->edit_query("UPDATE sysuser SET nickname = 'New Name' WHERE adminid = 10000");
+        if (ulink->iserror)
+        {
+            ulink->rollback();  // Rollback on error
+        }
+        else
+        {
+            ulink->edit_query("INSERT INTO sysuser (adminid, name) VALUES (10001, 'test')");
+            if (ulink->iserror)
+            {
+                ulink->rollback();  // Rollback on error
+            }
+            else
+            {
+                // 4. Commit the transaction
+                ulink->commit();
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        ulink->rollback();
+    }
+}</code></pre>
+
+    <h3 id="transaction-with-structure">Transaction with Query Results</h3>
+    <pre><code>// Define the result structure
+namespace orm::cust
+{
+    struct UserStruct : orm::Base<UserStruct>
+    {
+        unsigned int adminid;
+        std::string name;
+        std::string nickname;
+        ORM_NAMES(adminid, name, nickname);
+    };
+}
+
+// Query and modify data within a transaction
+auto ulink = std::make_unique<orm::db_conn>("cms");
+orm::cust::UserStruct commit_data;
+
+if (ulink->begin_commit())
+{
+    try
+    {
+        // Update operation
+        ulink->edit_query("UPDATE sysuser SET nickname = 'Nice Name' WHERE adminid = 10000");
+        if (!ulink->iserror)
+        {
+            // Insert operation
+            ulink->edit_query("INSERT INTO sysuser (adminid, name) VALUES (NULL, 'userroot')");
+            if (!ulink->iserror)
+            {
+                // Query operation (using the same connection)
+                ulink->edit_query(
+                    "SELECT adminid, name, nickname FROM sysuser WHERE adminid = 10000 LIMIT 1",
+                    commit_data  // Results stored in struct
+                );
+                if (!ulink->iserror)
+                {
+                    ulink->commit();  // Commit
+                }
+                else
+                {
+                    ulink->rollback();
+                }
+            }
+            else
+            {
+                ulink->rollback();
+            }
+        }
+        else
+        {
+            ulink->rollback();
+        }
+    }
+    catch (const std::exception& e)
+    {
+        ulink->rollback();
+    }
+}
+
+// Read results
+if (commit_data.adminid != 0)
+{
+    std::cout << "adminid: " << commit_data.adminid 
+              << ", name: " << commit_data.name << std::endl;
+}</code></pre>
+
+    <h3 id="transaction-orm">Using ORM Objects to Generate SQL</h3>
+    <pre><code>// Recommended: Use ORM objects to generate SQL, then commit with transaction
+auto user_m = orm::cms::Sysuser();
+
+// Get INSERT SQL
+user_m.data.nickname = "New Name";
+std::string insert_sql = user_m.commit_insert();
+
+// Get UPDATE SQL
+user_m.where("adminid", 10005);
+std::string update_sql = user_m.commit_update("nickname");
+
+// Get DELETE SQL
+std::string delete_sql = user_m.commit_remove();
+
+// Then use db_conn to execute these SQL and commit the transaction
+auto ulink = std::make_unique<orm::db_conn>("cms");
+if (ulink->begin_commit())
+{
+    ulink->edit_query(insert_sql);
+    if (!ulink->iserror)
+    {
+        ulink->edit_query(update_sql);
+        if (!ulink->iserror)
+        {
+            ulink->commit();
+        }
+        else
+        {
+            ulink->rollback();
+        }
+    }
+    else
+    {
+        ulink->rollback();
+    }
+}</code></pre>
+
+    <div class="tip-box">
+        💡 Tip:
+        <ul>
+            <li><code>begin_commit()</code> — Start a transaction, returns <code>bool</code> indicating success</li>
+            <li><code>edit_query(sql)</code> — Execute write operations (INSERT/UPDATE/DELETE), check for errors via <code>iserror</code></li>
+            <li><code>edit_query(sql, result)</code> — Execute query operation, results stored in struct</li>
+            <li><code>commit()</code> — Commit the transaction</li>
+            <li><code>rollback()</code> — Rollback the transaction</li>
+        </ul>
+        Transaction handling is important for scenarios requiring data consistency, such as transfers and order processing. If any operation in the transaction fails, the entire transaction will be rolled back.
+    </div>
+
+    <h2 id="connection-pool">Database Connection Pool</h2>
+    <p>Paozhu ORM uses a connection pool to manage database connections. The <code>maxpool</code> parameter in <code>orm.conf</code> controls the maximum number of connections for each data source:</p>
+    <ul>
+        <li>A larger <code>maxpool</code> value supports more concurrent requests</li>
+        <li>Each data source independently manages its own connection pool</li>
+        <li>Idle connections are automatically recycled to avoid resource waste</li>
+        <li>The connection pool supports automatic reconnection, allowing recovery after network issues</li>
+    </ul>
+    <div class="tip-box">
+        💡 Recommendation: Set <code>maxpool</code> to 2-3 times the number of business threads. The exact value should be adjusted based on your actual business scenarios and database capacity.
+    </div>
+
+    <a href="index.html" class="back-to-index">← Back to Home</a>
+    `;
+
+    document.getElementById('content-cn').innerHTML = cnFullContent;
+    document.getElementById('content-en').innerHTML = enFullContent;
+
+    function buildHierarchyNav(lang) {
+        const container = document.getElementById('dynamic-nav');
+        const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+        if (!contentDiv) {
+            container.innerHTML = '<p>Content not found</p>';
+            return;
+        }
+        const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+        if (headings.length === 0) {
+            container.innerHTML = '<p style="padding: 1rem;">No sections</p>';
+            return;
+        }
+
+        const root = { children: [] };
+        let stack = [root];
+
+        headings.forEach(heading => {
+            let level = parseInt(heading.tagName[1]);
+            const id = heading.id;
+            let title = heading.innerText.trim();
+            if (!title) title = heading.textContent.trim() || "Section";
+            const node = { level, id, title, children: [] };
+            while (stack.length > 0 && stack[stack.length-1].level >= level) {
+                stack.pop();
+            }
+            const parent = stack[stack.length-1];
+            parent.children.push(node);
+            stack.push(node);
+        });
+
+        function renderTree(nodes) {
+            if (!nodes.length) return '';
+            let html = '<ul class="nav-tree no-bullet">';
+            nodes.forEach(node => {
+                const hasChildren = node.children.length > 0;
+                const liClass = `level-${node.level}`;
+                html += `<li class="${liClass}">`;
+                html += `<div class="tree-item"><a href="#${node.id}" data-id="${node.id}" class="nav-link">${escapeHtml(node.title)}</a></div>`;
+                if (hasChildren) {
+                    html += renderTree(node.children);
+                }
+                html += `</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        const navHtml = renderTree(root.children);
+        container.innerHTML = navHtml || '<p>No navigation</p>';
+
+        attachNavEvents(contentDiv);
+    }
+
+    function attachNavEvents(contentDiv) {
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            link.removeEventListener('click', navClickHandler);
+            link.addEventListener('click', navClickHandler);
+        });
+        function navClickHandler(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-id');
+            const targetElem = contentDiv.querySelector(`#${targetId}`);
+            if (targetElem) {
+                targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                history.pushState(null, null, `#${targetId}`);
+            }
+            if (window.innerWidth <= 860) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active-link'));
+            this.classList.add('active-link');
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    if (id) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active-link');
+                            if (link.getAttribute('data-id') === id) {
+                                link.classList.add('active-link');
+                            }
+                        });
+                    }
+                }
+            });
+        }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+
+        const allHeadings = contentDiv.querySelectorAll('[id]');
+        allHeadings.forEach(el => observer.observe(el));
+    }
+
+    let currentLang = 'cn';
+    function switchLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+        if (lang === 'cn') {
+            document.getElementById('content-cn').classList.add('active-lang');
+        } else {
+            document.getElementById('content-en').classList.add('active-lang');
+        }
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        buildHierarchyNav(lang);
+        window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang) switchLanguage(lang);
+        });
+    });
+
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+
+    const topBtn = document.getElementById('scrollTopBtn');
+    topBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // URL hash 检测语言切换
+    const hashLang = window.location.hash;
+    if (hashLang === '#english' || hashLang === '#en') {
+        switchLanguage('en');
+    } else if (hashLang === '#chinese' || hashLang === '#zh') {
+        switchLanguage('cn');
+    } else {
+        buildHierarchyNav('cn');
+    }
+</script>
+</body>
+</html>

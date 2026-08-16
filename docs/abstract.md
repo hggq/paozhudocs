@@ -319,6 +319,7 @@ pval.from_json(bbb);
 - `is_string()` 是否是字符串
 - `is_number()` 是否数字
 
+
 #### 典型使用方式和HTML模板使用
 
 ```C++
@@ -346,6 +347,65 @@ pval.from_json(bbb);
   <td><a href="/superadmin/edituser?userid=<%c echo<<a["userid"].to_string(); %>">编辑</a> | <a href="/superadmin/deleteuser?userid=<%c echo<<a["userid"].to_string(); %>" onclick="return confirm('确定删除？');">删除</a></td>
 </tr>
 <%c } %>
+```
+
+#### 内置微型对象高级方法
+
+- `obj_val multi_sort(std::string_view key,unsigned char order);` 二维数组按键名排序 order 可以是 SORT_ASC,SORT_DESC
+- `obj_val multi_sort(std::string_view key,unsigned char order,std::string_view key2,unsigned char order2);`	二维数组按键名排序 order 可以是 SORT_ASC,SORT_DESC，如果有相同二次排序,需要key2 和 order2
+
+#### 内置微型对象高级用法
+
+```c++
+    http::obj_val zval4;
+    zval4.set_array();
+    float s[6]={83.3,77.75,60.45,83.3,77.75,45.6};
+    for(unsigned int jjj=0;jjj<6;jjj++)
+    {
+        http::obj_val z4;
+        z4.set_object();
+        z4["name"]="sss"+std::to_string(jjj);
+        z4["score"]=s[jjj];
+        z4["id"]=jjj+10;
+        zval4.push(z4);
+    }
+    http::obj_val zval5=zval4.multi_sort("score",SORT_ASC);
+
+    std::cout<<"------"<<std::endl;
+    if(zval5.is_array())
+    {
+        std::cout<<"multi_sort score result: "<<zval5.size()<<std::endl;
+        for(auto &a:zval5.as_array())
+        {
+            if(a.is_object())
+            {
+                for(auto &[aa,bb]:a.as_object())
+                {
+                    std::cout<<"zval5["<<aa<<"]="<< bb.to_string()<<std::endl;
+                }
+            }
+            std::cout<<std::endl;
+        }
+    }
+
+    http::obj_val zval6=zval4.multi_sort("score",SORT_ASC,"id",SORT_DESC);
+    std::cout<<"------"<<std::endl;
+    if(zval6.is_array())
+    {
+        std::cout<<"multi_sort score id result: "<<zval6.size()<<std::endl;
+        for(auto &a:zval6.as_array())
+        {
+            if(a.is_object())
+            {
+                for(auto &[aa,bb]:a.as_object())
+                {
+                    std::cout<<"zval6["<<aa<<"]="<< bb.to_string()<<std::endl;
+                }
+            }
+            std::cout<<std::endl;
+        }
+    }
+    std::cout<<"------"<<std::endl;
 ```
 
 

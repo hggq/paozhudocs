@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu 控制器开发教程 · Controller Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-tree li {
+            margin: 0.2rem 0;
+            list-style: none;
+        }
+        .nav-tree .tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .nav-tree a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.88rem;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+            opacity: 0.85;
+            flex: 1;
+        }
+        .nav-tree a:hover {
+            background-color: var(--nav-hover-bg);
+            opacity: 1;
+            color: var(--link-color);
+        }
+        .nav-tree a.active-link {
+            background-color: var(--link-color);
+            color: white;
+            opacity: 1;
+        }
+        .nav-tree .level-1 > a {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+        .nav-tree .level-2 {
+            padding-left: 1.3rem;
+        }
+        .nav-tree .level-3 {
+            padding-left: 2.2rem;
+        }
+        .no-bullet {
+            list-style: none;
+        }
+        .sidebar-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin: 1rem 0 0.5rem 0.5rem;
+        }
+
+        .content-panel {
+            display: none;
+            animation: fade 0.2s ease;
+        }
+        .content-panel.active-lang {
+            display: block;
+        }
+        @keyframes fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            border: 1px solid var(--border-light);
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        h1, h2, h3, h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+        img, svg { max-width: 100%; }
+
+        .back-to-index {
+            display: block;
+            margin-top: 3rem;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            background-color: var(--code-bg);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--link-color);
+            font-weight: 600;
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+        .back-to-index:hover {
+            background-color: var(--nav-hover-bg);
+            color: var(--link-hover);
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 1.2rem;
+            right: 1.2rem;
+            background: #475569;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: 0.2s;
+            z-index: 99;
+            font-weight: bold;
+        }
+        .scroll-top:hover {
+            opacity: 1;
+            background: var(--link-color);
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+            margin: 0.8rem 0;
+        }
+        li {
+            margin: 0.3rem 0;
+        }
+        .tip-box {
+            background-color: var(--code-bg);
+            border-left: 4px solid var(--link-color);
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+        .warning-box {
+            background-color: var(--code-bg);
+            border-left: 4px solid #f59e0b;
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+    </style>
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">🎮 控制器开发导航</div>
+            <div id="dynamic-nav">加载中...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel active-lang"></div>
+        <div id="content-en" class="content-panel"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+    const cnFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🎮 Paozhu 控制器开发教程</h1>
+        <p style="opacity: 0.8;">掌握 Paozhu 框架控制器开发的核心知识与实战技巧</p>
+    </div>
+
+    <h2 id="controller-basics">控制器基础</h2>
+    <h3 id="what-is-controller">什么是控制器</h3>
+    <p>控制器（Controller）是 Paozhu 框架中处理 HTTP 请求的核心组件。每个控制器函数接收客户端请求，执行业务逻辑，并返回响应结果。控制器通常位于 <code>controller/src/</code> 目录下。</p>
+
+    <h3 id="create-basic-controller">创建基本控制器</h3>
+    <p>一个标准的控制器包含头文件和源文件。首先创建头文件 <code>controller/src/testhello.h</code>：</p>
+    <pre><code>#pragma once
+#include "httppeer.h"
+
+namespace http
+{
+    // 控制器函数声明
+}
+    </code></pre>
+    <p>然后创建源文件 <code>controller/src/testhello.cpp</code>：</p>
+    <pre><code>#include "httppeer.h"
+#include "testhello.h"
+
+namespace http
+{
+//@urlpath(null, hello)
+std::string testhello(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << " Hello world! Paozhu framework ";
+    return "";
+}
+}</code></pre>
+    <div class="tip-box">
+        💡 <strong>提示</strong>：控制器函数必须放在 <code>http</code> 命名空间内，框架会自动扫描该命名空间下的所有注解函数。
+    </div>
+
+    <h2 id="annotation-routing">注解路由</h2>
+    <h3 id="urlpath-annotation">@urlpath 注解用法</h3>
+    <p>Paozhu 使用 <code>//@urlpath</code> 注解来绑定 URL 路由。框架在编译时扫描所有注解，自动生成路由映射代码。</p>
+
+    <h4 id="annotation-syntax">注解语法</h4>
+    <pre><code>//@urlpath(前置拦截器, URL路径)
+返回类型 函数名(std::shared_ptr<httppeer> peer)</code></pre>
+    <ul>
+        <li><strong>前置拦截器</strong>：可以为 <code>null</code>（无拦截器），也可以指定一个预处理函数（如 <code>islogin</code> 检查登录）</li>
+        <li><strong>URL路径</strong>：绑定的 URL 路径，如 <code>hello</code> 对应 <code>/hello</code></li>
+    </ul>
+
+    <h4 id="annotation-example">完整示例</h4>
+    <pre><code>//@urlpath(null,hello)
+std::string testhello(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << " Hello world! Paozhu framework ";
+    return "";
+}</code></pre>
+    <p>上述代码将 <code>/hello</code> 路径映射到 <code>testhello</code> 函数。当浏览器访问 <code>http://yourdomain/hello</code> 时，框架会自动调用该函数。</p>
+
+    <h3 id="pre-filter-annotation">前置拦截器注解</h3>
+    <p>前置拦截器可以在控制器函数执行前进行权限检查、日志记录等操作：</p>
+    <pre><code>//@urlpath(islogin, admin)
+std::string adminpage(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << "Admin panel";
+    return "";
+}</code></pre>
+    <p>上述代码中，<code>islogin</code> 拦截器会在 <code>adminpage</code> 函数执行前被调用，用于验证用户是否已登录。</p>
+
+    <h2 id="request-params">获取请求参数</h2>
+    <h3 id="get-params">GET 参数</h3>
+    <p>通过 <code>client.get</code> 对象获取 URL 查询字符串参数：</p>
+    <pre><code>// 获取 GET 参数
+std::string id = client.get["id"].to_string();
+int page = client.get["page"].to_int();
+
+// 带默认值获取
+std::string keyword = client.get["keyword"].to_string("");
+int limit = client.get["limit"].to_int(10);</code></pre>
+
+    <h3 id="post-params">POST 参数</h3>
+    <p>通过 <code>client.post</code> 对象获取表单 POST 参数。为防止 SQL 注入和 XSS 攻击，建议使用 <code>to_escape()</code> 方法进行安全转义：</p>
+    <pre><code>// POST 参数（需处理安全转义）
+std::string username = client.post["username"].to_escape();
+std::string password = client.post["password"].to_string();
+
+// 获取整数类型参数
+int status = client.post["status"].to_int();
+
+// 获取数组参数
+auto tags = client.post["tags"].to_vector();</code></pre>
+
+    <div class="warning-box">
+        ⚠️ <strong>安全提示</strong>：处理用户输入时，务必使用 <code>to_escape()</code> 进行转义，特别是在将数据存入数据库或输出到 HTML 页面时。
+    </div>
+
+    <h3 id="file-upload">文件上传</h3>
+    <p>通过 <code>client.files</code> 对象处理文件上传。上传的文件会先保存到服务端临时目录，需要调用 <code>std::filesystem::rename</code> 移动到目标目录：</p>
+    <pre><code>// 获取上传文件信息（tempfile 为服务端临时文件路径）
+std::string filename  = client.files["avatar"]["filename"].as_string();
+std::string tempfile  = client.files["avatar"]["tempfile"].as_string();
+unsigned int filesize = client.files["avatar"]["size"].to_int();
+
+// 保存到站点 upload 目录
+namespace fs = std::filesystem;
+std::string sitepath = client.get_sitepath();
+if (sitepath.back() != '/')
+{
+    sitepath.push_back('/');
+}
+sitepath.append("upload");
+fs::create_directories(sitepath);
+fs::rename(tempfile, sitepath + "/" + filename);
+client << "File uploaded successfully: " << filename;</code></pre>
+
+    <h2 id="session-management">Session 管理</h2>
+    <h3 id="check-login">检查登录状态</h3>
+    <p>使用 Session 验证用户登录状态是最常见的鉴权方式：</p>
+    <pre><code>// 检查登录状态
+if (client.session["userid"].to_int() == 0)
+{
+    // 未登录，渲染登录页（视图渲染必须调用 view 方法）
+    client.view("login/login");
+    return "";
+}</code></pre>
+
+    <h3 id="set-session">设置 Session</h3>
+    <p>用户登录成功后，将用户信息存入 Session：</p>
+    <pre><code>// 设置 Session
+client.session["userid"] = users.getCompanyid();
+client.session["username"] = users.getName();
+client.save_session();</code></pre>
+
+    <h3 id="destroy-session">销毁 Session</h3>
+    <p>用户退出登录时，清除 Session 数据：</p>
+    <pre><code>// 销毁 Session
+client.clear_session();</code></pre>
+
+    <h3 id="session-goto">跳转与 Session 配合</h3>
+    <pre><code>// 跳转到其他页面
+client.goto_url("/cms/list");
+
+// 带延迟和消息的跳转
+client.goto_url("/login", 3, "登录成功，正在跳转...");</code></pre>
+
+    <h2 id="response-output">返回响应</h2>
+    <h3 id="direct-output">直接输出文本</h3>
+    <p>使用流操作符 <code>&lt;&lt;</code> 直接输出响应内容：</p>
+    <pre><code>// 直接输出文本
+client << "Hello World";
+
+// 输出 HTML 内容
+client << "<h1>Welcome</h1>";
+
+// 输出 JSON 数据
+client << "{\"status\":\"ok\",\"code\":200}";</code></pre>
+
+    <h3 id="set-response-header">设置响应头</h3>
+    <p>通过 <code>peer</code> 对象设置 HTTP 响应头：</p>
+    <pre><code>// 设置响应类型
+peer->type("application/json");
+client.output = json_string;
+
+// 设置自定义响应头
+peer->set_header("X-Custom-Header", "Paozhu");
+
+// 设置 HTTP 状态码
+peer->status(404);
+client << "Page Not Found";</code></pre>
+
+    <h3 id="redirect-response">跳转响应</h3>
+    <p>使用 <code>goto_url</code> 方法实现页面跳转：</p>
+    <pre><code>// 立即跳转
+client.goto_url("/dashboard");
+
+// 带延迟跳转（3秒后跳转）
+client.goto_url("/login", 3, "登录失败！");
+
+// 带查询参数跳转
+client.goto_url("/search?keyword=" + keyword);</code></pre>
+
+    <h3 id="template-response">渲染模板</h3>
+    <p>调用 <code>view</code> 方法渲染模板视图（注意：不能通过 <code>return</code> 返回模板路径，返回值会被当作下一个路由方法名查找）：</p>
+    <pre><code>// 渲染模板视图
+client.view("cms/list");
+return "";
+
+// 带数据渲染（数据需放入 client.val 供模板使用）
+client.val["list"] = topics;
+client.val["total"] = total;
+client.view("cms/list");
+return "";</code></pre>
+
+    <h2 id="coroutine-controller">协程控制器</h2>
+    <h3 id="async-basic">协程基础</h3>
+    <p>Paozhu 支持 C++20 协程，使用 <code>asio::awaitable</code> 返回类型和 <code>co_await</code> 关键字实现异步操作。协程控制器特别适合处理数据库查询、外部 API 请求等 IO 密集型操作。</p>
+
+    <h3 id="async-example">协程控制器示例</h3>
+    <pre><code>//@urlpath(null,async_example)
+asio::awaitable<std::string> async_example(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+
+    // 协程方式执行异步操作
+    auto result = co_await some_async_operation();
+
+    client << "Result: " << result;
+    co_return "";
+}</code></pre>
+
+    <h3 id="async-db-example">协程数据库操作</h3>
+    <p>使用协程进行数据库查询，无需阻塞线程：</p>
+    <pre><code>//@urlpath(null,async_users)
+asio::awaitable<std::string> async_get_users(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+
+    // 协程方式查询数据库
+    auto users = co_await orm::cms::Sysuser().async_fetch();
+
+    client.val["users"] = users;
+    client.view("user/list");
+    co_return "";
+}</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>协程优势</strong>：协程允许在等待 IO 操作时释放线程资源，从而大幅提升并发性能。推荐在涉及数据库、网络请求等场景使用协程控制器。
+    </div>
+
+    <h2 id="middleware-preprocessor">中间件预处理器</h2>
+    <h3 id="pre-introduction">预处理器简介</h3>
+    <p>预处理器（Pre Middleware）在控制器函数执行前运行，常用于：</p>
+    <ul>
+        <li>用户鉴权（检查登录状态、权限验证）</li>
+        <li>日志记录（记录请求信息）</li>
+        <li>CSRF 防护</li>
+        <li>请求参数预处理</li>
+        <li>性能监控</li>
+    </ul>
+
+    <h3 id="pre-create">创建预处理器</h3>
+    <p>预处理器是返回 <code>std::string</code> 的普通控制器函数，同样通过 <code>@urlpath</code> 注解注册。框架调用预处理器时：返回 <code>"ok"</code> 表示继续执行目标控制器；返回空字符串表示直接结束；返回其他字符串（如 <code>"cms/login"</code>）则将其作为下一个路由方法名进行方法链跳转：</p>
+    <pre><code>// 登录检查预处理器
+//@urlpath(null,cms/islogin)
+std::string islogin(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    if (client.session["userid"].to_int() == 0)
+    {
+        return "cms/login";  // 未登录，方法链跳转到登录页路由（cms/login 方法内渲染视图）
+    }
+    return "ok";  // 已登录，继续执行
+}
+
+// 日志记录预处理器（返回 "ok" 放行）
+//@urlpath(null,logrequest)
+std::string logrequest(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    std::string url = client.urlpath;  // 当前请求路径
+    // 记录日志
+    return "ok";
+}</code></pre>
+
+    <h3 id="pre-use">在注解中使用预处理器</h3>
+    <p>在 <code>@urlpath</code> 注解的第一个参数中填入预处理器函数名，即可为路由绑定预处理逻辑：</p>
+    <pre><code>// 使用 islogin 预处理器保护后台页面
+//@urlpath(islogin, admin/panel)
+std::string admin_panel(std::shared_ptr<httppeer> peer)
+{
+    // 只有预处理器返回 "ok" 时才会执行到此
+    httppeer &client = peer->get_peer();
+    client << "Admin Panel";
+    return "";
+}</code></pre>
+
+    <h2 id="complete-example">完整示例</h2>
+    <h3 id="crud-controller">CRUD 控制器完整示例</h3>
+    <p>以下是一个包含登录验证、列表展示、添加、编辑、删除操作的完整 CRUD 控制器：</p>
+    <pre><code>// controller/src/testcrud.cpp
+#include "orm.h"
+#include "md5.h"
+#include "func.h"
+#include "httppeer.h"
+#include "request.h"
+#include "testcrud.h"
+
+namespace http
+{
+//@urlpath(null,cms/login)
+std::string articlelogin(std::shared_ptr<httppeer> peer)
+{
+    peer->view("login/login");
+    return "";
+}
+
+// 预处理器：判断是否已经登录，修改内容时需要权限
+//@urlpath(null,cms/islogin)
+std::string articleislogin(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    if (client.session["userid"].to_int() == 0)
+    {
+        return "cms/login";  // 未登录，方法链跳转到登录页路由（cms/login 方法内渲染视图）
+    }
+    return "ok";  // 已登录，放行
+}
+
+//@urlpath(null,cms/loginpost)
+std::string articleloginpost(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client     = peer->get_peer();
+    // 必须处理用户输入，预防攻击
+    std::string username = client.post["username"].to_escape();
+    std::string password = client.post["password"].to_string();
+
+    auto users = orm::cms::Sysuser();
+    std::string md5string;
+    try
+    {
+        md5string = md5(password);
+        users.where("name", username).whereAnd("password", md5string).fetch_one();
+        if (users.getAdminid() > 0)
+        {
+            // 保存登录信息到 Session
+            client.session["userid"] = users.getCompanyid();
+            client.save_session();
+            client.goto_url("/cms/list");
+            return "";
+        }
+        else
+        {
+            client.goto_url("/cms/login", 3, "用户名或密码错误！");
+            return "";
+        }
+    }
+    catch (std::exception &e)
+    {
+        client << "<p>" << e.what() << "</p>";
+        return "";
+    }
+}
+
+//@urlpath(articleislogin,cms/list)
+std::string articlelist(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    auto articles    = orm::cms::Article();
+    int page         = client.get["page"].to_int();
+    if (page < 0)
+    {
+        page = 0;
+    }
+
+    articles.where("isopen", 1);
+    auto [bar_min, bar_max, current_page, total_page] = articles.page(page, 10, 5);
+
+    client.val["pageinfo"].set_object();
+    client.val["pageinfo"]["min"]     = bar_min;
+    client.val["pageinfo"]["max"]     = bar_max;
+    client.val["pageinfo"]["current"] = current_page;
+    client.val["pageinfo"]["total"]   = total_page;
+
+    articles.order(" aid desc ").fetch();
+    if (articles.error_msg.size() > 0)
+    {
+        client.val["msg"] = client.val["msg"].to_string() + articles.error_msg;
+    }
+
+    client.val["list"].set_array();
+    if (articles.size() > 0)
+    {
+        obj_val item;
+        for (auto &bb : articles)
+        {
+            item["aid"]        = bb.aid;
+            item["title"]      = bb.title;
+            item["createtime"] = bb.createtime;
+            item["summary"]    = bb.summary;
+            client.val["list"].push(std::move(item));
+        }
+    }
+    peer->view("cms/list");
+    return "";
+}
+
+//@urlpath(articleislogin,cms/addpost)
+std::string articleaddpost(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client    = peer->get_peer();
+    std::string title   = client.post["title"].to_string();
+    std::string content = client.post["content"].to_string();
+
+    auto articles = orm::cms::Article();
+    articles.setIsopen(1);
+    articles.setCreatetime(get_date("%Y-%m-%d %X"));
+    articles.setAddtime(timeid());
+    articles.setAddip(client.client_ip);
+    articles.setTitle(title);
+    articles.setContent(content);
+
+    try
+    {
+        auto [effectnum, last_id] = articles.save();
+        if (effectnum > 0)
+        {
+            client.goto_url("/cms/list", 3, "内容已经添加");
+            return "";
+        }
+        else
+        {
+            client.goto_url("/cms/list", 3, "添加出错(error)");
+            return "";
+        }
+    }
+    catch (std::exception &e)
+    {
+        client << "<p>" << articles.sqlstring << "</p>";
+        client << "<p>" << e.what() << "</p>";
+        return "";
+    }
+}
+
+//@urlpath(articleislogin,cms/editpost)
+std::string articleeditpost(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client    = peer->get_peer();
+    std::string title   = client.post["title"].to_string();
+    std::string content = client.post["content"].to_string();
+    unsigned int aid    = client.post["aid"].to_int();
+
+    auto articles = orm::cms::Article();
+    articles.setTitle(title);
+    articles.setContent(content);
+    articles.where("aid", aid);
+
+    int effectnum = 0;
+    try
+    {
+        effectnum = articles.update("title,content");
+    }
+    catch (std::exception &e)
+    {
+        client << "<p>" << articles.sqlstring << "</p>";
+        client << "<p>" << e.what() << "</p>";
+        return "";
+    }
+    if (effectnum > 0)
+    {
+        client.goto_url("/cms/list", 3, "内容已经更新");
+        return "";
+    }
+    else
+    {
+        client.goto_url("/cms/list", 3, "更新出错(error)");
+        return "";
+    }
+}
+
+//@urlpath(articleislogin,cms/delete)
+std::string articledelete(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    unsigned int aid = client.get["id"].to_int();
+
+    auto articles = orm::cms::Article();
+    int effectnum = 0;
+    try
+    {
+        effectnum = articles.remove(aid);
+    }
+    catch (std::exception &e)
+    {
+        client << "<p>" << articles.sqlstring << "</p>";
+        client << "<p>" << e.what() << "</p>";
+        return "";
+    }
+    if (effectnum > 0)
+    {
+        client.goto_url("/cms/list", 3, "内容已经删除");
+        return "";
+    }
+    else
+    {
+        client.goto_url("/cms/list", 3, "删除出错(error)");
+        return "";
+    }
+}
+
+//@urlpath(articleislogin,logout)
+std::string logout(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client.clear_session();
+    client.goto_url("/cms/login");
+    return "";
+}
+}</code></pre>
+
+    <h3 id="crud-explain">代码要点说明</h3>
+    <ul>
+        <li><strong>articleislogin 预处理器</strong>：通过 <code>@urlpath</code> 注册，返回 <code>"ok"</code> 放行，返回视图路径则拦截并渲染该视图</li>
+        <li><strong>articleloginpost</strong>：处理登录表单提交，密码使用 <code>md5()</code> 加密后与数据库比对，成功后写入 Session 并跳转</li>
+        <li><strong>articlelist</strong>：文章列表，使用 <code>articles.page(page, 10, 5)</code> 分页，返回 <code>bar_min, bar_max, current_page, total_page</code> 四个分页变量</li>
+        <li><strong>articleaddpost</strong>：新增文章，通过 setter 方法赋值（如 <code>setTitle()/setContent()</code>），<code>save()</code> 返回 <code>[effectnum, last_id]</code></li>
+        <li><strong>articleeditpost</strong>：根据 <code>aid</code> 更新文章，<code>update("title,content")</code> 仅更新指定字段</li>
+        <li><strong>articledelete</strong>：根据 <code>aid</code> 调用 <code>remove(aid)</code> 删除记录</li>
+        <li><strong>logout</strong>：调用 <code>clear_session()</code> 清除 Session 并跳转至登录页</li>
+    </ul>
+
+    <div class="tip-box">
+        💡 <strong>最佳实践</strong>：建议将预处理器函数放在独立文件中（如 <code>middleware.cpp</code>），通过 <code>@urlpath</code> 注册后即可在多个控制器间复用。控制器函数按业务模块分文件组织，保持代码清晰。所有 SQL 参数都通过 ORM 的条件绑定传入，避免字符串拼接导致的注入风险。
+    </div>
+
+    <a href="index.html" class="back-to-index">← 返回首页</a>
+    `;
+
+    const enFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🎮 Paozhu Controller Guide</h1>
+        <p style="opacity: 0.8;">Master the core concepts and practical skills of Paozhu controller development</p>
+    </div>
+
+    <h2 id="controller-basics">Controller Basics</h2>
+    <h3 id="what-is-controller">What is a Controller</h3>
+    <p>Controllers are the core components that handle HTTP requests in the Paozhu framework. Each controller function receives client requests, executes business logic, and returns responses. Controllers are typically located in the <code>controller/src/</code> directory.</p>
+
+    <h3 id="create-basic-controller">Creating a Basic Controller</h3>
+    <p>A standard controller consists of a header file and a source file. First, create the header file <code>controller/src/testhello.h</code>:</p>
+    <pre><code>#pragma once
+#include "httppeer.h"
+
+namespace http
+{
+    // Controller function declarations
+}
+    </code></pre>
+    <p>Then create the source file <code>controller/src/testhello.cpp</code>:</p>
+    <pre><code>#include "httppeer.h"
+#include "testhello.h"
+
+namespace http
+{
+//@urlpath(null, hello)
+std::string testhello(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << " Hello world! Paozhu framework ";
+    return "";
+}
+}</code></pre>
+    <div class="tip-box">
+        💡 <strong>Tip</strong>: Controller functions must be placed in the <code>http</code> namespace. The framework automatically scans all annotated functions in this namespace.
+    </div>
+
+    <h2 id="annotation-routing">Annotation Routing</h2>
+    <h3 id="urlpath-annotation">@urlpath Annotation Usage</h3>
+    <p>Paozhu uses the <code>//@urlpath</code> annotation to bind URL routes. The framework scans all annotations at compile time and automatically generates routing mapping code.</p>
+
+    <h4 id="annotation-syntax">Annotation Syntax</h4>
+    <pre><code>//@urlpath(pre_filter, URL_path)
+return_type function_name(std::shared_ptr<httppeer> peer)</code></pre>
+    <ul>
+        <li><strong>Pre-filter</strong>: Can be <code>null</code> (no filter), or specify a pre-processing function (e.g., <code>islogin</code> for login check)</li>
+        <li><strong>URL Path</strong>: The URL path to bind, e.g., <code>hello</code> maps to <code>/hello</code></li>
+    </ul>
+
+    <h4 id="annotation-example">Complete Example</h4>
+    <pre><code>//@urlpath(null,hello)
+std::string testhello(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << " Hello world! Paozhu framework ";
+    return "";
+}</code></pre>
+    <p>The code above maps the <code>/hello</code> path to the <code>testhello</code> function. When a browser visits <code>http://yourdomain/hello</code>, the framework automatically invokes this function.</p>
+
+    <h3 id="pre-filter-annotation">Pre-filter Annotation</h3>
+    <p>Pre-filters can perform permission checks, logging, and other operations before the controller function executes:</p>
+    <pre><code>//@urlpath(islogin, admin)
+std::string adminpage(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << "Admin panel";
+    return "";
+}</code></pre>
+    <p>In the example above, the <code>islogin</code> filter is called before <code>adminpage</code> to verify the user is logged in.</p>
+
+    <h2 id="request-params">Getting Request Parameters</h2>
+    <h3 id="get-params">GET Parameters</h3>
+    <p>Use the <code>client.get</code> object to access URL query string parameters:</p>
+    <pre><code>// Get GET parameters
+std::string id = client.get["id"].to_string();
+int page = client.get["page"].to_int();
+
+// Get with default values
+std::string keyword = client.get["keyword"].to_string("");
+int limit = client.get["limit"].to_int(10);</code></pre>
+
+    <h3 id="post-params">POST Parameters</h3>
+    <p>Use the <code>client.post</code> object to access form POST parameters. To prevent SQL injection and XSS attacks, use the <code>to_escape()</code> method for safe escaping:</p>
+    <pre><code>// POST parameters (with safe escaping)
+std::string username = client.post["username"].to_escape();
+std::string password = client.post["password"].to_string();
+
+// Get integer parameter
+int status = client.post["status"].to_int();
+
+// Get array parameter
+auto tags = client.post["tags"].to_vector();</code></pre>
+
+    <div class="warning-box">
+        ⚠️ <strong>Security Warning</strong>: Always use <code>to_escape()</code> to sanitize user input, especially when storing data to a database or outputting to HTML pages.
+    </div>
+
+    <h3 id="file-upload">File Upload</h3>
+    <p>Use the <code>client.files</code> object to handle file uploads. Uploaded files are first saved to a temporary directory on the server; use <code>std::filesystem::rename</code> to move them to the target directory:</p>
+    <pre><code>// Get uploaded file info (tempfile is the server-side temporary path)
+std::string filename  = client.files["avatar"]["filename"].as_string();
+std::string tempfile  = client.files["avatar"]["tempfile"].as_string();
+unsigned int filesize = client.files["avatar"]["size"].to_int();
+
+// Save to the site upload directory
+namespace fs = std::filesystem;
+std::string sitepath = client.get_sitepath();
+if (sitepath.back() != '/')
+{
+    sitepath.push_back('/');
+}
+sitepath.append("upload");
+fs::create_directories(sitepath);
+fs::rename(tempfile, sitepath + "/" + filename);
+client << "File uploaded successfully: " << filename;</code></pre>
+
+    <h2 id="session-management">Session Management</h2>
+    <h3 id="check-login">Checking Login Status</h3>
+    <p>Using Session to verify user login status is the most common authentication approach:</p>
+    <pre><code>// Check login status
+if (client.session["userid"].to_int() == 0)
+{
+    // Not logged in: render the login page (view rendering must call the view method)
+    client.view("login/login");
+    return "";
+}</code></pre>
+
+    <h3 id="set-session">Setting Session</h3>
+    <p>After successful login, store user information in Session:</p>
+    <pre><code>// Set Session
+client.session["userid"] = users.getCompanyid();
+client.session["username"] = users.getName();
+client.save_session();</code></pre>
+
+    <h3 id="destroy-session">Destroying Session</h3>
+    <p>When a user logs out, clear the Session data:</p>
+    <pre><code>// Destroy Session
+client.clear_session();</code></pre>
+
+    <h3 id="session-goto">Redirect with Session</h3>
+    <pre><code>// Redirect to another page
+client.goto_url("/cms/list");
+
+// Redirect with delay and message
+client.goto_url("/login", 3, "Login failed!");</code></pre>
+
+    <h2 id="response-output">Response Output</h2>
+    <h3 id="direct-output">Direct Text Output</h3>
+    <p>Use the stream operator <code>&lt;&lt;</code> to directly output response content:</p>
+    <pre><code>// Output text directly
+client << "Hello World";
+
+// Output HTML content
+client << "<h1>Welcome</h1>";
+
+// Output JSON data
+client << "{\"status\":\"ok\",\"code\":200}";</code></pre>
+
+    <h3 id="set-response-header">Setting Response Headers</h3>
+    <p>Set HTTP response headers via the <code>peer</code> object:</p>
+    <pre><code>// Set response type
+peer->type("application/json");
+client.output = json_string;
+
+// Set custom response header
+peer->set_header("X-Custom-Header", "Paozhu");
+
+// Set HTTP status code
+peer->status(404);
+client << "Page Not Found";</code></pre>
+
+    <h3 id="redirect-response">Redirect Response</h3>
+    <p>Use the <code>goto_url</code> method to implement page redirects:</p>
+    <pre><code>// Immediate redirect
+client.goto_url("/dashboard");
+
+// Redirect with delay (3 seconds)
+client.goto_url("/login", 3, "Login failed!");
+
+// Redirect with query parameters
+client.goto_url("/search?keyword=" + keyword);</code></pre>
+
+    <h3 id="template-response">Rendering Templates</h3>
+    <p>Call the <code>view</code> method to render a template view (do NOT return a template path via <code>return</code> — the return value is looked up as the next route method name):</p>
+    <pre><code>// Render template view
+client.view("cms/list");
+return "";
+
+// Render with data (data must be stored in client.val for templates)
+client.val["list"] = topics;
+client.val["total"] = total;
+client.view("cms/list");
+return "";</code></pre>
+
+    <h2 id="coroutine-controller">Coroutine Controller</h2>
+    <h3 id="async-basic">Coroutine Basics</h3>
+    <p>Paozhu supports C++20 coroutines, using <code>asio::awaitable</code> return types and the <code>co_await</code> keyword for async operations. Coroutine controllers are especially suitable for IO-intensive operations like database queries and external API requests.</p>
+
+    <h3 id="async-example">Coroutine Controller Example</h3>
+    <pre><code>//@urlpath(null,async_example)
+asio::awaitable<std::string> async_example(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+
+    // Execute async operation via coroutine
+    auto result = co_await some_async_operation();
+
+    client << "Result: " << result;
+    co_return "";
+}</code></pre>
+
+    <h3 id="async-db-example">Coroutine Database Operation</h3>
+    <p>Using coroutines for database queries without blocking threads:</p>
+    <pre><code>//@urlpath(null,async_users)
+asio::awaitable<std::string> async_get_users(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+
+    // Query database via coroutine
+    auto users = co_await orm::cms::Sysuser().async_fetch();
+
+    client.val["users"] = users;
+    client.view("user/list");
+    co_return "";
+}</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>Coroutine Benefits</strong>: Coroutines allow releasing thread resources while waiting for IO operations, greatly improving concurrency performance. Coroutine controllers are recommended for scenarios involving databases, network requests, etc.
+    </div>
+
+    <h2 id="middleware-preprocessor">Middleware Pre-processor</h2>
+    <h3 id="pre-introduction">Introduction to Pre-processors</h3>
+    <p>Pre-processors (Pre Middleware) run before the controller function and are commonly used for:</p>
+    <ul>
+        <li>Authentication (login check, permission verification)</li>
+        <li>Logging (recording request information)</li>
+        <li>CSRF protection</li>
+        <li>Request parameter preprocessing</li>
+        <li>Performance monitoring</li>
+    </ul>
+
+    <h3 id="pre-create">Creating a Pre-processor</h3>
+    <p>A pre-processor is a regular controller function returning <code>std::string</code>, also registered via the <code>@urlpath</code> annotation. When the framework invokes a pre-processor: returning <code>"ok"</code> continues to the target controller; returning an empty string ends the chain directly; returning any other string (e.g. <code>"cms/login"</code>) is treated as the next route method name for a method-chain jump:</p>
+    <pre><code>// Login check pre-processor
+//@urlpath(null,cms/islogin)
+std::string islogin(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    if (client.session["userid"].to_int() == 0)
+    {
+        return "cms/login";  // Not logged in: method-chain jump to the login route (the cms/login method renders the view)
+    }
+    return "ok";  // Logged in: continue
+}
+
+// Logging pre-processor (returns "ok" to pass through)
+//@urlpath(null,logrequest)
+std::string logrequest(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    std::string url = client.urlpath;  // current request path
+    // Log the request
+    return "ok";
+}</code></pre>
+
+    <h3 id="pre-use">Using Pre-processors in Annotations</h3>
+    <p>Put the pre-processor function name in the first parameter of the <code>@urlpath</code> annotation to bind it to a route:</p>
+    <pre><code>// Protect a backend page with the islogin pre-processor
+//@urlpath(islogin, admin/panel)
+std::string admin_panel(std::shared_ptr<httppeer> peer)
+{
+    // Only reached when the pre-processor returns "ok"
+    httppeer &client = peer->get_peer();
+    client << "Admin Panel";
+    return "";
+}</code></pre>
+
+    <h2 id="complete-example">Complete Example</h2>
+    <h3 id="crud-controller">Complete CRUD Controller Example</h3>
+    <p>Below is a complete CRUD controller including login verification, list display, add, edit, and delete operations:</p>
+    <pre><code>// controller/src/testcrud.cpp
+#include "orm.h"
+#include "md5.h"
+#include "func.h"
+#include "httppeer.h"
+#include "request.h"
+#include "testcrud.h"
+
+namespace http
+{
+//@urlpath(null,cms/login)
+std::string articlelogin(std::shared_ptr<httppeer> peer)
+{
+    peer->view("login/login");
+    return "";
+}
+
+// Pre-processor: check login state, required to modify content
+//@urlpath(null,cms/islogin)
+std::string articleislogin(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    if (client.session["userid"].to_int() == 0)
+    {
+        return "cms/login";  // Not logged in: method-chain jump to the login route (the cms/login method renders the view)
+    }
+    return "ok";  // Logged in: pass through
+}
+
+//@urlpath(null,cms/loginpost)
+std::string articleloginpost(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client     = peer->get_peer();
+    // Always sanitize user input to prevent attacks
+    std::string username = client.post["username"].to_escape();
+    std::string password = client.post["password"].to_string();
+
+    auto users = orm::cms::Sysuser();
+    std::string md5string;
+    try
+    {
+        md5string = md5(password);
+        users.where("name", username).whereAnd("password", md5string).fetch_one();
+        if (users.getAdminid() > 0)
+        {
+            // Store login info in Session
+            client.session["userid"] = users.getCompanyid();
+            client.save_session();
+            client.goto_url("/cms/list");
+            return "";
+        }
+        else
+        {
+            client.goto_url("/cms/login", 3, "Invalid username or password!");
+            return "";
+        }
+    }
+    catch (std::exception &e)
+    {
+        client << "<p>" << e.what() << "</p>";
+        return "";
+    }
+}
+
+//@urlpath(articleislogin,cms/list)
+std::string articlelist(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    auto articles    = orm::cms::Article();
+    int page         = client.get["page"].to_int();
+    if (page < 0)
+    {
+        page = 0;
+    }
+
+    articles.where("isopen", 1);
+    auto [bar_min, bar_max, current_page, total_page] = articles.page(page, 10, 5);
+
+    client.val["pageinfo"].set_object();
+    client.val["pageinfo"]["min"]     = bar_min;
+    client.val["pageinfo"]["max"]     = bar_max;
+    client.val["pageinfo"]["current"] = current_page;
+    client.val["pageinfo"]["total"]   = total_page;
+
+    articles.order(" aid desc ").fetch();
+    if (articles.error_msg.size() > 0)
+    {
+        client.val["msg"] = client.val["msg"].to_string() + articles.error_msg;
+    }
+
+    client.val["list"].set_array();
+    if (articles.size() > 0)
+    {
+        obj_val item;
+        for (auto &bb : articles)
+        {
+            item["aid"]        = bb.aid;
+            item["title"]      = bb.title;
+            item["createtime"] = bb.createtime;
+            item["summary"]    = bb.summary;
+            client.val["list"].push(std::move(item));
+        }
+    }
+    peer->view("cms/list");
+    return "";
+}
+
+//@urlpath(articleislogin,cms/addpost)
+std::string articleaddpost(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client    = peer->get_peer();
+    std::string title   = client.post["title"].to_string();
+    std::string content = client.post["content"].to_string();
+
+    auto articles = orm::cms::Article();
+    articles.setIsopen(1);
+    articles.setCreatetime(get_date("%Y-%m-%d %X"));
+    articles.setAddtime(timeid());
+    articles.setAddip(client.client_ip);
+    articles.setTitle(title);
+    articles.setContent(content);
+
+    try
+    {
+        auto [effectnum, last_id] = articles.save();
+        if (effectnum > 0)
+        {
+            client.goto_url("/cms/list", 3, "Content added");
+            return "";
+        }
+        else
+        {
+            client.goto_url("/cms/list", 3, "Add failed (error)");
+            return "";
+        }
+    }
+    catch (std::exception &e)
+    {
+        client << "<p>" << articles.sqlstring << "</p>";
+        client << "<p>" << e.what() << "</p>";
+        return "";
+    }
+}
+
+//@urlpath(articleislogin,cms/editpost)
+std::string articleeditpost(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client    = peer->get_peer();
+    std::string title   = client.post["title"].to_string();
+    std::string content = client.post["content"].to_string();
+    unsigned int aid    = client.post["aid"].to_int();
+
+    auto articles = orm::cms::Article();
+    articles.setTitle(title);
+    articles.setContent(content);
+    articles.where("aid", aid);
+
+    int effectnum = 0;
+    try
+    {
+        effectnum = articles.update("title,content");
+    }
+    catch (std::exception &e)
+    {
+        client << "<p>" << articles.sqlstring << "</p>";
+        client << "<p>" << e.what() << "</p>";
+        return "";
+    }
+    if (effectnum > 0)
+    {
+        client.goto_url("/cms/list", 3, "Content updated");
+        return "";
+    }
+    else
+    {
+        client.goto_url("/cms/list", 3, "Update failed (error)");
+        return "";
+    }
+}
+
+//@urlpath(articleislogin,cms/delete)
+std::string articledelete(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    unsigned int aid = client.get["id"].to_int();
+
+    auto articles = orm::cms::Article();
+    int effectnum = 0;
+    try
+    {
+        effectnum = articles.remove(aid);
+    }
+    catch (std::exception &e)
+    {
+        client << "<p>" << articles.sqlstring << "</p>";
+        client << "<p>" << e.what() << "</p>";
+        return "";
+    }
+    if (effectnum > 0)
+    {
+        client.goto_url("/cms/list", 3, "Content deleted");
+        return "";
+    }
+    else
+    {
+        client.goto_url("/cms/list", 3, "Delete failed (error)");
+        return "";
+    }
+}
+
+//@urlpath(articleislogin,logout)
+std::string logout(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client.clear_session();
+    client.goto_url("/cms/login");
+    return "";
+}
+}</code></pre>
+
+    <h3 id="crud-explain">Code Highlights</h3>
+    <ul>
+        <li><strong>articleislogin pre-processor</strong>: Registered via <code>@urlpath</code>; returns <code>"ok"</code> to pass through, or a view path to intercept and render that view</li>
+        <li><strong>articleloginpost</strong>: Processes login form submission; the password is encrypted with <code>md5()</code> and compared with the database, then writes Session and redirects on success</li>
+        <li><strong>articlelist</strong>: Article list with pagination via <code>articles.page(page, 10, 5)</code>, which returns four variables: <code>bar_min, bar_max, current_page, total_page</code></li>
+        <li><strong>articleaddpost</strong>: Adds an article using setter methods (e.g. <code>setTitle()/setContent()</code>); <code>save()</code> returns <code>[effectnum, last_id]</code></li>
+        <li><strong>articleeditpost</strong>: Updates an article by <code>aid</code>; <code>update("title,content")</code> updates only the specified fields</li>
+        <li><strong>articledelete</strong>: Deletes a record by <code>aid</code> via <code>remove(aid)</code></li>
+        <li><strong>logout</strong>: Clears Session with <code>clear_session()</code> and redirects to the login page</li>
+    </ul>
+
+    <div class="tip-box">
+        💡 <strong>Best Practices</strong>: Consider placing pre-processor functions in a separate file (e.g., <code>middleware.cpp</code>), registered via <code>@urlpath</code> for reuse across controllers. Organize controller functions by business module in separate files to keep code clean. Always pass SQL parameters through ORM condition binding to avoid injection risks from string concatenation.
+    </div>
+
+    <a href="index.html" class="back-to-index">← Back to Home</a>
+    `;
+
+    document.getElementById('content-cn').innerHTML = cnFullContent;
+    document.getElementById('content-en').innerHTML = enFullContent;
+
+    function buildHierarchyNav(lang) {
+        const container = document.getElementById('dynamic-nav');
+        const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+        if (!contentDiv) {
+            container.innerHTML = '<p>Content not found</p>';
+            return;
+        }
+        const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+        if (headings.length === 0) {
+            container.innerHTML = '<p style="padding: 1rem;">No sections</p>';
+            return;
+        }
+
+        const root = { children: [] };
+        let stack = [root];
+
+        headings.forEach(heading => {
+            let level = parseInt(heading.tagName[1]);
+            const id = heading.id;
+            let title = heading.innerText.trim();
+            if (!title) title = heading.textContent.trim() || "Section";
+            const node = { level, id, title, children: [] };
+            while (stack.length > 0 && stack[stack.length-1].level >= level) {
+                stack.pop();
+            }
+            const parent = stack[stack.length-1];
+            parent.children.push(node);
+            stack.push(node);
+        });
+
+        function renderTree(nodes) {
+            if (!nodes.length) return '';
+            let html = '<ul class="nav-tree no-bullet">';
+            nodes.forEach(node => {
+                const hasChildren = node.children.length > 0;
+                const liClass = `level-${node.level}`;
+                html += `<li class="${liClass}">`;
+                html += `<div class="tree-item"><a href="#${node.id}" data-id="${node.id}" class="nav-link">${escapeHtml(node.title)}</a></div>`;
+                if (hasChildren) {
+                    html += renderTree(node.children);
+                }
+                html += `</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        const navHtml = renderTree(root.children);
+        container.innerHTML = navHtml || '<p>No navigation</p>';
+
+        attachNavEvents(contentDiv);
+    }
+
+    function attachNavEvents(contentDiv) {
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            link.removeEventListener('click', navClickHandler);
+            link.addEventListener('click', navClickHandler);
+        });
+        function navClickHandler(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-id');
+            const targetElem = contentDiv.querySelector(`#${targetId}`);
+            if (targetElem) {
+                targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                history.pushState(null, null, `#${targetId}`);
+            }
+            if (window.innerWidth <= 860) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active-link'));
+            this.classList.add('active-link');
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    if (id) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active-link');
+                            if (link.getAttribute('data-id') === id) {
+                                link.classList.add('active-link');
+                            }
+                        });
+                    }
+                }
+            });
+        }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+
+        const allHeadings = contentDiv.querySelectorAll('[id]');
+        allHeadings.forEach(el => observer.observe(el));
+    }
+
+    let currentLang = 'cn';
+    function switchLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+        if (lang === 'cn') {
+            document.getElementById('content-cn').classList.add('active-lang');
+        } else {
+            document.getElementById('content-en').classList.add('active-lang');
+        }
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        buildHierarchyNav(lang);
+        window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang) switchLanguage(lang);
+        });
+    });
+
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+
+    const topBtn = document.getElementById('scrollTopBtn');
+    topBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // URL hash 检测语言切换
+    const hashLang = window.location.hash;
+    if (hashLang === '#english' || hashLang === '#en') {
+        switchLanguage('en');
+    } else if (hashLang === '#chinese' || hashLang === '#zh') {
+        switchLanguage('cn');
+    } else {
+        buildHierarchyNav('cn');
+    }
+</script>
+</body>
+</html>

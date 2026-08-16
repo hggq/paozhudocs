@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PaoZhu C++ Web Framework - 项目概述</title>
+    <style>
+        /* Light mode */
+        a {
+            text-decoration: none;
+        }
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans CJK SC', Sathu, EucrosiaUPC, Arial, Helvetica, sans-serif;
+            font-size: 16px;
+            line-height: 1.6em;
+            margin: 0;
+            padding: 0;
+        }
+        code {
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+        @media (prefers-color-scheme: light) {
+            body {
+                color: #333;
+                background-color: #f8f9fa;
+                font-size: 14px;
+            }
+            body pre {
+                padding: 15px;
+                overflow: auto;
+                line-height: 1.45em;
+                background-color: #f5f5f5;
+                border-radius: 8px;
+                border: 1px solid #e0e0e0;
+            }
+            body pre > code {
+                padding: 0;
+                margin: 0;
+                word-break: normal;
+                white-space: pre;
+                background: transparent;
+                border: 0;
+                color: #333;
+            }
+            body pre > code {
+                white-space: pre-wrap;
+            }
+            code {
+                background-color: #e8e8e8;
+                border-radius: 5px;
+                padding: 3px;
+            }
+            .sidebar {
+                background-color: #ffffff;
+                border-right: 1px solid #e0e0e0;
+            }
+            .sidebar a {
+                color: #555;
+            }
+            .sidebar a:hover {
+                background-color: #f0f0f0;
+                color: #1a73e8;
+            }
+            .sidebar a.active {
+                background-color: #e8f0fe;
+                color: #1a73e8;
+                border-left: 3px solid #1a73e8;
+            }
+            .content {
+                background-color: #ffffff;
+            }
+            .lang-toggle {
+                background-color: #f0f0f0;
+                color: #333;
+                border: 1px solid #ddd;
+            }
+            .lang-toggle:hover {
+                background-color: #e0e0e0;
+            }
+            .lang-toggle.active {
+                background-color: #1a73e8;
+                color: white;
+                border-color: #1a73e8;
+            }
+            .feature-card {
+                background-color: #ffffff;
+                border: 1px solid #e0e0e0;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+            .tech-badge {
+                background-color: #e8f0fe;
+                color: #1a73e8;
+            }
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+            body {
+                color: #e0e0e0;
+                background-color: #1a1a1a;
+            }
+            body pre {
+                padding: 15px;
+                overflow: auto;
+                line-height: 1.45em;
+                background-color: #2d2d2d;
+                border-radius: 8px;
+                border: 1px solid #444;
+            }
+            body pre > code {
+                padding: 0;
+                margin: 0;
+                word-break: normal;
+                white-space: pre;
+                background: transparent;
+                border: 0;
+                color: #e0e0e0;
+            }
+            body pre > code {
+                white-space: pre-wrap;
+            }
+            code {
+                background-color: #333;
+                border-radius: 5px;
+                padding: 3px;
+            }
+            .sidebar {
+                background-color: #252525;
+                border-right: 1px solid #3a3a3a;
+            }
+            .sidebar a {
+                color: #bbb;
+            }
+            .sidebar a:hover {
+                background-color: #333;
+                color: #64b5f6;
+            }
+            .sidebar a.active {
+                background-color: #1e3a5f;
+                color: #64b5f6;
+                border-left: 3px solid #64b5f6;
+            }
+            .content {
+                background-color: #1e1e1e;
+            }
+            .lang-toggle {
+                background-color: #333;
+                color: #ccc;
+                border: 1px solid #444;
+            }
+            .lang-toggle:hover {
+                background-color: #444;
+            }
+            .lang-toggle.active {
+                background-color: #64b5f6;
+                color: white;
+                border-color: #64b5f6;
+            }
+            .feature-card {
+                background-color: #252525;
+                border: 1px solid #3a3a3a;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            .tech-badge {
+                background-color: #1e3a5f;
+                color: #64b5f6;
+            }
+        }
+
+        /* Layout */
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid;
+            border-color: inherit;
+        }
+
+        .sidebar-header h2 {
+            margin: 0 0 5px;
+            font-size: 18px;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 8px;
+            margin: 15px 20px;
+        }
+
+        .lang-toggle {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+
+        .sidebar-nav li a {
+            display: block;
+            padding: 12px 20px;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-nav li a:hover {
+            padding-left: 23px;
+        }
+
+        .content {
+            flex: 1;
+            padding: 40px 60px;
+            max-width: 1000px;
+        }
+
+        .content h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid;
+            border-color: #1a73e8;
+        }
+
+        .content h2 {
+            font-size: 24px;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid;
+            border-color: #ddd;
+        }
+
+        .content h3 {
+            font-size: 20px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        .content p {
+            margin: 10px 0;
+            line-height: 1.7;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            padding: 20px;
+            border-radius: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .feature-card .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .feature-card h4 {
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .feature-card p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .tech-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .structure-tree {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .structure-tree .dir {
+            font-weight: 600;
+        }
+
+        .structure-tree .comment {
+            opacity: 0.6;
+            margin-left: 10px;
+        }
+
+        .page-footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid;
+            border-color: #ddd;
+            text-align: center;
+        }
+
+        .page-footer a {
+            font-weight: 500;
+        }
+
+        .scroll-top {
+            position: fixed;
+            color: #bbb;
+            opacity: 50;
+            right: 15px;
+            bottom: 10px;
+            z-index: 99999;
+            background-color: #666;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            border-radius: 30px;
+            transition: all 0.4s;
+            text-align: center;
+            text-decoration: none;
+            color: white !important;
+            cursor: pointer;
+        }
+
+        .back-to-index {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 25px;
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            color: white;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+
+        .back-to-index:hover {
+            transform: translateY(-2px);
+        }
+
+        .lang-content {
+            display: none;
+        }
+
+        .lang-content.active {
+            display: block;
+        }
+
+        /* Code syntax highlighting */
+        .keyword { color: #569cd6; }
+        .type { color: #4ec9b0; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .function { color: #dcdcaa; }
+        .number { color: #b5cea8; }
+        .preprocessor { color: #c586c0; }
+
+        @media (prefers-color-scheme: dark) {
+            .keyword { color: #569cd6; }
+            .type { color: #4ec9b0; }
+            .string { color: #ce9178; }
+            .comment { color: #6a9955; }
+            .function { color: #dcdcaa; }
+            .number { color: #b5cea8; }
+            .preprocessor { color: #c586c0; }
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+            }
+            .content {
+                padding: 20px;
+            }
+        }
+
+        @media print {
+            .sidebar {
+                display: none !important;
+            }
+            .scroll-top {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>PaoZhu 🧨</h2>
+                <div class="subtitle" data-zh="C++ 全栈 Web 框架" data-en="Full-Stack Web Framework for C++">
+                    C++ 全栈 Web 框架
+                </div>
+            </div>
+            <div class="lang-switcher">
+                <div class="lang-toggle active" onclick="switchLanguage('zh')" id="btn-zh">🇨🇳 中文</div>
+                <div class="lang-toggle" onclick="switchLanguage('en')" id="btn-en">🇬🇧 English</div>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="#overview" onclick="scrollToSection('overview')" data-zh="框架简介" data-en="Framework Overview">框架简介</a></li>
+                <li><a href="#features" onclick="scrollToSection('features')" data-zh="核心特性" data-en="Core Features">核心特性</a></li>
+                <li><a href="#techstack" onclick="scrollToSection('techstack')" data-zh="技术栈" data-en="Tech Stack">技术栈</a></li>
+                <li><a href="#structure" onclick="scrollToSection('structure')" data-zh="项目结构" data-en="Project Structure">项目结构</a></li>
+                <li><a href="#quickstart" onclick="scrollToSection('quickstart')" data-zh="快速开始" data-en="Quick Start">快速开始</a></li>
+                <li><a href="#index" onclick="goToIndex()" data-zh="返回首页" data-en="Back to Index">返回首页</a></li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <!-- 中文内容 -->
+            <div class="lang-content active" id="content-zh">
+                <h1>PaoZhu 项目概述</h1>
+
+                <h2 id="overview">框架简介</h2>
+                <p>Paozhu 是一个面向 C++ 的全栈 Web 框架，强调「为 C++ Web 快速开发而生」。</p>
+                <p>核心特点包括：原生 HTTP/1.1、HTTP/2 解析；协程与线程池分离的 I/O 模型（类似 Go 调度思想）；内置 ORM、WebSocket、RPC、缓存、压缩等能力；通过注解自动发现路由并注册控制器方法；支持视图渲染与模板。</p>
+
+                <h2 id="features">核心特性</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="icon">⚡</div>
+                        <h4>高性能异步 I/O</h4>
+                        <p>基于 ASIO 的协程调度，实现高效并发处理</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🔧</div>
+                        <h4>注解驱动开发</h4>
+                        <p>//@urlpath 注解自动注册路由，无需手动配置</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🗄️</div>
+                        <h4>内置 ORM</h4>
+                        <p>支持 MySQL 和 PostgreSQL，简化数据库操作</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🔌</div>
+                        <h4>WebSocket 支持</h4>
+                        <p>原生 WebSocket 客户端和服务端支持</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🎨</div>
+                        <h4>视图系统</h4>
+                        <p>灵活的模板渲染引擎，支持视图缓存</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">💻</div>
+                        <h4>多平台支持</h4>
+                        <p>Linux / macOS / Windows 全平台兼容</p>
+                    </div>
+                </div>
+
+                <h3>可选功能</h3>
+                <p>PDF 生成、Excel 读写、Word 读写、ZIP 压缩、短信发送、支付集成等</p>
+                <div class="tech-stack">
+                    <span class="tech-badge">PDF 生成</span>
+                    <span class="tech-badge">Excel 读写</span>
+                    <span class="tech-badge">Word 读写</span>
+                    <span class="tech-badge">ZIP 压缩</span>
+                    <span class="tech-badge">短信发送</span>
+                    <span class="tech-badge">支付集成</span>
+                </div>
+
+                <h2 id="techstack">技术栈</h2>
+                <div class="tech-stack">
+                    <span class="tech-badge">C++20 标准</span>
+                    <span class="tech-badge">Asio (ASIO_STANDALONE)</span>
+                    <span class="tech-badge">OpenSSL</span>
+                    <span class="tech-badge">ZLIB / Brotli</span>
+                    <span class="tech-badge">CMake / Xmake 构建系统</span>
+                    <span class="tech-badge">vcpkg 包管理</span>
+                </div>
+
+                <h2 id="structure">项目结构</h2>
+                <p>以下是 PaoZhu 项目的典型目录结构：</p>
+                <pre><code class="structure-tree">
+<span class="dir">startup/</span>          启动入口
+├── main_daemon.cpp     守护进程模式
+└── main_dev.cpp        开发模式
+
+<span class="dir">common/</span>           公共组件
+├── 自动控制器注册
+└── 路由注册等
+
+<span class="dir">controller/</span>       业务控制器
+├── src/                示例代码
+└── include/            头文件
+
+<span class="dir">viewsrc/</span>          视图系统
+<span class="dir">orm/</span>              ORM 数据访问
+<span class="dir">conf/</span>             配置文件
+├── server.conf         服务器配置
+└── orm.conf            数据库配置
+                </code></pre>
+
+                <h2 id="quickstart">快速开始示例代码</h2>
+                <p>Hello World 示例：</p>
+                <pre><code>
+<span class="preprocessor">#include</span> <span class="string">"httppeer.h"</span>
+<span class="preprocessor">#include</span> <span class="string">"testhello.h"</span>
+<span class="keyword">namespace</span> <span class="type">http</span>
+{
+<span class="comment">//@urlpath(null,hello)</span>
+<span class="type">std</span>::<span class="type">string</span> <span class="function">testhello</span>(<span class="type">std</span>::<span class="type">shared_ptr</span><span class="keyword"><</span><span class="type">httppeer</span><span class="keyword">></span> peer)
+{
+    httppeer &client = peer->get_peer();
+    client <span class="keyword"><<</span> <span class="string">" Hello world! Paozhu c++ web framework "</span>;
+    <span class="keyword">return</span> <span class="string">""</span>;
+}
+}
+                </code></pre>
+
+                <div class="page-footer">
+                    <a href="index.html" class="back-to-index">← 返回首页</a>
+                </div>
+            </div>
+
+            <!-- English content -->
+            <div class="lang-content" id="content-en">
+                <h1>PaoZhu Project Overview</h1>
+
+                <h2 id="overview-en">Framework Overview</h2>
+                <p>Paozhu is a full-stack Web framework for C++, emphasizing "rapid Web development for C++".</p>
+                <p>Core features include: native HTTP/1.1 and HTTP/2 parsing; an I/O model separating coroutines and thread pools (similar to Go's scheduling philosophy); built-in ORM, WebSocket, RPC, caching, compression capabilities; automatic route discovery and controller method registration through annotations; support for view rendering and templates.</p>
+
+                <h2 id="features-en">Core Features</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="icon">⚡</div>
+                        <h4>High-Performance Async I/O</h4>
+                        <p>Coroutine-based scheduling powered by ASIO for efficient concurrency</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🔧</div>
+                        <h4>Annotation-Driven Development</h4>
+                        <p>//@urlpath annotations automatically register routes, no manual config needed</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🗄️</div>
+                        <h4>Built-in ORM</h4>
+                        <p>Supports MySQL and PostgreSQL, simplifies database operations</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🔌</div>
+                        <h4>WebSocket Support</h4>
+                        <p>Native WebSocket client and server support</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">🎨</div>
+                        <h4>View System</h4>
+                        <p>Flexible template rendering engine with view caching support</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">💻</div>
+                        <h4>Cross-Platform</h4>
+                        <p>Full compatibility across Linux, macOS, and Windows</p>
+                    </div>
+                </div>
+
+                <h3>Optional Features</h3>
+                <p>PDF generation, Excel read/write, Word read/write, ZIP compression, SMS sending, payment integration, etc.</p>
+                <div class="tech-stack">
+                    <span class="tech-badge">PDF Generation</span>
+                    <span class="tech-badge">Excel Read/Write</span>
+                    <span class="tech-badge">Word Read/Write</span>
+                    <span class="tech-badge">ZIP Compression</span>
+                    <span class="tech-badge">SMS Sending</span>
+                    <span class="tech-badge">Payment Integration</span>
+                </div>
+
+                <h2 id="techstack-en">Tech Stack</h2>
+                <div class="tech-stack">
+                    <span class="tech-badge">C++20 Standard</span>
+                    <span class="tech-badge">Asio (ASIO_STANDALONE)</span>
+                    <span class="tech-badge">OpenSSL</span>
+                    <span class="tech-badge">ZLIB / Brotli</span>
+                    <span class="tech-badge">CMake / Xmake Build System</span>
+                    <span class="tech-badge">vcpkg Package Manager</span>
+                </div>
+
+                <h2 id="structure-en">Project Structure</h2>
+                <p>Here is the typical directory structure of the PaoZhu project:</p>
+                <pre><code class="structure-tree">
+<span class="dir">startup/</span>          Entry point
+├── main_daemon.cpp     Daemon mode
+└── main_dev.cpp        Development mode
+
+<span class="dir">common/</span>           Common components
+├── Auto controller registration
+└── Route registration, etc.
+
+<span class="dir">controller/</span>       Business controllers
+├── src/                Example code
+└── include/            Header files
+
+<span class="dir">viewsrc/</span>          View system
+<span class="dir">orm/</span>              ORM data access
+<span class="dir">conf/</span>             Configuration files
+├── server.conf         Server configuration
+└── orm.conf            Database configuration
+                </code></pre>
+
+                <h2 id="quickstart-en">Quick Start Example</h2>
+                <p>Hello World example:</p>
+                <pre><code>
+<span class="preprocessor">#include</span> <span class="string">"httppeer.h"</span>
+<span class="preprocessor">#include</span> <span class="string">"testhello.h"</span>
+<span class="keyword">namespace</span> <span class="type">http</span>
+{
+<span class="comment">//@urlpath(null,hello)</span>
+<span class="type">std</span>::<span class="type">string</span> <span class="function">testhello</span>(<span class="type">std</span>::<span class="type">shared_ptr</span><span class="keyword"><</span><span class="type">httppeer</span><span class="keyword">></span> peer)
+{
+    httppeer &client = peer->get_peer();
+    client <span class="keyword"><<</span> <span class="string">" Hello world! Paozhu c++ web framework "</span>;
+    <span class="keyword">return</span> <span class="string">""</span>;
+}
+}
+                </code></pre>
+
+                <div class="page-footer">
+                    <a href="index.html" class="back-to-index">← Back to Index</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <a href="javascript:window.scrollTo({ top: 0, behavior: 'smooth' });" class="scroll-top">↑</a>
+
+    <script>
+        function switchLanguage(lang) {
+            document.querySelectorAll('.lang-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.lang-toggle').forEach(el => el.classList.remove('active'));
+
+            if (lang === 'zh') {
+                document.getElementById('content-zh').classList.add('active');
+                document.getElementById('btn-zh').classList.add('active');
+                document.documentElement.lang = 'zh-CN';
+            } else {
+                document.getElementById('content-en').classList.add('active');
+                document.getElementById('btn-en').classList.add('active');
+                document.documentElement.lang = 'en';
+            }
+
+            // 更新侧边栏导航文本
+            document.querySelectorAll('.sidebar-nav a').forEach(function(a) {
+                var text = lang === 'zh' ? a.getAttribute('data-zh') : a.getAttribute('data-en');
+                if (text) a.textContent = text;
+            });
+
+            // 更新副标题
+            var subtitle = document.querySelector('.sidebar-header .subtitle');
+            if (subtitle) {
+                var subText = lang === 'zh' ? subtitle.getAttribute('data-zh') : subtitle.getAttribute('data-en');
+                if (subText) subtitle.textContent = subText;
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function scrollToSection(id) {
+            var content = document.getElementById('content-zh');
+            if (!content.classList.contains('active')) {
+                content = document.getElementById('content-en');
+            }
+            var target = content.querySelector('#' + id);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function goToIndex() {
+            window.location.href = 'index.html';
+        }
+
+        function updateSidebarActive() {
+            var lang = document.querySelector('.lang-content.active').id;
+            var sections = {
+                'content-zh': ['overview', 'features', 'techstack', 'structure', 'quickstart'],
+                'content-en': ['overview-en', 'features-en', 'techstack-en', 'structure-en', 'quickstart-en']
+            };
+
+            var current = null;
+            var scrollY = window.scrollY + 100;
+
+            sections[lang].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el && el.offsetTop <= scrollY) {
+                    current = id;
+                }
+            });
+
+            document.querySelectorAll('.sidebar-nav a').forEach(function(a) {
+                a.classList.remove('active');
+            });
+
+            var navMap = {
+                'overview': 0, 'features': 1, 'techstack': 2, 'structure': 3, 'quickstart': 4
+            };
+            var navIndex = current ? sections[lang].indexOf(current) : -1;
+            var navLinks = document.querySelectorAll('.sidebar-nav a');
+            if (navIndex >= 0) {
+                navLinks[navIndex].classList.add('active');
+            }
+        }
+
+        window.addEventListener('scroll', updateSidebarActive);
+        window.addEventListener('load', updateSidebarActive);
+
+        var lang = localStorage.getItem('paozhu-lang');
+        var hashLang = window.location.hash;
+        if (hashLang === '#english' || hashLang === '#en') {
+            switchLanguage('en');
+        } else if (hashLang === '#chinese' || hashLang === '#zh') {
+            switchLanguage('zh');
+        } else if (lang === 'en') {
+            switchLanguage('en');
+        }
+    </script>
+</body>
+</html>

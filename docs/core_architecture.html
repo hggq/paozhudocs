@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu 核心架构 · Core Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-tree li {
+            margin: 0.2rem 0;
+            list-style: none;
+        }
+        .nav-tree .tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .nav-tree a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.88rem;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+            opacity: 0.85;
+            flex: 1;
+        }
+        .nav-tree a:hover {
+            background-color: var(--nav-hover-bg);
+            opacity: 1;
+            color: var(--link-color);
+        }
+        .nav-tree a.active-link {
+            background-color: var(--link-color);
+            color: white;
+            opacity: 1;
+        }
+        .nav-tree .level-1 > a {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+        .nav-tree .level-2 {
+            padding-left: 1.3rem;
+        }
+        .nav-tree .level-3 {
+            padding-left: 2.2rem;
+        }
+        .no-bullet {
+            list-style: none;
+        }
+        .sidebar-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin: 1rem 0 0.5rem 0.5rem;
+        }
+
+        .content-panel {
+            display: none;
+            animation: fade 0.2s ease;
+        }
+        .content-panel.active-lang {
+            display: block;
+        }
+        @keyframes fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            border: 1px solid var(--border-light);
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        h1, h2, h3, h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+        img, svg { max-width: 100%; }
+
+        .arch-diagram {
+            background: linear-gradient(135deg, var(--code-bg) 0%, var(--sidebar-bg) 100%);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+        .arch-diagram pre {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .layer-box {
+            display: flex;
+            align-items: stretch;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+        .layer-card {
+            flex: 1;
+            min-width: 200px;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1.2rem;
+            border-left: 4px solid var(--link-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .layer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+        }
+        .layer-card h4 {
+            margin-top: 0;
+            color: var(--link-color);
+        }
+        .layer-card p {
+            font-size: 0.9rem;
+            opacity: 0.85;
+            margin: 0.4rem 0;
+        }
+        .layer-card .icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .flow-steps {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin: 1.5rem 0;
+        }
+        .flow-step {
+            background: var(--link-color);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            min-width: 100px;
+        }
+        .flow-arrow {
+            color: var(--link-color);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .flow-step-alt {
+            background: #059669;
+        }
+        .flow-step-warn {
+            background: #d97706;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.2rem 0;
+            font-size: 0.9rem;
+        }
+        .info-table th,
+        .info-table td {
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-light);
+            text-align: left;
+        }
+        .info-table th {
+            background-color: var(--sidebar-bg);
+            font-weight: 600;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 3rem;
+            padding: 0.6rem 1.2rem;
+            background: var(--link-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 24px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .back-link:hover {
+            background: var(--link-hover);
+            transform: translateY(-1px);
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 1.2rem;
+            right: 1.2rem;
+            background: #475569;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: 0.2s;
+            z-index: 99;
+            font-weight: bold;
+        }
+        .scroll-top:hover {
+            opacity: 1;
+            background: var(--link-color);
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(5,150,105,0.08) 100%);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .highlight-box strong {
+            color: var(--link-color);
+        }
+
+        .code-caption {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: -0.8rem;
+            margin-bottom: 0.8rem;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">📐 核心架构导航</div>
+            <div id="dynamic-nav">加载中...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel active-lang"></div>
+        <div id="content-en" class="content-panel"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+const cnFullContent = `
+<div style="text-align: center; margin-bottom: 1.8rem;">
+    <h1 style="margin-top: 0.3rem;">🧨 Paozhu 核心架构</h1>
+    <p style="opacity: 0.8;">MVC分层 · 协程驱动 · 高性能C++20 Web框架</p>
+</div>
+
+<h2 id="overview">架构总览</h2>
+<p>Paozhu 框架采用经典的 MVC（Model-View-Controller）分层架构，结合协程与线程池分离的 I/O 模型，实现了高性能、高并发的 Web 服务。</p>
+
+<div class="arch-diagram">
+<pre style="color: var(--text-color);">
+┌─────────────────────────────────────────────────────────────────┐
+│                     用户请求 (HTTP/HTTPS)                       │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        传输层 (Transport)                        │
+│   HTTP/1.1  │  HTTP/2  │  WebSocket  │  Socket (统一抽象)       │
+│   基于协程调度 · ASIO I/O 上下文                                 │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       控制层 (Controller)                       │
+│   httppeer 接收请求 · 读取参数 · 执行业务逻辑 · 设置输出/视图    │
+│   同步函数 ──→ 业务线程池                                       │
+│   协程函数 ──→ I/O 协程调度                                     │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+              ┌────────────┴────────────┐
+              ▼                         ▼
+┌─────────────────────┐     ┌─────────────────────────────────────┐
+│   数据层 (ORM)      │     │        视图层 (View)                │
+│   MySQL 协议封装    │     │   视图方法集中注册                   │
+│   协程/同步双模式   │     │   控制器通过名称渲染页面             │
+│   连接池管理        │     │   多模块支持 (admin/cms/superadmin)  │
+└─────────────────────┘     └─────────────────────────────────────┘
+</pre>
+</div>
+
+<div class="layer-box">
+    <div class="layer-card">
+        <div class="icon">🎯</div>
+        <h4>控制层</h4>
+        <p>控制器函数接收 httppeer，读取请求参数、执行业务逻辑、设置输出或调用视图</p>
+    </div>
+    <div class="layer-card">
+        <div class="icon">🖼️</div>
+        <h4>视图层</h4>
+        <p>视图方法集中注册，控制器通过名称渲染页面。支持多模块视图</p>
+    </div>
+    <div class="layer-card">
+        <div class="icon">💾</div>
+        <h4>数据层</h4>
+        <p>ORM 封装数据库访问，支持协程与连接池，支持主从分离</p>
+    </div>
+    <div class="layer-card">
+        <div class="icon">🌐</div>
+        <h4>传输层</h4>
+        <p>HTTP/1.1、HTTP/2、WebSocket、Socket 统一抽象，基于协程与线程池分离的调度模型</p>
+    </div>
+</div>
+
+<h2 id="core-components">核心组件分析</h2>
+
+<h3 id="startup-lifecycle">1. 启动与生命周期</h3>
+
+<h4>守护进程模式</h4>
+<p>生产环境推荐使用守护进程模式运行：先初始化守护环境（fork 子进程后台运行），再获取单例 HTTP 服务器并运行，配置文件路径通过命令行参数传入。</p>
+<pre><code>// startup/main_daemon.cpp — 守护进程模式启动
+#include "httppeer.h"
+
+int main(int argc, char* argv[])
+{
+    std::string config_path = "conf/server.conf";
+    if (argc > 1) config_path = argv[1];
+
+    // 初始化守护环境（fork 子进程，后台运行）
+    http::init_daemon();
+
+    // 获取单例 HTTP 服务器并运行
+    http::get_server_app().run(config_path);
+    return 0;
+}</code></pre>
+
+<h4>开发模式</h4>
+<p>开发模式直接获取单例 HTTP 服务器并运行，便于调试和快速迭代。</p>
+<pre><code>// startup/main_dev.cpp — 开发模式启动
+#include "httppeer.h"
+
+int main(int argc, char* argv[])
+{
+    std::string config_path = "conf/server.conf";
+    if (argc > 1) config_path = argv[1];
+
+    // 获取单例 HTTP 服务器并运行
+    http::get_server_app().run(config_path);
+    return 0;
+}</code></pre>
+
+<div class="highlight-box">
+    <strong>💡 提示：</strong>守护进程模式下可以通过 <code>reboot_cron</code> 配置自动重启周期，也可以通过 <code>touch log/restart_server</code> 手动触发重启。
+</div>
+
+<h3 id="route-discovery">2. 路由发现与控制器注册</h3>
+
+<h4>自动发现（注解方式）</h4>
+<p>通过宏注解 <code>//@urlpath</code> 将控制器函数映射到 URL，并在运行时自动填充到路由表中，类似 Java Spring Boot 的路由注册方式。</p>
+<pre><code>// controller/src/techempower.cpp
+#include "techempower.h"
+
+//@urlpath(null, plaintext)
+asio::awaitable<std::string> techempowerplaintext(
+    std::shared_ptr<httppeer> peer)
+{
+    peer->type("text/plain; charset=UTF-8");
+    peer->set_header("Date", get_gmttime());
+    peer->output = "Hello, World!";
+    co_return "";
+}
+
+// controller/src/admin/menu.cpp
+//@urlpath(null,admin/dashboard)
+std::string admin_dashboard(std::shared_ptr<httppeer> peer)
+{
+    httppeer& client = peer->get_peer();
+    client.view("admin/dashboard");
+    return "";
+}</code></pre>
+
+<p>框架在编译时自动扫描 <code>controller/src</code> 目录下的源文件，解析注解并生成路由映射代码到 <code>common/autocontrolmethod.hpp</code>。</p>
+
+<h4>手动注册</h4>
+<p>通过 <code>_inithttpmethodregto</code> 函数将 URL 与函数指针关联。每个路由用一个 <code>regmethold_t</code> 结构体描述：<code>pre</code> 为预处理器函数指针，<code>regfun</code> 为控制器函数指针，适用于需要灵活控制注册时机的场景。</p>
+<pre><code>// common/reghttpmethod.hpp — 手动注册路由
+namespace http {
+    void _inithttpmethodregto(std::map<std::string, regmethold_t> &methodcallback)
+    {
+        struct regmethold_t temp;
+        temp.pre = nullptr;
+        temp.regfun = &http::testjson;
+        methodcallback.emplace("testjson", temp);
+
+        temp.pre = &http::admin_islogin;
+        temp.regfun = &http::admin_welcome;
+        methodcallback.emplace("admin/welcome", temp);
+    }
+}</code></pre>
+
+<h4>协程控制器</h4>
+<p>支持 <code>asio::awaitable</code> 形式的协程控制器，协程在 I/O 线程中运行，适合 I/O 密集型操作。</p>
+<pre><code>// 协程控制器示例 — 异步获取数据
+//@urlpath(null, coroutine_example)
+asio::awaitable<std::string> coroutine_example(
+    std::shared_ptr<httppeer> peer)
+{
+    httppeer& client = peer->get_peer();
+
+    // 协程方式查询数据库
+    auto world = orm::World();
+    world.where("id", 1);
+    co_await world.async_fetch();
+
+    // 输出 JSON
+    peer->output = world.to_json();
+    peer->type("application/json; charset=UTF-8");
+    co_return "";
+}</code></pre>
+
+<h3 id="view-rendering">3. 视图渲染系统</h3>
+
+<h4>视图方法集中注册</h4>
+<p>所有视图方法在编译后集中注册到 <code>regviewmethod.hpp</code> 中，控制器通过字符串键名调用对应渲染函数。</p>
+<pre><code>// viewsrc/include/regviewmethod.hpp
+namespace http {
+    void _initview_method_regto(VIEW_REG& _viewmetholdreg)
+    {
+        _viewmetholdreg.emplace("home/header", 
+            http::view::home::header);
+        _viewmetholdreg.emplace("login/login", 
+            http::view::login::login);
+        _viewmetholdreg.emplace("admin/dashboard", 
+            http::view::admin::dashboard);
+        _viewmetholdreg.emplace("cms/list", 
+            http::view::cms::list);
+        _viewmetholdreg.emplace("superadmin/welcome", 
+            http::view::superadmin::welcome);
+    }
+}</code></pre>
+
+<h4>控制器调用视图</h4>
+<pre><code>// 在控制器中通过名称渲染视图
+//@urlpath(admin_islogin,admin/addtopic)
+std::string admin_addtopic(std::shared_ptr<httppeer> peer)
+{
+    httppeer& client = peer->get_peer();
+
+    // 准备视图数据
+    auto topicm = orm::cms::Topic();
+    topicm.where("userid", client.session["userid"].to_int())
+          .asc("parentid").fetch();
+
+    client.val["list"].set_array();
+    for (auto& record : topicm.record) {
+        obj_val temp;
+        temp["id"]       = record.topicid;
+        temp["parentid"] = record.parentid;
+        temp["value"]    = record.title;
+        client.val["list"].push(temp);
+    }
+
+    // 通过名称渲染视图
+    peer->view("admin/addtopic");
+    return "";
+}</code></pre>
+
+<h4>支持多模块视图</h4>
+<p>视图系统支持多模块隔离，不同业务模块的视图放在各自命名空间下，互不冲突。</p>
+<pre><code>// 视图目录结构
+view/
+├── admin/
+│   ├── dashboard.html
+│   ├── addtopic.html
+│   └── login.html
+├── cms/
+│   ├── list.html
+│   ├── edit.html
+│   ├── add.html
+│   └── show.html
+├── superadmin/
+│   ├── welcome.html
+│   └── userlist.html
+└── home/
+    └── header.html
+
+// 对应的命名空间
+http::view::admin::dashboard(...)
+http::view::cms::list(...)
+http::view::superadmin::welcome(...)</code></pre>
+
+<h3 id="websocket-factory">4. WebSocket/Socket 工厂</h3>
+
+<h4>会话处理器与注册</h4>
+<p>通过继承 <code>websockets_api</code> 基类编写会话处理类，并重写 <code>onopen/onmessage/onclose</code> 等回调（每个回调都有对应的 <code>async_</code> 协程版本）。最后在 <code>_initwebsocketmethodregto</code> 注册函数中，用 <code>methodcallback.emplace</code> 将路径映射到会话工厂。</p>
+<pre><code>// common/websockets_method_reg.hpp — WebSocket 会话注册
+#include "websockets_api.h"
+
+// 自定义会话处理类，继承 websockets_api 基类
+class my_websocket_handler : public websockets_api {
+public:
+    my_websocket_handler(unsigned int m, unsigned int g)
+        : websockets_api(8, m, g, 0) {}
+
+    // 协程方式处理客户端消息
+    asio::awaitable<void> async_onmessage(websockets_data_list_t &&msg) override
+    {
+        std::string outhello;
+        // 构造文本帧并回显给客户端
+        ws_parse->make_ws_text(msg.value, outhello);
+        co_await session_sock->async_send_writer(outhello);
+        co_return;
+    }
+};
+
+// 注册函数 — 将协议路径映射到会话工厂
+void _initwebsocketmethodregto(WEBSOCKET_REG &methodcallback)
+{
+    methodcallback.emplace("wstest",
+        [](unsigned int m, unsigned int g) -> std::shared_ptr<websockets_api>
+        {
+            return std::make_shared<my_websocket_handler>(m, g);
+        });
+}</code></pre>
+
+<h3 id="request-flow">5. 请求处理流程</h3>
+
+<p>一次完整的 HTTP 请求处理流程如下：</p>
+
+<div class="flow-steps">
+    <div class="flow-step">接收与解析</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">路由发现</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step flow-step-warn">中间件处理</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">控制器执行</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step flow-step-alt">视图渲染</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">响应返回</div>
+</div>
+
+<table class="info-table">
+    <thead>
+        <tr>
+            <th>阶段</th>
+            <th>说明</th>
+            <th>关键组件</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>① 接收与解析</td>
+            <td>HTTP 服务器接收请求并解析协议（HTTP/1.1 或 HTTP/2）</td>
+            <td>httpparse, ASIO</td>
+        </tr>
+        <tr>
+            <td>② 路由发现</td>
+            <td>根据 URL 查找对应的控制器函数</td>
+            <td>路由表, autocontrolmethod</td>
+        </tr>
+        <tr>
+            <td>③ 中间件处理</td>
+            <td>可选 pre 钩子用于鉴权、日志、CORS 等</td>
+            <td>islogin, method_pre</td>
+        </tr>
+        <tr>
+            <td>④ 控制器执行</td>
+            <td>同步或协程控制器执行业务逻辑</td>
+            <td>业务线程池 / 协程调度</td>
+        </tr>
+        <tr>
+            <td>⑤ 视图渲染</td>
+            <td>可选渲染 HTML 模板或输出 JSON</td>
+            <td>视图方法, obj_val</td>
+        </tr>
+        <tr>
+            <td>⑥ 响应返回</td>
+            <td>写回客户端（支持 gzip/br 压缩）</td>
+            <td>ASIO, 压缩模块</td>
+        </tr>
+    </tbody>
+</table>
+
+<pre><code>// 完整请求处理流程示例
+//@urlpath(islogin, api/getuser)
+std::string api_getuser(std::shared_ptr<httppeer> peer)
+{
+    httppeer& client = peer->get_peer();
+
+    // ② 路由已匹配 → ③ islogin 中间件已通过
+
+    // ④ 控制器执行 — 读取参数
+    unsigned int userid = client.get["userid"].to_int();
+
+    // ④ 业务逻辑 — 查询数据库
+    auto user = orm::cms::Sysuser();
+    user.where("userid", userid).fetch_one();
+
+    // ⑤ 视图渲染 — 构造 JSON
+    client.val["code"] = user.data.adminid > 0 ? 0 : 1;
+    client.val["data"].set_object();
+    client.val["data"]["id"]       = user.data.adminid;
+    client.val["data"]["username"] = user.data.name;
+    client.val["data"]["nickname"] = user.data.nickname;
+
+    // ⑥ 响应返回
+    client.out_json();
+    return "";
+}</code></pre>
+
+<h2 id="io-model">I/O 模型</h2>
+
+<h3>协程驱动的 I/O 与计算分离</h3>
+<p>Paozhu 采用类似 Go 语言的调度思想，使用协程进行 I/O 等待，用户代码在独立线程池中执行，实现 I/O 与计算的完全分离。</p>
+
+<div class="arch-diagram">
+<pre style="color: var(--text-color);">
+┌─────────────────────────────────────────────────────────────────┐
+│                        请求处理模型                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────────────┐         ┌──────────────────────┐     │
+│  │   ASIO I/O 协程线程   │         │    业务线程池         │     │
+│  │  (cothreadnum = 8)   │         │  (threadmax = 1024)  │     │
+│  │                      │         │                      │     │
+│  │  • accept 连接       │  I/O    │  • 同步控制器执行     │     │
+│  │  • 解析 HTTP 协议    │  等待   │  • 文件 I/O 操作      │     │
+│  │  • 协程控制器调度    │ ──────→ │  • CPU 密集型计算     │     │
+│  │  • 异步数据库查询    │         │  • 同步 ORM 操作      │     │
+│  │  • WebSocket 协程    │         │  • 视图渲染           │     │
+│  │                      │         │                      │     │
+│  └──────────────────────┘         └──────────────────────┘     │
+│              │                            │                    │
+│              │     协程控制器直接在 I/O 线程运行              │     │
+│              └────────── 不经过业务线程池 ──────────┘          │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<h4>核心设计理念</h4>
+<ul>
+    <li><strong>I/O 等待不阻塞：</strong>协程在等待网络数据时主动让出 CPU，I/O 线程可以继续处理其他连接</li>
+    <li><strong>计算与 I/O 分离：</strong>CPU 密集型任务放入业务线程池，避免阻塞 I/O 处理</li>
+    <li><strong>协程传染性：</strong>在协程控制器中调用的函数也必须是协程版本（async_ 前缀），反之亦然</li>
+    <li><strong>高并发吞吐：</strong>少量 I/O 协程线程可以处理大量并发连接，资源开销极低</li>
+</ul>
+
+<pre><code>// 协程控制器 — 在 I/O 线程运行，不经过业务线程池
+//@urlpath(null, high_concurrency)
+asio::awaitable<std::string> high_concurrency(
+    std::shared_ptr<httppeer> peer)
+{
+    // 这些操作都在 I/O 线程中以协程方式执行
+    auto db = orm::World();
+    db.where("id", peer->get["id"].to_int());
+    co_await db.async_fetch();  // 异步等待，不阻塞
+
+    peer->output = db.to_json();
+    co_return "";
+}
+
+// 同步控制器 — 提交到业务线程池执行
+//@urlpath(null, cpu_intensive)
+std::string cpu_intensive(std::shared_ptr<httppeer> peer)
+{
+    // CPU 密集型操作在业务线程池中执行
+    httppeer& client = peer->get_peer();
+
+    std::vector<int> data;
+    for (int i = 0; i < 1000000; i++) {
+        data.push_back(i * i);
+    }
+
+    client << "Computation done!";
+    return "";
+}</code></pre>
+
+<div class="highlight-box">
+    <strong>⚠️ 注意：</strong>不要在协程控制器（<code>asio::awaitable</code>）中使用 <code>std::this_thread::sleep_for()</code> 等阻塞操作，这会阻塞 I/O 线程，严重影响并发性能。
+</div>
+
+<h2 id="performance">性能优化</h2>
+
+<h3>I/O 与计算分离</h3>
+<p>框架将 I/O 操作与业务计算分离到不同的线程池中，协程控制器运行在 I/O 协程线程，同步控制器运行在业务线程池，确保高并发下的响应速度。</p>
+<pre><code>// 配置文件示例 — 线程池参数
+// conf/server.conf
+[default]
+cothreadnum = 8        ; I/O 协程线程数（通常等于 CPU 核心数）
+threadmax   = 1024    ; 最大业务线程数
+threadmin   = 5       ; 最小业务线程数</code></pre>
+
+<h3>高并发优化</h3>
+
+<h4>HTTP/2 支持</h4>
+<p>框架原生支持 HTTP/2 协议，提供多路复用、头部压缩等特性，显著提升页面加载速度。</p>
+<pre><code>// conf/server.conf — 启用 HTTP/2
+[default]
+http2_enable = 1
+
+[www.host.com]
+http2_enable = 1   ; 每个域名可独立配置</code></pre>
+
+<h4>WebSocket 支持</h4>
+<p>内置 WebSocket 支持，支持实时双向通信，适用于聊天、推送等场景。</p>
+
+<h4>ORM 连接池</h4>
+<p>数据库连接池复用连接，避免频繁建立和断开连接的开销，支持主从分离和读写分离。</p>
+<pre><code>// conf/orm.conf — 连接池配置（主库与从库在同一配置节内）
+[default]
+type    = main
+host    = 127.0.0.1
+port    = 3306
+dbname  = hello_world
+user    = benchmarkdbuser
+maxpool = 5          ; 主库连接池大小
+dbtype  = mysql
+charset = utf8mb4
+
+type    = second
+host    = 127.0.0.1
+port    = 3306
+dbname  = hello_world
+user    = benchmarkdbuser
+maxpool = 20          ; 从库连接池大小（读多写少）
+dbtype  = mysql
+charset = utf8mb4</code></pre>
+
+<h4>静态资源压缩与缓存</h4>
+<p>内置 gzip 和 Brotli 压缩支持，压缩后的静态资源可缓存到磁盘，避免重复压缩开销。</p>
+<pre><code>// conf/server.conf — 静态资源压缩缓存
+[default]
+static_file_compress_cache = 1   ; 启用压缩缓存
+staticfile_cache_num       = 0   ; 0=不缓存，>=10 启用磁盘缓存</code></pre>
+
+<h3>流量限制</h3>
+
+<h4>平滑移动平均线二段式限流</h4>
+<p>框架内置基于平滑移动平均线（SMA）的二段式限流机制，在保护服务器的同时不影响正常流量。</p>
+<pre><code>// 限流配置示例
+// 框架内部实现
+// 第一段：基于连接数的硬限制
+// links_restart_process = n9998877ts1te5
+//   当连接数超过 15000 时，在 1:00-5:00 时段内重启进程
+
+// 第二段：基于时间窗口的软限制
+// clean_cron = m5t600
+//   每 5 分钟清理 600 秒前的不活跃连接
+
+// reboot_cron = d180h5
+//   每 180 天凌晨 5 点自动重启进程</code></pre>
+
+<div class="highlight-box">
+    <strong>🎯 性能调优建议：</strong>
+    <ul>
+        <li><code>cothreadnum</code> 设置为 CPU 物理核心数，充分利用多核</li>
+        <li><code>threadmax</code> 根据业务复杂度调整，建议 512-2048</li>
+        <li>生产环境开启 <code>static_file_compress_cache=1</code></li>
+        <li>使用 HTTP/2 减少连接开销</li>
+        <li>数据库连接池 <code>maxpool</code> 根据最大并发设置</li>
+    </ul>
+</div>
+
+<div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-light);">
+    <a href="index.html" class="back-link">← 返回首页</a>
+</div>
+`;
+
+const enFullContent = `
+<div style="text-align: center; margin-bottom: 1.8rem;">
+    <h1 style="margin-top: 0.3rem;">🧨 Paozhu Core Architecture</h1>
+    <p style="opacity: 0.8;">MVC Layering · Coroutine-Driven · High-Performance C++20 Web Framework</p>
+</div>
+
+<h2 id="overview">Architecture Overview</h2>
+<p>Paozhu framework adopts the classic MVC (Model-View-Controller) layered architecture, combined with a coroutine and thread-pool separated I/O model to achieve high-performance, high-concurrency web services.</p>
+
+<div class="arch-diagram">
+<pre style="color: var(--text-color);">
+┌─────────────────────────────────────────────────────────────────┐
+│                    Client Request (HTTP/HTTPS)                   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Transport Layer                               │
+│   HTTP/1.1  │  HTTP/2  │  WebSocket  │  Socket (Unified)        │
+│   Coroutine-based scheduling · ASIO I/O context                 │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Controller Layer                              │
+│   httppeer receives requests · Reads params · Business logic    │
+│   Sync functions ──→ Business thread pool                       │
+│   Coroutine functions ──→ I/O coroutine scheduler               │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+              ┌────────────┴────────────┐
+              ▼                         ▼
+┌─────────────────────┐     ┌─────────────────────────────────────┐
+│   Data Layer (ORM)  │     │       View Layer                     │
+│   MySQL protocol    │     │   Centralized view registration     │
+│   Coroutine/Sync    │     │   Controller renders by name         │
+│   Connection pool   │     │   Multi-module (admin/cms/etc.)      │
+└─────────────────────┘     └─────────────────────────────────────┘
+</pre>
+</div>
+
+<div class="layer-box">
+    <div class="layer-card">
+        <div class="icon">🎯</div>
+        <h4>Controller</h4>
+        <p>Handler functions receive httppeer, read request parameters, execute business logic, set output or invoke views</p>
+    </div>
+    <div class="layer-card">
+        <div class="icon">🖼️</div>
+        <h4>View</h4>
+        <p>View methods are centrally registered. Controllers render pages by name. Supports multi-module views</p>
+    </div>
+    <div class="layer-card">
+        <div class="icon">💾</div>
+        <h4>Data (ORM)</h4>
+        <p>ORM wraps database access with coroutine and sync modes. Connection pool with master/slave support</p>
+    </div>
+    <div class="layer-card">
+        <div class="icon">🌐</div>
+        <h4>Transport</h4>
+        <p>HTTP/1.1, HTTP/2, WebSocket, Socket unified abstraction. Coroutine + thread pool separation</p>
+    </div>
+</div>
+
+<h2 id="core-components">Core Components Analysis</h2>
+
+<h3 id="startup-lifecycle">1. Startup & Lifecycle</h3>
+
+<h4>Daemon Mode</h4>
+<p>Production environments recommend daemon mode: first initialize the daemon environment (fork a child process to run in the background), then obtain and run the singleton HTTP server. The config file path is passed as a command-line argument.</p>
+<pre><code>// startup/main_daemon.cpp — Daemon mode startup
+#include "httppeer.h"
+
+int main(int argc, char* argv[])
+{
+    std::string config_path = "conf/server.conf";
+    if (argc > 1) config_path = argv[1];
+
+    // Initialize daemon environment (fork child process, run in background)
+    http::init_daemon();
+
+    // Get singleton HTTP server and run
+    http::get_server_app().run(config_path);
+    return 0;
+}</code></pre>
+
+<h4>Development Mode</h4>
+<p>Development mode directly obtains and runs the singleton HTTP server, facilitating debugging and rapid iteration.</p>
+<pre><code>// startup/main_dev.cpp — Debug mode startup
+#include "httppeer.h"
+
+int main(int argc, char* argv[])
+{
+    std::string config_path = "conf/server.conf";
+    if (argc > 1) config_path = argv[1];
+
+    // Get singleton HTTP server and run
+    http::get_server_app().run(config_path);
+    return 0;
+}</code></pre>
+
+<div class="highlight-box">
+    <strong>💡 Tip:</strong> In daemon mode, use <code>reboot_cron</code> for automatic restart cycles, or <code>touch log/restart_server</code> to manually trigger a restart.
+</div>
+
+<h3 id="route-discovery">2. Route Discovery & Controller Registration</h3>
+
+<h4>Auto-Discovery (Annotation)</h4>
+<p>Use the macro annotation <code>//@urlpath</code> to map controller functions to URLs. The mappings are automatically populated into the routing table at runtime, similar to Java Spring Boot.</p>
+<pre><code>// controller/src/techempower.cpp
+#include "techempower.h"
+
+//@urlpath(null, plaintext)
+asio::awaitable<std::string> techempowerplaintext(
+    std::shared_ptr<httppeer> peer)
+{
+    peer->type("text/plain; charset=UTF-8");
+    peer->set_header("Date", get_gmttime());
+    peer->output = "Hello, World!";
+    co_return "";
+}
+
+// controller/src/admin/menu.cpp
+//@urlpath(null,admin/dashboard)
+std::string admin_dashboard(std::shared_ptr<httppeer> peer)
+{
+    httppeer& client = peer->get_peer();
+    client.view("admin/dashboard");
+    return "";
+}</code></pre>
+
+<p>At compile time, the framework automatically scans source files in <code>controller/src</code>, parses annotations, and generates route mapping code into <code>common/autocontrolmethod.hpp</code>.</p>
+
+<h4>Manual Registration</h4>
+<p>Use the <code>_inithttpmethodregto</code> function to associate URLs with function pointers. Each route is described by a <code>regmethold_t</code> struct: <code>pre</code> is the pre-processor function pointer and <code>regfun</code> is the controller function pointer, suitable for scenarios requiring flexible control over registration timing.</p>
+<pre><code>// common/reghttpmethod.hpp — Manual route registration
+namespace http {
+    void _inithttpmethodregto(std::map<std::string, regmethold_t> &methodcallback)
+    {
+        struct regmethold_t temp;
+        temp.pre = nullptr;
+        temp.regfun = &http::testjson;
+        methodcallback.emplace("testjson", temp);
+
+        temp.pre = &http::admin_islogin;
+        temp.regfun = &http::admin_welcome;
+        methodcallback.emplace("admin/welcome", temp);
+    }
+}</code></pre>
+
+<h4>Coroutine Controllers</h4>
+<p>Supports <code>asio::awaitable</code> form coroutine controllers that run in I/O threads, suitable for I/O-intensive operations.</p>
+<pre><code>// Coroutine controller — async data fetch
+//@urlpath(null, coroutine_example)
+asio::awaitable<std::string> coroutine_example(
+    std::shared_ptr<httppeer> peer)
+{
+    httppeer& client = peer->get_peer();
+
+    // Async database query via coroutine
+    auto world = orm::World();
+    world.where("id", 1);
+    co_await world.async_fetch();
+
+    // Output JSON
+    peer->output = world.to_json();
+    peer->type("application/json; charset=UTF-8");
+    co_return "";
+}</code></pre>
+
+<h3 id="view-rendering">3. View Rendering System</h3>
+
+<h4>Centralized View Registration</h4>
+<p>All view methods are centrally registered into <code>regviewmethod.hpp</code> after compilation. Controllers invoke the corresponding rendering function via string keys.</p>
+<pre><code>// viewsrc/include/regviewmethod.hpp
+namespace http {
+    void _initview_method_regto(VIEW_REG& _viewmetholdreg)
+    {
+        _viewmetholdreg.emplace("home/header",
+            http::view::home::header);
+        _viewmetholdreg.emplace("login/login",
+            http::view::login::login);
+        _viewmetholdreg.emplace("admin/dashboard",
+            http::view::admin::dashboard);
+        _viewmetholdreg.emplace("cms/list",
+            http::view::cms::list);
+        _viewmetholdreg.emplace("superadmin/welcome",
+            http::view::superadmin::welcome);
+    }
+}</code></pre>
+
+<h4>Controller Invoking Views</h4>
+<pre><code>// Render views by name in controllers
+//@urlpath(admin_islogin,admin/addtopic)
+std::string admin_addtopic(std::shared_ptr<httppeer> peer)
+{
+    httppeer& client = peer->get_peer();
+
+    // Prepare view data
+    auto topicm = orm::cms::Topic();
+    topicm.where("userid", client.session["userid"].to_int())
+          .asc("parentid").fetch();
+
+    client.val["list"].set_array();
+    for (auto& record : topicm.record) {
+        obj_val temp;
+        temp["id"]       = record.topicid;
+        temp["parentid"] = record.parentid;
+        temp["value"]    = record.title;
+        client.val["list"].push(temp);
+    }
+
+    // Render view by name
+    peer->view("admin/addtopic");
+    return "";
+}</code></pre>
+
+<h4>Multi-Module Views</h4>
+<p>The view system supports multi-module isolation. Views from different business modules are placed under their respective namespaces without conflicts.</p>
+<pre><code>// View directory structure
+view/
+├── admin/
+│   ├── dashboard.html
+│   ├── addtopic.html
+│   └── login.html
+├── cms/
+│   ├── list.html
+│   ├── edit.html
+│   ├── add.html
+│   └── show.html
+├── superadmin/
+│   ├── welcome.html
+│   └── userlist.html
+└── home/
+    └── header.html
+
+// Corresponding namespaces
+http::view::admin::dashboard(...)
+http::view::cms::list(...)
+http::view::superadmin::welcome(...)</code></pre>
+
+<h3 id="websocket-factory">4. WebSocket/Socket Factory</h3>
+
+<h4>Session Handlers and Registration</h4>
+<p>Write a session handler class by inheriting the <code>websockets_api</code> base class and overriding callbacks such as <code>onopen/onmessage/onclose</code> (each has a corresponding <code>async_</code> coroutine version). Finally, in the <code>_initwebsocketmethodregto</code> registration function, map the protocol path to the session factory via <code>methodcallback.emplace</code>.</p>
+<pre><code>// common/websockets_method_reg.hpp — WebSocket session registration
+#include "websockets_api.h"
+
+// Custom session handler class, inheriting the websockets_api base class
+class my_websocket_handler : public websockets_api {
+public:
+    my_websocket_handler(unsigned int m, unsigned int g)
+        : websockets_api(8, m, g, 0) {}
+
+    // Handle client messages via coroutine
+    asio::awaitable<void> async_onmessage(websockets_data_list_t &&msg) override
+    {
+        std::string outhello;
+        // Build a text frame and echo it back to the client
+        ws_parse->make_ws_text(msg.value, outhello);
+        co_await session_sock->async_send_writer(outhello);
+        co_return;
+    }
+};
+
+// Registration function — map protocol paths to session factories
+void _initwebsocketmethodregto(WEBSOCKET_REG &methodcallback)
+{
+    methodcallback.emplace("wstest",
+        [](unsigned int m, unsigned int g) -> std::shared_ptr<websockets_api>
+        {
+            return std::make_shared<my_websocket_handler>(m, g);
+        });
+}</code></pre>
+
+<h3 id="request-flow">5. Request Processing Flow</h3>
+
+<p>A complete HTTP request processing flow:</p>
+
+<div class="flow-steps">
+    <div class="flow-step">Receive & Parse</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Route Match</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step flow-step-warn">Middleware</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Controller</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step flow-step-alt">View Render</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Response</div>
+</div>
+
+<table class="info-table">
+    <thead>
+        <tr>
+            <th>Stage</th>
+            <th>Description</th>
+            <th>Key Component</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>① Receive & Parse</td>
+            <td>HTTP server receives and parses protocol (HTTP/1.1 or HTTP/2)</td>
+            <td>httpparse, ASIO</td>
+        </tr>
+        <tr>
+            <td>② Route Match</td>
+            <td>Find the controller function based on URL</td>
+            <td>Routing table, autocontrolmethod</td>
+        </tr>
+        <tr>
+            <td>③ Middleware</td>
+            <td>Optional pre-hooks for auth, logging, CORS, etc.</td>
+            <td>islogin, method_pre</td>
+        </tr>
+        <tr>
+            <td>④ Controller</td>
+            <td>Sync or coroutine controller executes business logic</td>
+            <td>Business thread pool / Coroutine scheduler</td>
+        </tr>
+        <tr>
+            <td>⑤ View Render</td>
+            <td>Optional HTML template rendering or JSON output</td>
+            <td>View methods, obj_val</td>
+        </tr>
+        <tr>
+            <td>⑥ Response</td>
+            <td>Write back to client (supports gzip/br compression)</td>
+            <td>ASIO, compression module</td>
+        </tr>
+    </tbody>
+</table>
+
+<pre><code>// Complete request processing flow example
+//@urlpath(islogin, api/getuser)
+std::string api_getuser(std::shared_ptr<httppeer> peer)
+{
+    httppeer& client = peer->get_peer();
+
+    // ② Route matched → ③ islogin middleware passed
+
+    // ④ Controller — read parameters
+    unsigned int userid = client.get["userid"].to_int();
+
+    // ④ Business logic — query database
+    auto user = orm::cms::Sysuser();
+    user.where("userid", userid).fetch_one();
+
+    // ⑤ View render — construct JSON
+    client.val["code"] = user.data.adminid > 0 ? 0 : 1;
+    client.val["data"].set_object();
+    client.val["data"]["id"]       = user.data.adminid;
+    client.val["data"]["username"] = user.data.name;
+    client.val["data"]["nickname"] = user.data.nickname;
+
+    // ⑥ Response
+    client.out_json();
+    return "";
+}</code></pre>
+
+<h2 id="io-model">I/O Model</h2>
+
+<h3>Coroutine-Driven I/O and Computation Separation</h3>
+<p>Paozhu adopts a Go-like scheduling philosophy, using coroutines for I/O waiting while user code executes in separate thread pools, achieving complete separation of I/O and computation.</p>
+
+<div class="arch-diagram">
+<pre style="color: var(--text-color);">
+┌─────────────────────────────────────────────────────────────────┐
+│                     Request Processing Model                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────────────┐         ┌──────────────────────┐     │
+│  │  ASIO I/O Coroutine  │         │   Business Thread    │     │
+│  │  Thread Pool         │         │   Pool               │     │
+│  │  (cothreadnum = 8)   │         │  (threadmax = 1024)  │     │
+│  │                      │         │                      │     │
+│  │  • Accept connections│  I/O    │  • Sync controllers  │     │
+│  │  • Parse HTTP        │  Wait   │  • File I/O          │     │
+│  │  • Coroutine dispatch│ ──────→ │  • CPU-intensive     │     │
+│  │  • Async DB queries  │         │  • Sync ORM ops      │     │
+│  │  • WebSocket coroutine│        │  • View rendering    │     │
+│  │                      │         │                      │     │
+│  └──────────────────────┘         └──────────────────────┘     │
+│              │                            │                    │
+│              │     Coroutine controllers run directly           │
+│              └────────── in I/O threads ──────────────────┘    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<h4>Core Design Principles</h4>
+<ul>
+    <li><strong>Non-blocking I/O:</strong> Coroutines voluntarily yield CPU while waiting for network data, allowing I/O threads to process other connections</li>
+    <li><strong>Separation of Concerns:</strong> CPU-intensive tasks go to the business thread pool, avoiding I/O thread blocking</li>
+    <li><strong>Coroutine Propagation:</strong> Functions called within coroutine controllers must also be coroutine versions (async_ prefix), and vice versa</li>
+    <li><strong>High Concurrency:</strong> A small number of I/O coroutine threads can handle massive concurrent connections with minimal resource overhead</li>
+</ul>
+
+<pre><code>// Coroutine controller — runs in I/O thread, not business pool
+//@urlpath(null, high_concurrency)
+asio::awaitable<std::string> high_concurrency(
+    std::shared_ptr<httppeer> peer)
+{
+    // These operations execute as coroutines in I/O threads
+    auto db = orm::World();
+    db.where("id", peer->get["id"].to_int());
+    co_await db.async_fetch();  // Async wait, non-blocking
+
+    peer->output = db.to_json();
+    co_return "";
+}
+
+// Sync controller — dispatched to business thread pool
+//@urlpath(null, cpu_intensive)
+std::string cpu_intensive(std::shared_ptr<httppeer> peer)
+{
+    // CPU-intensive operations execute in business thread pool
+    httppeer& client = peer->get_peer();
+
+    std::vector<int> data;
+    for (int i = 0; i < 1000000; i++) {
+        data.push_back(i * i);
+    }
+
+    client << "Computation done!";
+    return "";
+}</code></pre>
+
+<div class="highlight-box">
+    <strong>⚠️ Warning:</strong> Do not use blocking calls like <code>std::this_thread::sleep_for()</code> in coroutine controllers (<code>asio::awaitable</code>), as this blocks the I/O thread and severely impacts concurrency.
+</div>
+
+<h2 id="performance">Performance Optimization</h2>
+
+<h3>I/O and Computation Separation</h3>
+<p>The framework separates I/O operations and business computation into different thread pools. Coroutine controllers run in I/O coroutine threads, while sync controllers run in the business thread pool, ensuring responsive performance under high concurrency.</p>
+<pre><code>// Config example — thread pool parameters
+// conf/server.conf
+[default]
+cothreadnum = 8        ; I/O coroutine threads (usually = CPU cores)
+threadmax   = 1024    ; Max business threads
+threadmin   = 5       ; Min business threads</code></pre>
+
+<h3>High-Concurrency Optimization</h3>
+
+<h4>HTTP/2 Support</h4>
+<p>The framework natively supports HTTP/2, providing multiplexing, header compression, and other features that significantly improve page load speed.</p>
+<pre><code>// conf/server.conf — Enable HTTP/2
+[default]
+http2_enable = 1
+
+[www.host.com]
+http2_enable = 1   ; Per-domain configuration</code></pre>
+
+<h4>WebSocket Support</h4>
+<p>Built-in WebSocket support for real-time bidirectional communication, suitable for chat, push notification, and other scenarios.</p>
+
+<h4>ORM Connection Pool</h4>
+<p>Database connection pool reuses connections to avoid frequent setup/teardown overhead, supporting master/slave and read/write separation.</p>
+<pre><code>// conf/orm.conf — Connection pool config (primary and replica in the same section)
+[default]
+type    = main
+host    = 127.0.0.1
+port    = 3306
+dbname  = hello_world
+user    = benchmarkdbuser
+maxpool = 5          ; Master pool size
+dbtype  = mysql
+charset = utf8mb4
+
+type    = second
+host    = 127.0.0.1
+port    = 3306
+dbname  = hello_world
+user    = benchmarkdbuser
+maxpool = 20          ; Slave pool size (reads > writes)
+dbtype  = mysql
+charset = utf8mb4</code></pre>
+
+<h4>Static Resource Compression & Cache</h4>
+<p>Built-in gzip and Brotli compression support. Compressed static resources can be cached to disk to avoid repeated compression overhead.</p>
+<pre><code>// conf/server.conf — Static resource compression cache
+[default]
+static_file_compress_cache = 1   ; Enable compression cache
+staticfile_cache_num       = 0   ; 0=disable, >=10 enable disk cache</code></pre>
+
+<h3>Traffic Limiting</h3>
+
+<h4>SMA-Based Two-Phase Rate Limiting</h4>
+<p>The framework implements a built-in two-phase rate limiting mechanism based on Simple Moving Average (SMA), protecting the server without impacting normal traffic.</p>
+<pre><code>// Rate limiting config example
+// Internal framework implementation
+// Phase 1: Hard limit based on connection count
+// links_restart_process = n9998877ts1te5
+//   Restart process during 1:00-5:00 AM when connections exceed 15000
+
+// Phase 2: Soft limit based on time windows
+// clean_cron = m5t600
+//   Clean inactive connections older than 600s every 5 minutes
+
+// reboot_cron = d180h5
+//   Auto-restart every 180 days at 5:00 AM</code></pre>
+
+<div class="highlight-box">
+    <strong>🎯 Performance Tuning Tips:</strong>
+    <ul>
+        <li>Set <code>cothreadnum</code> to the number of physical CPU cores for optimal multi-core utilization</li>
+        <li>Adjust <code>threadmax</code> based on business complexity, recommended 512-2048</li>
+        <li>Enable <code>static_file_compress_cache=1</code> in production</li>
+        <li>Use HTTP/2 to reduce connection overhead</li>
+        <li>Set <code>maxpool</code> in database connection pool based on max concurrency</li>
+    </ul>
+</div>
+
+<div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-light);">
+    <a href="index.html" class="back-link">← Back to Home</a>
+</div>
+`;
+
+document.getElementById('content-cn').innerHTML = cnFullContent;
+document.getElementById('content-en').innerHTML = enFullContent;
+
+function buildHierarchyNav(lang) {
+    const container = document.getElementById('dynamic-nav');
+    const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+    if (!contentDiv) {
+        container.innerHTML = '<p>No content found</p>';
+        return;
+    }
+    const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+    if (headings.length === 0) {
+        container.innerHTML = '<p style="padding: 1rem;">No table of contents</p>';
+        return;
+    }
+
+    const root = { children: [] };
+    let stack = [root];
+
+    headings.forEach(heading => {
+        let level = parseInt(heading.tagName[1]);
+        const id = heading.id;
+        let title = heading.innerText.trim();
+        if (!title) title = heading.textContent.trim() || "Section";
+        const node = { level, id, title, children: [] };
+        while (stack.length > 0 && stack[stack.length-1].level >= level) {
+            stack.pop();
+        }
+        const parent = stack[stack.length-1];
+        parent.children.push(node);
+        stack.push(node);
+    });
+
+    function renderTree(nodes, levelClass = 'level-1') {
+        if (!nodes.length) return '';
+        let html = '<ul class="nav-tree no-bullet">';
+        nodes.forEach(node => {
+            const hasChildren = node.children.length > 0;
+            const liClass = `level-${node.level}`;
+            html += `<li class="${liClass}">`;
+            html += `<div class="tree-item"><a href="#${node.id}" data-id="${node.id}" class="nav-link">${escapeHtml(node.title)}</a></div>`;
+            if (hasChildren) {
+                html += renderTree(node.children, `level-${node.level+1}`);
+            }
+            html += `</li>`;
+        });
+        html += '</ul>';
+        return html;
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    const navHtml = renderTree(root.children);
+    container.innerHTML = navHtml || '<p>No navigation data</p>';
+
+    attachNavEvents(contentDiv);
+}
+
+function attachNavEvents(contentDiv) {
+    const links = document.querySelectorAll('.nav-link');
+    links.forEach(link => {
+        link.removeEventListener('click', navClickHandler);
+        link.addEventListener('click', navClickHandler);
+    });
+    function navClickHandler(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('data-id');
+        const targetElem = contentDiv.querySelector(`#${targetId}`);
+        if (targetElem) {
+            targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            history.pushState(null, null, `#${targetId}`);
+        }
+        if (window.innerWidth <= 860) {
+            document.getElementById('sidebar').classList.remove('mobile-open');
+        }
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active-link'));
+        this.classList.add('active-link');
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.id;
+                if (id) {
+                    document.querySelectorAll('.nav-link').forEach(link => {
+                        link.classList.remove('active-link');
+                        if (link.getAttribute('data-id') === id) {
+                            link.classList.add('active-link');
+                        }
+                    });
+                }
+            }
+        });
+    }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+
+    const allHeadings = contentDiv.querySelectorAll('[id]');
+    allHeadings.forEach(el => observer.observe(el));
+}
+
+let currentLang = 'cn';
+function switchLanguage(lang) {
+    currentLang = lang;
+    document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+    if (lang === 'cn') {
+        document.getElementById('content-cn').classList.add('active-lang');
+    } else {
+        document.getElementById('content-en').classList.add('active-lang');
+    }
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+    buildHierarchyNav(lang);
+    window.scrollTo(0, 0);
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const lang = btn.getAttribute('data-lang');
+        if (lang) switchLanguage(lang);
+    });
+});
+
+const menuBtn = document.getElementById('mobileMenuBtn');
+const sidebar = document.getElementById('sidebar');
+if (menuBtn) {
+    menuBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('mobile-open');
+    });
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+            sidebar.classList.remove('mobile-open');
+        }
+    });
+}
+
+const topBtn = document.getElementById('scrollTopBtn');
+topBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// URL hash 检测语言切换
+const hashLang = window.location.hash;
+if (hashLang === '#english' || hashLang === '#en') {
+    switchLanguage('en');
+} else if (hashLang === '#chinese' || hashLang === '#zh') {
+    switchLanguage('cn');
+} else {
+    buildHierarchyNav('cn');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu WebSocket 教程 · WebSocket Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-tree li {
+            margin: 0.2rem 0;
+            list-style: none;
+        }
+        .nav-tree .tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .nav-tree a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.88rem;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+            opacity: 0.85;
+            flex: 1;
+        }
+        .nav-tree a:hover {
+            background-color: var(--nav-hover-bg);
+            opacity: 1;
+            color: var(--link-color);
+        }
+        .nav-tree a.active-link {
+            background-color: var(--link-color);
+            color: white;
+            opacity: 1;
+        }
+        .nav-tree .level-1 > a {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+        .nav-tree .level-2 {
+            padding-left: 1.3rem;
+        }
+        .nav-tree .level-3 {
+            padding-left: 2.2rem;
+        }
+        .no-bullet {
+            list-style: none;
+        }
+        .sidebar-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin: 1rem 0 0.5rem 0.5rem;
+        }
+
+        .content-panel {
+            display: none;
+            animation: fade 0.2s ease;
+        }
+        .content-panel.active-lang {
+            display: block;
+        }
+        @keyframes fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            border: 1px solid var(--border-light);
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        h1, h2, h3, h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+        img, svg { max-width: 100%; }
+
+        .back-to-index {
+            display: block;
+            margin-top: 3rem;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            background-color: var(--code-bg);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--link-color);
+            font-weight: 600;
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+        .back-to-index:hover {
+            background-color: var(--nav-hover-bg);
+            color: var(--link-hover);
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 1.2rem;
+            right: 1.2rem;
+            background: #475569;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: 0.2s;
+            z-index: 99;
+            font-weight: bold;
+        }
+        .scroll-top:hover {
+            opacity: 1;
+            background: var(--link-color);
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+            margin: 0.8rem 0;
+        }
+        li {
+            margin: 0.3rem 0;
+        }
+        .tip-box {
+            background-color: var(--code-bg);
+            border-left: 4px solid var(--link-color);
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+        .warning-box {
+            background-color: var(--code-bg);
+            border-left: 4px solid #f59e0b;
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+    </style>
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">🔌 WebSocket 开发导航</div>
+            <div id="dynamic-nav">加载中...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel active-lang"></div>
+        <div id="content-en" class="content-panel"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+    const cnFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🔌 Paozhu WebSocket 教程</h1>
+        <p style="opacity: 0.8;">掌握 Paozhu 框架 WebSocket 开发的核心知识与实战技巧</p>
+    </div>
+
+    <h2 id="websocket-overview">WebSocket概述</h2>
+    <p>Paozhu提供原生WebSocket支持，包括服务端和客户端。支持同步和协程两种模式。</p>
+
+    <h2 id="websocket-server">WebSocket服务端</h2>
+    <h3 id="ws-server-handler">创建WebSocket处理器</h3>
+    <p>继承 <code>websockets_api</code> 基类，实现回调函数。以下示例基于项目自带的 <code>websockets/loopwebsockets.hpp</code>：</p>
+    <pre><code>// WebSocket处理器头文件
+#pragma once
+#include "websockets.h"
+#include "websockets_callback.h"
+
+namespace http
+{
+class my_websocket_handler : public websockets_api
+{
+public:
+    my_websocket_handler(unsigned int m, unsigned int g) : websockets_api(8, m, g, 0) {}
+
+    void onopen() override
+    {
+        // 连接建立时触发
+        isco = true;
+        loop_num = 8;
+        DEBUG_LOG("WebSocket connected");
+    }
+
+    asio::awaitable<void> async_onopen() override
+    {
+        isco = true;
+        loop_num = 8;
+        co_return;
+    }
+
+    void onclose() override
+    {
+        // 连接关闭时触发
+        isclose = true;
+        DEBUG_LOG("WebSocket disconnected");
+    }
+
+    asio::awaitable<void> async_onmessage(websockets_data_list_t &&msg) override
+    {
+        // 收到消息时触发（协程模式）
+        std::string outhello;
+        ws_parse->make_ws_text(msg.value, outhello);
+        co_await session_sock->async_send_writer(outhello);
+        co_return;
+    }
+
+    void onmessage() override
+    {
+        // 收到消息时触发（同步模式）
+        std::unique_lock&lt;std::mutex&gt; lock(content_list_mutex);
+        if (content_list.empty())
+        {
+            return;
+        }
+        auto msg = std::move(content_list.front());
+        content_list.pop_front();
+        lock.unlock();
+
+        std::string outhello;
+        ws_parse->make_ws_text(msg.value, outhello);
+        session_sock->send_writer(outhello);
+    }
+};
+}</code></pre>
+
+    <h3 id="ws-server-register">注册WebSocket路由</h3>
+    <p>在 <code>common/websockets_method_reg.hpp</code> 中定义 <code>_initwebsocketmethodregto</code> 函数，向 <code>WEBSOCKET_REG</code> 映射表注册路由（路径不带前导斜杠）：</p>
+    <pre><code>#include "websockets_callback.h"
+#include "loopwebsockets.hpp"
+
+void _initwebsocketmethodregto(WEBSOCKET_REG &amp;methodcallback)
+{
+    methodcallback.emplace("wstest", [](unsigned int m, unsigned int g) -&gt; std::shared_ptr&lt;websockets_api&gt;
+                           { return std::make_shared&lt;my_websocket_handler&gt;(m, g); });
+}</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>提示</strong>：<code>_initwebsocketmethodregto</code> 接受一个 <code>WEBSOCKET_REG</code> 映射表引用，通过 <code>emplace</code> 将路径（如 <code>wstest</code>）绑定到返回 <code>std::shared_ptr&lt;websockets_api&gt;</code> 的工厂函数。框架收到对应路径的WebSocket升级请求时，会自动调用该工厂函数创建处理器实例。
+    </div>
+
+    <h2 id="websocket-client">WebSocket客户端</h2>
+    <h3 id="ws-client-basic">创建WebSocket客户端</h3>
+    <p>使用 <code>http::websocket_client</code> 类创建客户端连接。以下示例展示了如何连接、发送消息和接收消息：</p>
+    <pre><code>#include "http_websocket_client.h"
+
+//@urlpath(null,test_websocket_client)
+asio::awaitable<std::string> test_websocket_client(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    
+    std::shared_ptr<http::websocket_client> a = std::make_shared<http::websocket_client>();
+    
+    // 连接到WebSocket服务器
+    bool isok = co_await a->async_connect("ws://127.0.0.1:80/wstest");
+    if (!isok)
+    {
+        client << "连接失败";
+        co_return "";
+    }
+    
+    // 发送消息
+    unsigned int n = co_await a->async_text_write("Hello WebSocket");
+    client << "发送: " << n << " 字节";
+    
+    // 接收消息
+    n = co_await a->async_text_read();
+    client << "收到: " << a->recv_data.content;
+    
+    co_return "";
+}</code></pre>
+
+    <h3 id="ws-client-api">客户端API说明</h3>
+    <ul>
+        <li><code>async_connect(url)</code>：异步连接到WebSocket服务器，返回 <code>bool</code> 表示是否成功</li>
+        <li><code>async_text_write(message)</code>：异步发送文本消息，返回发送的字节数</li>
+        <li><code>async_text_read()</code>：异步接收文本消息，接收的数据存储在 <code>recv_data.content</code> 中</li>
+    </ul>
+
+    <h2 id="coroutine-websocket">协程WebSocket</h2>
+    <h3 id="ws-coroutine-advanced">高级用法</h3>
+    <p>Paozhu的WebSocket客户端支持多种回调设置，可以实现定时循环、自动收发等高级功能：</p>
+    <pre><code>// 设置定时回调
+a->async_dur_time_loop_fun = [](std::shared_ptr<websocket_client> b) -> asio::awaitable<void> {
+    std::string send_content = "websocket client loop";
+    unsigned int n = co_await b->async_text_write(send_content);
+    DEBUG_LOG("sent: %s", send_content.c_str());
+    co_return;
+};
+
+// 设置接收完成回调
+a->async_recv_finish_fun = [](std::shared_ptr<websocket_client> b) -> asio::awaitable<void> {
+    if (b->recv_data.length > 0)
+    {
+        DEBUG_LOG("received: %s", b->recv_data.content.c_str());
+    }
+    co_return;
+};
+
+// 启动循环
+a->async_run_loop_fun = [](std::shared_ptr<websocket_client> b, 
+                           websocket_client::ws_pack_data pack_data) -> asio::awaitable<void> {
+    DEBUG_LOG("running loop");
+    co_return;
+};
+
+co_spawn(a->strand_, [a]() mutable { 
+    return a->async_run_loop(); 
+}, asio::detached);
+
+a->add_client_task_loop();</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>回调说明</strong>：
+        <ul>
+            <li><code>async_dur_time_loop_fun</code>：定时触发的回调，可用于周期性发送心跳或数据</li>
+            <li><code>async_recv_finish_fun</code>：每次接收完成后触发的回调，用于处理收到的数据</li>
+            <li><code>async_run_loop_fun</code>：主循环回调，通过 <code>co_spawn</code> 启动协程</li>
+            <li><code>add_client_task_loop()</code>：将客户端任务加入框架的定时循环调度中</li>
+        </ul>
+    </div>
+
+    <h2 id="socket-support">Socket支持</h2>
+    <h3 id="socket-tcp">普通TCP Socket支持</h3>
+    <p>除了WebSocket协议，Paozhu还支持普通的TCP Socket通信。通过内置的Socket模块，可以轻松实现自定义TCP服务端和客户端。TCP Socket支持同样支持协程模式，方便与WebSocket协同工作。</p>
+
+    <div class="warning-box">
+        ⚠️ <strong>注意</strong>：TCP Socket为底层通信协议，使用时需自行处理协议解析。对于需要可靠消息传输的场景，建议优先使用WebSocket。
+    </div>
+
+    <h2 id="complete-example">完整示例</h2>
+    <h3 id="full-websocket-example">完整WebSocket示例</h3>
+    <p>以下是一个基于 <code>websockets/loopwebsockets.hpp</code> 和 <code>controller/src/test_websocket_handle.cpp</code> 的完整WebSocket示例，包含服务端处理器和客户端控制器：</p>
+    <pre><code>// websockets/loopwebsockets.hpp
+#pragma once
+#include "orm.h"
+#include "websockets.h"
+#include "websockets_callback.h"
+
+namespace http
+{
+class test_websocket_handler : public websockets_api
+{
+public:
+    test_websocket_handler(unsigned int m, unsigned int g) : websockets_api(8, m, g, 0) {}
+
+    void onopen() override
+    {
+        isco = true;
+        loop_num = 8;
+        DEBUG_LOG("WebSocket client connected");
+    }
+
+    asio::awaitable<void> async_onopen() override
+    {
+        isco = true;
+        loop_num = 8;
+        co_return;
+    }
+
+    void onclose() override
+    {
+        isclose = true;
+        DEBUG_LOG("WebSocket client disconnected");
+    }
+
+    asio::awaitable<void> async_onmessage(websockets_data_list_t &&msg) override
+    {
+        std::string outhello;
+        ws_parse->make_ws_text(msg.value, outhello);
+        co_await session_sock->async_send_writer(outhello);
+        co_return;
+    }
+
+    void onmessage() override
+    {
+        std::unique_lock&lt;std::mutex&gt; lock(content_list_mutex);
+        if (content_list.empty())
+        {
+            return;
+        }
+        auto msg = std::move(content_list.front());
+        content_list.pop_front();
+        lock.unlock();
+
+        std::string outhello;
+        ws_parse->make_ws_text(msg.value, outhello);
+        session_sock->send_writer(outhello);
+    }
+};
+}
+
+// common/websockets_method_reg.hpp
+#include "loopwebsockets.hpp"
+
+void _initwebsocketmethodregto(WEBSOCKET_REG &amp;methodcallback)
+{
+    methodcallback.emplace("wsdemo", [](unsigned int m, unsigned int g) -&gt; std::shared_ptr&lt;websockets_api&gt;
+                           { return std::make_shared&lt;test_websocket_handler&gt;(m, g); });
+}
+
+// controller/src/test_websocket_handle.cpp
+#include "httppeer.h"
+#include "test_websocket_handle.h"
+
+namespace http
+{
+// WebSocket客户端测试接口
+//@urlpath(null, test_ws_demo)
+asio::awaitable<std::string> test_ws_demo(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    
+    auto ws_client = std::make_shared<http::websocket_client>();
+    
+    bool isok = co_await ws_client->async_connect("ws://127.0.0.1:80/wsdemo");
+    if (!isok)
+    {
+        client << "WebSocket连接失败";
+        co_return "";
+    }
+    
+    co_await ws_client->async_text_write("Hello Server");
+    unsigned int n = co_await ws_client->async_text_read();
+    client << "收到回复: " << ws_client->recv_data.content;
+    
+    co_return "";
+}
+
+// 协程循环模式示例
+//@urlpath(null, test_ws_loop)
+asio::awaitable<std::string> test_ws_loop(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    
+    auto ws_client = std::make_shared<http::websocket_client>();
+    
+    bool isok = co_await ws_client->async_connect("ws://127.0.0.1:80/wsdemo");
+    if (!isok)
+    {
+        client << "WebSocket连接失败";
+        co_return "";
+    }
+    
+    ws_client->async_dur_time_loop_fun = 
+        [](std::shared_ptr<websocket_client> b) -> asio::awaitable<void> {
+            co_await b->async_text_write("heartbeat");
+            co_return;
+        };
+    
+    ws_client->async_recv_finish_fun = 
+        [](std::shared_ptr<websocket_client> b) -> asio::awaitable<void> {
+            if (b->recv_data.length > 0)
+            {
+                DEBUG_LOG("Server: %s", b->recv_data.content.c_str());
+            }
+            co_return;
+        };
+    
+    ws_client->async_run_loop_fun = 
+        [](std::shared_ptr<websocket_client> b, 
+           websocket_client::ws_pack_data pack_data) -> asio::awaitable<void> {
+            DEBUG_LOG("Loop running");
+            co_return;
+        };
+    
+    co_spawn(ws_client->strand_, [ws_client]() mutable { 
+        return ws_client->async_run_loop(); 
+    }, asio::detached);
+    
+    ws_client->add_client_task_loop();
+    
+    client << "WebSocket循环已启动";
+    co_return "";
+}
+}</code></pre>
+
+    <h3 id="example-explain">代码要点说明</h3>
+    <ul>
+        <li><strong>test_websocket_handler</strong>：继承 <code>websockets_api</code> 实现的服务端处理器，在收到消息时通过 <code>ws_parse-&gt;make_ws_text</code> 构造回复帧，用 <code>session_sock-&gt;send_writer</code> 发送</li>
+        <li><strong>_initwebsocketmethodregto</strong>：WebSocket路由注册函数，将 <code>wsdemo</code> 路径（不带斜杠）绑定到处理器工厂函数</li>
+        <li><strong>test_ws_demo</strong>：基本客户端示例，演示连接、发送、接收的完整流程</li>
+        <li><strong>test_ws_loop</strong>：协程循环模式示例，展示如何设置定时回调、接收回调和主循环</li>
+    </ul>
+
+    <div class="tip-box">
+        💡 <strong>最佳实践</strong>：
+        <ul>
+            <li>服务端处理器建议继承 <code>websockets_api</code> 并用智能指针管理，避免内存泄漏</li>
+            <li>客户端连接失败时应有明确的错误处理逻辑</li>
+            <li>循环模式下注意合理设置超时和重连机制</li>
+            <li>使用 <code>DEBUG_LOG</code> 输出关键节点日志便于调试</li>
+        </ul>
+    </div>
+
+    <a href="index.html" class="back-to-index">← 返回首页</a>
+    `;
+
+    const enFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🔌 Paozhu WebSocket Guide</h1>
+        <p style="opacity: 0.8;">Master the core concepts and practical skills of WebSocket development in Paozhu</p>
+    </div>
+
+    <h2 id="websocket-overview">WebSocket Overview</h2>
+    <p>Paozhu provides native WebSocket support, including both server and client implementations. It supports both synchronous and coroutine modes.</p>
+
+    <h2 id="websocket-server">WebSocket Server</h2>
+    <h3 id="ws-server-handler">Creating a WebSocket Handler</h3>
+    <p>Inherit from the <code>websockets_api</code> base class and implement the callback functions. The following example is based on the built-in <code>websockets/loopwebsockets.hpp</code>:</p>
+    <pre><code>// WebSocket handler header file
+#pragma once
+#include "websockets.h"
+#include "websockets_callback.h"
+
+namespace http
+{
+class my_websocket_handler : public websockets_api
+{
+public:
+    my_websocket_handler(unsigned int m, unsigned int g) : websockets_api(8, m, g, 0) {}
+
+    void onopen() override
+    {
+        // Triggered when connection is established
+        isco = true;
+        loop_num = 8;
+        DEBUG_LOG("WebSocket connected");
+    }
+
+    asio::awaitable&lt;void&gt; async_onopen() override
+    {
+        isco = true;
+        loop_num = 8;
+        co_return;
+    }
+
+    void onclose() override
+    {
+        // Triggered when connection is closed
+        isclose = true;
+        DEBUG_LOG("WebSocket disconnected");
+    }
+
+    asio::awaitable&lt;void&gt; async_onmessage(websockets_data_list_t &amp;&amp;msg) override
+    {
+        // Triggered when a message is received (coroutine mode)
+        std::string outhello;
+        ws_parse-&gt;make_ws_text(msg.value, outhello);
+        co_await session_sock-&gt;async_send_writer(outhello);
+        co_return;
+    }
+
+    void onmessage() override
+    {
+        // Triggered when a message is received (sync mode)
+        std::unique_lock&lt;std::mutex&gt; lock(content_list_mutex);
+        if (content_list.empty())
+        {
+            return;
+        }
+        auto msg = std::move(content_list.front());
+        content_list.pop_front();
+        lock.unlock();
+
+        std::string outhello;
+        ws_parse-&gt;make_ws_text(msg.value, outhello);
+        session_sock-&gt;send_writer(outhello);
+    }
+};
+}</code></pre>
+
+    <h3 id="ws-server-register">Registering WebSocket Route</h3>
+    <p>Define the <code>_initwebsocketmethodregto</code> function in <code>common/websockets_method_reg.hpp</code> and register the route in the <code>WEBSOCKET_REG</code> map (path without a leading slash):</p>
+    <pre><code>#include "websockets_callback.h"
+#include "loopwebsockets.hpp"
+
+void _initwebsocketmethodregto(WEBSOCKET_REG &amp;methodcallback)
+{
+    methodcallback.emplace("wstest", [](unsigned int m, unsigned int g) -&gt; std::shared_ptr&lt;websockets_api&gt;
+                           { return std::make_shared&lt;my_websocket_handler&gt;(m, g); });
+}</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>Tip</strong>: <code>_initwebsocketmethodregto</code> accepts a <code>WEBSOCKET_REG</code> map reference and binds a path (e.g., <code>wstest</code>) to a factory function returning <code>std::shared_ptr&lt;websockets_api&gt;</code> via <code>emplace</code>. When the framework receives a WebSocket upgrade request for the specified path, it automatically calls this factory function to create a handler instance.
+    </div>
+
+    <h2 id="websocket-client">WebSocket Client</h2>
+    <h3 id="ws-client-basic">Creating a WebSocket Client</h3>
+    <p>Use the <code>http::websocket_client</code> class to create client connections. The following example demonstrates connecting, sending messages, and receiving messages:</p>
+    <pre><code>#include "http_websocket_client.h"
+
+//@urlpath(null,test_websocket_client)
+asio::awaitable<std::string> test_websocket_client(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    
+    std::shared_ptr<http::websocket_client> a = std::make_shared<http::websocket_client>();
+    
+    // Connect to WebSocket server
+    bool isok = co_await a->async_connect("ws://127.0.0.1:80/wstest");
+    if (!isok)
+    {
+        client << "Connection failed";
+        co_return "";
+    }
+    
+    // Send message
+    unsigned int n = co_await a->async_text_write("Hello WebSocket");
+    client << "Sent: " << n << " bytes";
+    
+    // Receive message
+    n = co_await a->async_text_read();
+    client << "Received: " << a->recv_data.content;
+    
+    co_return "";
+}</code></pre>
+
+    <h3 id="ws-client-api">Client API Reference</h3>
+    <ul>
+        <li><code>async_connect(url)</code>: Asynchronously connect to a WebSocket server, returns <code>bool</code> indicating success</li>
+        <li><code>async_text_write(message)</code>: Asynchronously send a text message, returns the number of bytes sent</li>
+        <li><code>async_text_read()</code>: Asynchronously receive a text message. Received data is stored in <code>recv_data.content</code></li>
+    </ul>
+
+    <h2 id="coroutine-websocket">Coroutine WebSocket</h2>
+    <h3 id="ws-coroutine-advanced">Advanced Usage</h3>
+    <p>Paozhu's WebSocket client supports various callback settings for advanced features like timed loops and automatic send/receive:</p>
+    <pre><code>// Set timed callback
+a->async_dur_time_loop_fun = [](std::shared_ptr<websocket_client> b) -> asio::awaitable<void> {
+    std::string send_content = "websocket client loop";
+    unsigned int n = co_await b->async_text_write(send_content);
+    DEBUG_LOG("sent: %s", send_content.c_str());
+    co_return;
+};
+
+// Set receive finish callback
+a->async_recv_finish_fun = [](std::shared_ptr<websocket_client> b) -> asio::awaitable<void> {
+    if (b->recv_data.length > 0)
+    {
+        DEBUG_LOG("received: %s", b->recv_data.content.c_str());
+    }
+    co_return;
+};
+
+// Start the loop
+a->async_run_loop_fun = [](std::shared_ptr<websocket_client> b, 
+                           websocket_client::ws_pack_data pack_data) -> asio::awaitable<void> {
+    DEBUG_LOG("running loop");
+    co_return;
+};
+
+co_spawn(a->strand_, [a]() mutable { 
+    return a->async_run_loop(); 
+}, asio::detached);
+
+a->add_client_task_loop();</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>Callback Descriptions</strong>:
+        <ul>
+            <li><code>async_dur_time_loop_fun</code>: Triggered periodically, useful for periodic heartbeats or data sends</li>
+            <li><code>async_recv_finish_fun</code>: Triggered after each receive completes, used to process received data</li>
+            <li><code>async_run_loop_fun</code>: Main loop callback, started via <code>co_spawn</code> coroutine</li>
+            <li><code>add_client_task_loop()</code>: Adds the client task to the framework's timed loop scheduler</li>
+        </ul>
+    </div>
+
+    <h2 id="socket-support">Socket Support</h2>
+    <h3 id="socket-tcp">Plain TCP Socket Support</h3>
+    <p>In addition to the WebSocket protocol, Paozhu supports plain TCP Socket communication. Through the built-in Socket module, you can easily implement custom TCP servers and clients. TCP Socket also supports coroutine mode for seamless integration with WebSocket.</p>
+
+    <div class="warning-box">
+        ⚠️ <strong>Note</strong>: TCP Socket is a low-level protocol. You need to handle protocol parsing yourself. For reliable message transmission, WebSocket is recommended.
+    </div>
+
+    <h2 id="complete-example">Complete Example</h2>
+    <h3 id="full-websocket-example">Complete WebSocket Example</h3>
+    <p>Below is a complete WebSocket example based on <code>websockets/loopwebsockets.hpp</code> and <code>controller/src/test_websocket_handle.cpp</code>, including a server handler and client controller:</p>
+    <pre><code>// websockets/loopwebsockets.hpp
+#pragma once
+#include "orm.h"
+#include "websockets.h"
+#include "websockets_callback.h"
+
+namespace http
+{
+class test_websocket_handler : public websockets_api
+{
+public:
+    test_websocket_handler(unsigned int m, unsigned int g) : websockets_api(8, m, g, 0) {}
+
+    void onopen() override
+    {
+        isco = true;
+        loop_num = 8;
+        DEBUG_LOG("WebSocket client connected");
+    }
+
+    asio::awaitable&lt;void&gt; async_onopen() override
+    {
+        isco = true;
+        loop_num = 8;
+        co_return;
+    }
+
+    void onclose() override
+    {
+        isclose = true;
+        DEBUG_LOG("WebSocket client disconnected");
+    }
+
+    asio::awaitable&lt;void&gt; async_onmessage(websockets_data_list_t &amp;&amp;msg) override
+    {
+        std::string outhello;
+        ws_parse-&gt;make_ws_text(msg.value, outhello);
+        co_await session_sock-&gt;async_send_writer(outhello);
+        co_return;
+    }
+
+    void onmessage() override
+    {
+        std::unique_lock&lt;std::mutex&gt; lock(content_list_mutex);
+        if (content_list.empty())
+        {
+            return;
+        }
+        auto msg = std::move(content_list.front());
+        content_list.pop_front();
+        lock.unlock();
+
+        std::string outhello;
+        ws_parse-&gt;make_ws_text(msg.value, outhello);
+        session_sock-&gt;send_writer(outhello);
+    }
+};
+}
+
+// common/websockets_method_reg.hpp
+#include "loopwebsockets.hpp"
+
+void _initwebsocketmethodregto(WEBSOCKET_REG &amp;methodcallback)
+{
+    methodcallback.emplace("wsdemo", [](unsigned int m, unsigned int g) -&gt; std::shared_ptr&lt;websockets_api&gt;
+                           { return std::make_shared&lt;test_websocket_handler&gt;(m, g); });
+}
+
+// controller/src/test_websocket_handle.cpp
+#include "httppeer.h"
+#include "test_websocket_handle.h"
+
+namespace http
+{
+// WebSocket client test endpoint
+//@urlpath(null, test_ws_demo)
+asio::awaitable<std::string> test_ws_demo(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    
+    auto ws_client = std::make_shared<http::websocket_client>();
+    
+    bool isok = co_await ws_client->async_connect("ws://127.0.0.1:80/wsdemo");
+    if (!isok)
+    {
+        client << "WebSocket connection failed";
+        co_return "";
+    }
+    
+    co_await ws_client->async_text_write("Hello Server");
+    unsigned int n = co_await ws_client->async_text_read();
+    client << "Reply: " << ws_client->recv_data.content;
+    
+    co_return "";
+}
+
+// Coroutine loop mode example
+//@urlpath(null, test_ws_loop)
+asio::awaitable<std::string> test_ws_loop(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    
+    auto ws_client = std::make_shared<http::websocket_client>();
+    
+    bool isok = co_await ws_client->async_connect("ws://127.0.0.1:80/wsdemo");
+    if (!isok)
+    {
+        client << "WebSocket connection failed";
+        co_return "";
+    }
+    
+    ws_client->async_dur_time_loop_fun = 
+        [](std::shared_ptr<websocket_client> b) -> asio::awaitable<void> {
+            co_await b->async_text_write("heartbeat");
+            co_return;
+        };
+    
+    ws_client->async_recv_finish_fun = 
+        [](std::shared_ptr<websocket_client> b) -> asio::awaitable<void> {
+            if (b->recv_data.length > 0)
+            {
+                DEBUG_LOG("Server: %s", b->recv_data.content.c_str());
+            }
+            co_return;
+        };
+    
+    ws_client->async_run_loop_fun = 
+        [](std::shared_ptr<websocket_client> b, 
+           websocket_client::ws_pack_data pack_data) -> asio::awaitable<void> {
+            DEBUG_LOG("Loop running");
+            co_return;
+        };
+    
+    co_spawn(ws_client->strand_, [ws_client]() mutable { 
+        return ws_client->async_run_loop(); 
+    }, asio::detached);
+    
+    ws_client->add_client_task_loop();
+    
+    client << "WebSocket loop started";
+    co_return "";
+}
+}</code></pre>
+
+    <h3 id="example-explain">Code Highlights</h3>
+    <ul>
+        <li><strong>test_websocket_handler</strong>: Server handler inheriting from <code>websockets_api</code>, constructs reply frames via <code>ws_parse-&gt;make_ws_text</code> and sends them with <code>session_sock-&gt;send_writer</code></li>
+        <li><strong>_initwebsocketmethodregto</strong>: WebSocket route registration function, binds the <code>wsdemo</code> path (without a leading slash) to a handler factory function</li>
+        <li><strong>test_ws_demo</strong>: Basic client example demonstrating the complete connect-send-receive flow</li>
+        <li><strong>test_ws_loop</strong>: Coroutine loop mode example showing how to set timed callbacks, receive callbacks, and main loop</li>
+    </ul>
+
+    <div class="tip-box">
+        💡 <strong>Best Practices</strong>:
+        <ul>
+            <li>Prefer inheriting from <code>websockets_api</code> and managing handlers with smart pointers to avoid memory leaks</li>
+            <li>Always provide clear error handling when client connections fail</li>
+            <li>Set reasonable timeout and reconnect mechanisms in loop mode</li>
+            <li>Use <code>DEBUG_LOG</code> to output key-node logs for easier debugging</li>
+        </ul>
+    </div>
+
+    <a href="index.html" class="back-to-index">← Back to Home</a>
+    `;
+
+    document.getElementById('content-cn').innerHTML = cnFullContent;
+    document.getElementById('content-en').innerHTML = enFullContent;
+
+    function buildHierarchyNav(lang) {
+        const container = document.getElementById('dynamic-nav');
+        const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+        if (!contentDiv) {
+            container.innerHTML = '<p>Content not found</p>';
+            return;
+        }
+        const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+        if (headings.length === 0) {
+            container.innerHTML = '<p style="padding: 1rem;">No sections</p>';
+            return;
+        }
+
+        const root = { children: [] };
+        let stack = [root];
+
+        headings.forEach(heading => {
+            let level = parseInt(heading.tagName[1]);
+            const id = heading.id;
+            let title = heading.innerText.trim();
+            if (!title) title = heading.textContent.trim() || "Section";
+            const node = { level, id, title, children: [] };
+            while (stack.length > 0 && stack[stack.length-1].level >= level) {
+                stack.pop();
+            }
+            const parent = stack[stack.length-1];
+            parent.children.push(node);
+            stack.push(node);
+        });
+
+        function renderTree(nodes) {
+            if (!nodes.length) return '';
+            let html = '<ul class="nav-tree no-bullet">';
+            nodes.forEach(node => {
+                const hasChildren = node.children.length > 0;
+                const liClass = `level-${node.level}`;
+                html += `<li class="${liClass}">`;
+                html += `<div class="tree-item"><a href="#${node.id}" data-id="${node.id}" class="nav-link">${escapeHtml(node.title)}</a></div>`;
+                if (hasChildren) {
+                    html += renderTree(node.children);
+                }
+                html += `</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        const navHtml = renderTree(root.children);
+        container.innerHTML = navHtml || '<p>No navigation</p>';
+
+        attachNavEvents(contentDiv);
+    }
+
+    function attachNavEvents(contentDiv) {
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            link.removeEventListener('click', navClickHandler);
+            link.addEventListener('click', navClickHandler);
+        });
+        function navClickHandler(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-id');
+            const targetElem = contentDiv.querySelector(`#${targetId}`);
+            if (targetElem) {
+                targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                history.pushState(null, null, `#${targetId}`);
+            }
+            if (window.innerWidth <= 860) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active-link'));
+            this.classList.add('active-link');
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    if (id) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active-link');
+                            if (link.getAttribute('data-id') === id) {
+                                link.classList.add('active-link');
+                            }
+                        });
+                    }
+                }
+            });
+        }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+
+        const allHeadings = contentDiv.querySelectorAll('[id]');
+        allHeadings.forEach(el => observer.observe(el));
+    }
+
+    let currentLang = 'cn';
+    function switchLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+        if (lang === 'cn') {
+            document.getElementById('content-cn').classList.add('active-lang');
+        } else {
+            document.getElementById('content-en').classList.add('active-lang');
+        }
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        buildHierarchyNav(lang);
+        window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang) switchLanguage(lang);
+        });
+    });
+
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+
+    const topBtn = document.getElementById('scrollTopBtn');
+    topBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // URL hash 检测语言切换
+    const hashLang = window.location.hash;
+    if (hashLang === '#english' || hashLang === '#en') {
+        switchLanguage('en');
+    } else if (hashLang === '#chinese' || hashLang === '#zh') {
+        switchLanguage('cn');
+    } else {
+        buildHierarchyNav('cn');
+    }
+</script>
+</body>
+</html>

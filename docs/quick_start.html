@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu 快速开始教程 · Quick Start</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-tree li {
+            margin: 0.2rem 0;
+            list-style: none;
+        }
+        .nav-tree .tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .nav-tree a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.88rem;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+            opacity: 0.85;
+            flex: 1;
+        }
+        .nav-tree a:hover {
+            background-color: var(--nav-hover-bg);
+            opacity: 1;
+            color: var(--link-color);
+        }
+        .nav-tree a.active-link {
+            background-color: var(--link-color);
+            color: white;
+            opacity: 1;
+        }
+        .nav-tree .level-1 > a {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+        .nav-tree .level-2 {
+            padding-left: 1.3rem;
+        }
+        .nav-tree .level-3 {
+            padding-left: 2.2rem;
+        }
+        .no-bullet {
+            list-style: none;
+        }
+        .sidebar-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin: 1rem 0 0.5rem 0.5rem;
+        }
+
+        .content-panel {
+            display: none;
+            animation: fade 0.2s ease;
+        }
+        .content-panel.active-lang {
+            display: block;
+        }
+        @keyframes fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            border: 1px solid var(--border-light);
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        h1, h2, h3, h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+        img, svg { max-width: 100%; }
+
+        .platform-link {
+            display: inline-block;
+            margin: 0.3rem 0;
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--link-color);
+            transition: all 0.15s;
+            font-size: 0.9rem;
+        }
+        .platform-link:hover {
+            background-color: var(--nav-hover-bg);
+            border-color: var(--link-color);
+        }
+
+        .back-to-index {
+            display: block;
+            margin-top: 3rem;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            background-color: var(--code-bg);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--link-color);
+            font-weight: 600;
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+        .back-to-index:hover {
+            background-color: var(--nav-hover-bg);
+            color: var(--link-hover);
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 1.2rem;
+            right: 1.2rem;
+            background: #475569;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: 0.2s;
+            z-index: 99;
+            font-weight: bold;
+        }
+        .scroll-top:hover {
+            opacity: 1;
+            background: var(--link-color);
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+            margin: 0.8rem 0;
+        }
+        li {
+            margin: 0.3rem 0;
+        }
+        .tip-box {
+            background-color: var(--code-bg);
+            border-left: 4px solid var(--link-color);
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+    </style>
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">🚀 快速开始导航</div>
+            <div id="dynamic-nav">加载中...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel active-lang"></div>
+        <div id="content-en" class="content-panel"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+    const cnFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🚀 Paozhu 快速开始</h1>
+        <p style="opacity: 0.8;">从零开始构建你的第一个 Paozhu C++ Web 应用</p>
+    </div>
+
+    <h2 id="env-prepare">环境准备</h2>
+    <h3 id="cpp20">C++20 编译器支持</h3>
+    <p>Paozhu 框架基于 C++20 标准开发，需要支持 C++20 的编译器：</p>
+    <ul>
+        <li><strong>GCC</strong> ≥ 11.0（推荐 GCC 12+）</li>
+        <li><strong>Clang</strong> ≥ 16.0</li>
+        <li><strong>MSVC</strong> ≥ 2019（Visual Studio 2022 推荐）</li>
+        <li><strong>Apple Clang</strong>（Xcode 16+）</li>
+    </ul>
+    <div class="tip-box">
+        💡 提示：建议使用 GCC 12 或更高版本以获得完整的 C++20 协程支持和更好的优化。
+    </div>
+
+    <h3 id="required-deps">必需依赖</h3>
+    <p>以下库是编译 Paozhu 所必需的：</p>
+    <ul>
+        <li><code>Asio</code> — 异步网络库（已内嵌或通过包管理器安装）</li>
+        <li><code>OpenSSL</code> — SSL/TLS 支持，用于 HTTPS 和 HTTP/2</li>
+        <li><code>Zlib</code> — 数据压缩库</li>
+        <li><code>Brotli</code> — Brotli 压缩支持</li>
+    </ul>
+
+    <h3 id="optional-deps">可选依赖</h3>
+    <p>以下库用于启用额外功能，可按需安装：</p>
+    <ul>
+        <li><code>Boost</code> — 部分工具函数支持</li>
+        <li><code>GD</code> — 图像处理（验证码、缩略图等）</li>
+    </ul>
+
+    <h2 id="platform-install">平台安装</h2>
+    <p>选择你的平台，查看详细的安装指南：</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0;">
+        <a href="macos.html" class="platform-link">🍎 macOS 安装</a>
+        <a href="linux.html" class="platform-link">🐧 Linux 安装</a>
+        <a href="ubuntu.html" class="platform-link">📦 Ubuntu 安装</a>
+        <a href="windows.html" class="platform-link">🪟 Windows 安装</a>
+        <a href="saas.html" class="platform-link">☁️ SAAS 模式</a>
+    </div>
+
+    <h2 id="compile-steps">编译步骤</h2>
+    <h3 id="cmake-build">使用 CMake</h3>
+    <p>CMake 是最常用的编译方式，适用于所有平台：</p>
+    <pre><code>mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)</code></pre>
+    <div class="tip-box">
+        💡 <strong>macOS 用户注意</strong>：如果使用 Apple Silicon，<code>-j$(nproc)</code> 可替换为 <code>-j8</code> 或根据核心数调整。
+    </div>
+
+    <h3 id="xmake-build">使用 xmake</h3>
+    <p>如果你使用 xmake 构建系统：</p>
+    <pre><code>xmake</code></pre>
+
+    <h3 id="vcpkg-build">Windows 使用 vcpkg</h3>
+    <p>Windows 平台推荐使用 vcpkg 管理依赖：</p>
+    <pre><code>vcpkg integrate install
+cmake .. -DENABLE_VCPKG=ON -DCMAKE_TOOLCHAIN_FILE=&lt;vcpkg&gt;/scripts/buildsystems/vcpkg.cmake</code></pre>
+    <p>将 <code>&lt;vcpkg&gt;</code> 替换为你的 vcpkg 实际安装路径。</p>
+
+    <h2 id="config-guide">配置说明</h2>
+    <p>Paozhu 使用 <code>conf/server.conf</code> 作为核心配置文件。以下是关键配置项说明：</p>
+
+    <h3 id="server-conf">server.conf 关键配置</h3>
+    <pre><code>[default]
+httpport = 80
+httpsport = 443
+mainhost = www.hggq.com
+wwwpath = ./www/default
+threadmax = 1024
+threadmin = 5
+cothreadnum = 8
+
+# SSL 证书配置
+certificate_chain_file = www.hggq.com.pem
+private_key_file = www.hggq.com.key
+
+# 连接限流配置
+rate_limit_status = 0
+rate_limit_new_wait_num = 300
+rate_limit_accept_wait_num = 600
+rate_limit_accept_time = 250</code></pre>
+
+    <h3 id="config-items">配置项详解</h3>
+    <ul>
+        <li><code>httpport</code> — HTTP 服务监听端口（默认 80）</li>
+        <li><code>httpsport</code> — HTTPS 服务监听端口（默认 443）</li>
+        <li><code>mainhost</code> — 主域名，用于虚拟主机绑定</li>
+        <li><code>wwwpath</code> — 静态资源根路径，HTML/CSS/JS 文件存放目录</li>
+        <li><code>rate_limit_status</code> — 连接限流开关（1 开启），配合 <code>rate_limit_new_wait_num</code> / <code>rate_limit_accept_wait_num</code> / <code>rate_limit_accept_time</code> 使用</li>
+    </ul>
+
+    <h2 id="hello-world">第一个 Hello World</h2>
+    <p>创建你的第一个控制器，输出 "Hello World!"：</p>
+
+    <h3 id="create-controller">创建控制器文件</h3>
+    <p>在 <code>controller/src/</code> 目录下创建 <code>testhello.cpp</code>：</p>
+    <pre><code>// controller/src/testhello.cpp
+#include "httppeer.h"
+#include "testhello.h"
+
+namespace http
+{
+//@urlpath(null,hello)
+std::string testhello(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << " Hello world! Paozhu c++ web framework ";
+    return "";
+}
+}</code></pre>
+
+    <h3 id="code-explain">代码说明</h3>
+    <ul>
+        <li><code>//@urlpath(null,hello)</code> — URL 路由注解，将 <code>/hello</code> 路径绑定到此函数</li>
+        <li><code>httppeer</code> — HTTP 对等对象，封装了客户端请求信息</li>
+        <li><code>peer->get_peer()</code> — 获取底层 HTTP 客户端引用</li>
+        <li><code>client << "..."</code> — 使用流操作符直接输出响应内容</li>
+        <li>函数返回空字符串 <code>""</code> 表示已通过流操作符直接输出响应</li>
+    </ul>
+
+    <h2 id="run-test">运行测试</h2>
+    <h3 id="dev-mode">运行</h3>
+    <pre><code># 编译后在项目根目录运行（前台运行，便于查看日志）
+./paozhu conf/server.conf</code></pre>
+
+    <h3 id="access-browser">浏览器访问</h3>
+    <p>打开浏览器，访问：</p>
+    <pre><code>http://localhost/hello</code></pre>
+    <div class="tip-box">
+        ✨ 恭喜！你已经成功运行了第一个 Paozhu 应用。在浏览器中应该能看到 "Hello world! Paozhu c++ web framework" 的输出。
+    </div>
+
+    <h2 id="faq">常见问题</h2>
+    <h3 id="port-conflict">端口占用</h3>
+    <p><strong>问题</strong>：启动时提示 "Address already in use" 或端口被占用。</p>
+    <p><strong>解决</strong>：修改 <code>conf/server.conf</code> 中的 <code>httpport</code> 和 <code>httpsport</code> 为其他端口：</p>
+    <pre><code># 查看端口占用
+lsof -i :80
+
+# 修改配置
+# vim conf/server.conf
+httpport = 8080
+httpsport = 8443</code></pre>
+
+    <h3 id="cert-issues">证书问题</h3>
+    <p><strong>问题</strong>：HTTPS 启动失败或证书错误。</p>
+    <p><strong>解决</strong>：确认配置文件中 <code>certificate_chain_file</code> 和 <code>private_key_file</code> 指向正确的证书路径：</p>
+    <pre><code># 检查证书文件是否存在
+ls -la /path/to/cert.pem
+ls -la /path/to/key.pem
+
+# 开发模式下可使用自签名证书
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes</code></pre>
+
+    <h3 id="missing-deps">依赖缺失</h3>
+    <p><strong>问题</strong>：编译时出现 "header file not found" 或 "library not found" 错误。</p>
+    <p><strong>解决</strong>：安装对应的开发包：</p>
+    <pre><code># macOS (使用 Homebrew)
+brew install openssl zlib brotli asio
+
+# Ubuntu/Debian
+sudo apt install libssl-dev zlib1g-dev libbrotli-dev
+
+# CentOS/RHEL
+sudo dnf install openssl-devel zlib-devel brotli-devel</code></pre>
+
+    <a href="index.html" class="back-to-index">← 返回首页</a>
+    `;
+
+    const enFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🚀 Paozhu Quick Start</h1>
+        <p style="opacity: 0.8;">Build your first Paozhu C++ web application from scratch</p>
+    </div>
+
+    <h2 id="env-prepare">Environment Setup</h2>
+    <h3 id="cpp20">C++20 Compiler Support</h3>
+    <p>Paozhu is built on the C++20 standard. A C++20-capable compiler is required:</p>
+    <ul>
+        <li><strong>GCC</strong> ≥ 10.0 (GCC 12+ recommended)</li>
+        <li><strong>Clang</strong> ≥ 16.0</li>
+        <li><strong>MSVC</strong> ≥ 2019 (Visual Studio 2022 recommended)</li>
+        <li><strong>Apple Clang</strong> (Xcode 16+)</li>
+    </ul>
+    <div class="tip-box">
+        💡 Tip: GCC 12 or later is recommended for full C++20 coroutine support and better optimizations.
+    </div>
+
+    <h3 id="required-deps">Required Dependencies</h3>
+    <p>The following libraries are required to compile Paozhu:</p>
+    <ul>
+        <li><code>Asio</code> — Async networking library (bundled or via package manager)</li>
+        <li><code>OpenSSL</code> — SSL/TLS support for HTTPS and HTTP/2</li>
+        <li><code>Zlib</code> — Data compression library</li>
+        <li><code>Brotli</code> — Brotli compression support</li>
+    </ul>
+
+    <h3 id="optional-deps">Optional Dependencies</h3>
+    <p>These libraries enable additional features and can be installed as needed:</p>
+    <ul>
+        <li><code>Boost</code> — Utility function support</li>
+        <li><code>GD</code> — Image processing (captchas, thumbnails, etc.)</li>
+    </ul>
+
+    <h2 id="platform-install">Platform Installation</h2>
+    <p>Choose your platform for detailed installation instructions:</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0;">
+        <a href="macos_en.html" class="platform-link">🍎 macOS Guide</a>
+        <a href="linux_en.html" class="platform-link">🐧 Linux Guide</a>
+        <a href="ubuntu_en.html" class="platform-link">📦 Ubuntu Guide</a>
+        <a href="windows_en.html" class="platform-link">🪟 Windows Guide</a>
+        <a href="saas_en.html" class="platform-link">☁️ SAAS Mode</a>
+    </div>
+
+    <h2 id="compile-steps">Compilation Steps</h2>
+    <h3 id="cmake-build">Using CMake</h3>
+    <p>CMake is the most common build method, available on all platforms:</p>
+    <pre><code>mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)</code></pre>
+    <div class="tip-box">
+        💡 <strong>macOS Note</strong>: On Apple Silicon, replace <code>-j$(nproc)</code> with <code>-j8</code> or adjust based on your core count.
+    </div>
+
+    <h3 id="xmake-build">Using xmake</h3>
+    <p>If you use the xmake build system:</p>
+    <pre><code>xmake</code></pre>
+
+    <h3 id="vcpkg-build">Windows with vcpkg</h3>
+    <p>On Windows, vcpkg is the recommended way to manage dependencies:</p>
+    <pre><code>vcpkg integrate install
+cmake .. -DENABLE_VCPKG=ON -DCMAKE_TOOLCHAIN_FILE=&lt;vcpkg&gt;/scripts/buildsystems/vcpkg.cmake</code></pre>
+    <p>Replace <code>&lt;vcpkg&gt;</code> with your actual vcpkg installation path.</p>
+
+    <h2 id="config-guide">Configuration Guide</h2>
+    <p>Paozhu uses <code>conf/server.conf</code> as its core configuration file. Here are the key settings:</p>
+
+    <h3 id="server-conf">server.conf Key Settings</h3>
+    <pre><code>[default]
+httpport = 80
+httpsport = 443
+mainhost = www.hggq.com
+wwwpath = ./www/default
+threadmax = 1024
+threadmin = 5
+cothreadnum = 8
+
+# SSL Certificate Configuration
+certificate_chain_file = www.hggq.com.pem
+private_key_file = www.hggq.com.key
+
+# Connection Rate Limiting Configuration
+rate_limit_status = 0
+rate_limit_new_wait_num = 300
+rate_limit_accept_wait_num = 600
+rate_limit_accept_time = 250</code></pre>
+
+    <h3 id="config-items">Configuration Details</h3>
+    <ul>
+        <li><code>httpport</code> — HTTP service listening port (default: 80)</li>
+        <li><code>httpsport</code> — HTTPS service listening port (default: 443)</li>
+        <li><code>mainhost</code> — Primary domain for virtual hosting</li>
+        <li><code>wwwpath</code> — Static resource root directory for HTML/CSS/JS files</li>
+        <li><code>rate_limit_status</code> — Connection rate limiting switch (1 to enable), used with <code>rate_limit_new_wait_num</code> / <code>rate_limit_accept_wait_num</code> / <code>rate_limit_accept_time</code></li>
+    </ul>
+
+    <h2 id="hello-world">Your First Hello World</h2>
+    <p>Create your first controller that outputs "Hello World!":</p>
+
+    <h3 id="create-controller">Create the Controller File</h3>
+    <p>Create <code>testhello.cpp</code> in the <code>controller/src/</code> directory:</p>
+    <pre><code>// controller/src/testhello.cpp
+#include "httppeer.h"
+#include "testhello.h"
+
+namespace http
+{
+//@urlpath(null,hello)
+std::string testhello(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+    client << " Hello world! Paozhu c++ web framework ";
+    return "";
+}
+}</code></pre>
+
+    <h3 id="code-explain">Code Explanation</h3>
+    <ul>
+        <li><code>//@urlpath(null,hello)</code> — URL route annotation, binds the <code>/hello</code> path to this function</li>
+        <li><code>httppeer</code> — HTTP peer object encapsulating client request information</li>
+        <li><code>peer->get_peer()</code> — Get the underlying HTTP client reference</li>
+        <li><code>client << "..."</code> — Use the stream operator to directly output response content</li>
+        <li>Returns an empty string <code>""</code> to indicate the response was already sent via the stream operator</li>
+    </ul>
+
+    <h2 id="run-test">Run and Test</h2>
+    <h3 id="dev-mode">Run</h3>
+    <pre><code># Run from the project root after compilation (foreground, easy to view logs)
+./paozhu conf/server.conf</code></pre>
+
+    <h3 id="access-browser">Access via Browser</h3>
+    <p>Open your browser and visit:</p>
+    <pre><code>http://localhost/hello</code></pre>
+    <div class="tip-box">
+        ✨ Congratulations! You've successfully run your first Paozhu application. You should see "Hello world! Paozhu c++ web framework" displayed in your browser.
+    </div>
+
+    <h2 id="faq">FAQ</h2>
+    <h3 id="port-conflict">Port Conflict</h3>
+    <p><strong>Problem</strong>: Startup shows "Address already in use" or port occupied.</p>
+    <p><strong>Solution</strong>: Change <code>httpport</code> and <code>httpsport</code> in <code>conf/server.conf</code> to different ports:</p>
+    <pre><code># Check port usage
+lsof -i :80
+
+# Update configuration
+# vim conf/server.conf
+httpport = 8080
+httpsport = 8443</code></pre>
+
+    <h3 id="cert-issues">Certificate Issues</h3>
+    <p><strong>Problem</strong>: HTTPS fails to start or shows certificate errors.</p>
+    <p><strong>Solution</strong>: Verify that <code>certificate_chain_file</code> and <code>private_key_file</code> in the config point to valid certificate paths:</p>
+    <pre><code># Check certificate files
+ls -la /path/to/cert.pem
+ls -la /path/to/key.pem
+
+# Use self-signed certificate for development
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes</code></pre>
+
+    <h3 id="missing-deps">Missing Dependencies</h3>
+    <p><strong>Problem</strong>: Compilation fails with "header file not found" or "library not found" errors.</p>
+    <p><strong>Solution</strong>: Install the corresponding development packages:</p>
+    <pre><code># macOS (via Homebrew)
+brew install openssl zlib brotli asio
+
+# Ubuntu/Debian
+sudo apt install libssl-dev zlib1g-dev libbrotli-dev
+
+# CentOS/RHEL
+sudo dnf install openssl-devel zlib-devel brotli-devel</code></pre>
+
+    <a href="index.html" class="back-to-index">← Back to Home</a>
+    `;
+
+    document.getElementById('content-cn').innerHTML = cnFullContent;
+    document.getElementById('content-en').innerHTML = enFullContent;
+
+    function buildHierarchyNav(lang) {
+        const container = document.getElementById('dynamic-nav');
+        const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+        if (!contentDiv) {
+            container.innerHTML = '<p>Content not found</p>';
+            return;
+        }
+        const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+        if (headings.length === 0) {
+            container.innerHTML = '<p style="padding: 1rem;">No sections</p>';
+            return;
+        }
+
+        const root = { children: [] };
+        let stack = [root];
+
+        headings.forEach(heading => {
+            let level = parseInt(heading.tagName[1]);
+            const id = heading.id;
+            let title = heading.innerText.trim();
+            if (!title) title = heading.textContent.trim() || "Section";
+            const node = { level, id, title, children: [] };
+            while (stack.length > 0 && stack[stack.length-1].level >= level) {
+                stack.pop();
+            }
+            const parent = stack[stack.length-1];
+            parent.children.push(node);
+            stack.push(node);
+        });
+
+        function renderTree(nodes) {
+            if (!nodes.length) return '';
+            let html = '<ul class="nav-tree no-bullet">';
+            nodes.forEach(node => {
+                const hasChildren = node.children.length > 0;
+                const liClass = `level-${node.level}`;
+                html += `<li class="${liClass}">`;
+                html += `<div class="tree-item"><a href="#${node.id}" data-id="${node.id}" class="nav-link">${escapeHtml(node.title)}</a></div>`;
+                if (hasChildren) {
+                    html += renderTree(node.children);
+                }
+                html += `</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        const navHtml = renderTree(root.children);
+        container.innerHTML = navHtml || '<p>No navigation</p>';
+
+        attachNavEvents(contentDiv);
+    }
+
+    function attachNavEvents(contentDiv) {
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            link.removeEventListener('click', navClickHandler);
+            link.addEventListener('click', navClickHandler);
+        });
+        function navClickHandler(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-id');
+            const targetElem = contentDiv.querySelector(`#${targetId}`);
+            if (targetElem) {
+                targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                history.pushState(null, null, `#${targetId}`);
+            }
+            if (window.innerWidth <= 860) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active-link'));
+            this.classList.add('active-link');
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    if (id) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active-link');
+                            if (link.getAttribute('data-id') === id) {
+                                link.classList.add('active-link');
+                            }
+                        });
+                    }
+                }
+            });
+        }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+
+        const allHeadings = contentDiv.querySelectorAll('[id]');
+        allHeadings.forEach(el => observer.observe(el));
+    }
+
+    let currentLang = 'cn';
+    function switchLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+        if (lang === 'cn') {
+            document.getElementById('content-cn').classList.add('active-lang');
+        } else {
+            document.getElementById('content-en').classList.add('active-lang');
+        }
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        buildHierarchyNav(lang);
+        window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang) switchLanguage(lang);
+        });
+    });
+
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+
+    const topBtn = document.getElementById('scrollTopBtn');
+    topBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // URL hash 检测语言切换
+    const hashLang = window.location.hash;
+    if (hashLang === '#english' || hashLang === '#en') {
+        switchLanguage('en');
+    } else if (hashLang === '#chinese' || hashLang === '#zh') {
+        switchLanguage('cn');
+    } else {
+        buildHierarchyNav('cn');
+    }
+</script>
+</body>
+</html>

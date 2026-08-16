@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu 性能与部署教程 · Performance & Deployment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-tree li {
+            margin: 0.2rem 0;
+            list-style: none;
+        }
+        .nav-tree .tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .nav-tree a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.88rem;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+            opacity: 0.85;
+            flex: 1;
+        }
+        .nav-tree a:hover {
+            background-color: var(--nav-hover-bg);
+            opacity: 1;
+            color: var(--link-color);
+        }
+        .nav-tree a.active-link {
+            background-color: var(--link-color);
+            color: white;
+            opacity: 1;
+        }
+        .nav-tree .level-1 > a {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+        .nav-tree .level-2 {
+            padding-left: 1.3rem;
+        }
+        .nav-tree .level-3 {
+            padding-left: 2.2rem;
+        }
+        .no-bullet {
+            list-style: none;
+        }
+        .sidebar-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin: 1rem 0 0.5rem 0.5rem;
+        }
+
+        .content-panel {
+            display: none;
+            animation: fade 0.2s ease;
+        }
+        .content-panel.active-lang {
+            display: block;
+        }
+        @keyframes fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            border: 1px solid var(--border-light);
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        h1, h2, h3, h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+        img, svg { max-width: 100%; }
+
+        ul, ol {
+            padding-left: 1.5rem;
+            margin: 0.8rem 0;
+        }
+        li {
+            margin: 0.3rem 0;
+        }
+
+        .tip-box {
+            background-color: var(--code-bg);
+            border-left: 4px solid var(--link-color);
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+
+        .warn-box {
+            background-color: var(--code-bg);
+            border-left: 4px solid #d97706;
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            font-size: 0.92rem;
+        }
+
+        .back-to-index {
+            display: block;
+            margin-top: 3rem;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            background-color: var(--code-bg);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--link-color);
+            font-weight: 600;
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+        .back-to-index:hover {
+            background-color: var(--nav-hover-bg);
+            color: var(--link-hover);
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 1.2rem;
+            right: 1.2rem;
+            background: #475569;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: 0.2s;
+            z-index: 99;
+            font-weight: bold;
+        }
+        .scroll-top:hover {
+            opacity: 1;
+            background: var(--link-color);
+        }
+
+        .perf-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .perf-card {
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1.2rem;
+            border-left: 4px solid var(--link-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .perf-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+        }
+        .perf-card h4 {
+            margin-top: 0;
+            color: var(--link-color);
+        }
+        .perf-card p {
+            font-size: 0.9rem;
+            opacity: 0.85;
+            margin: 0.4rem 0;
+        }
+        .perf-card .icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.2rem 0;
+            font-size: 0.9rem;
+        }
+        .info-table th,
+        .info-table td {
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-light);
+            text-align: left;
+        }
+        .info-table th {
+            background-color: var(--sidebar-bg);
+            font-weight: 600;
+        }
+
+        .flow-steps {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin: 1.5rem 0;
+        }
+        .flow-step {
+            background: var(--link-color);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            min-width: 100px;
+        }
+        .flow-arrow {
+            color: var(--link-color);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .flow-step-alt {
+            background: #059669;
+        }
+        .flow-step-warn {
+            background: #d97706;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(5,150,105,0.08) 100%);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .highlight-box strong {
+            color: var(--link-color);
+        }
+    </style>
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">⚡ 性能与部署导航</div>
+            <div id="dynamic-nav">加载中...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel active-lang"></div>
+        <div id="content-en" class="content-panel"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+    const cnFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">⚡ Paozhu 性能优化与部署指南</h1>
+        <p style="opacity: 0.8;">I/O模型优化 · 数据库调优 · 生产部署 · 故障排除</p>
+    </div>
+
+    <h2 id="perf-optimization">【性能优化】</h2>
+
+    <h3 id="io-model-opt">1. I/O模型优化</h3>
+    <h4>I/O与计算分离</h4>
+    <p>Paozhu 采用协程驱动的 I/O 模型，将 I/O 操作与业务计算完全分离到不同的线程池中：</p>
+    <ul>
+        <li><strong>I/O 使用协程池</strong>：网络读写、异步数据库查询等 I/O 密集型操作在协程池中执行，以协程方式等待，不阻塞线程</li>
+        <li><strong>用户代码运行于独立线程池</strong>：同步控制器、CPU 密集型计算在独立的业务线程池中执行，避免阻塞 I/O 处理</li>
+    </ul>
+    <pre><code>// conf/server.conf — 线程池配置
+[default]
+cothreadnum = 8        ; I/O 协程线程数（通常设为 CPU 核心数）
+threadmax   = 1024    ; 最大业务线程数
+threadmin   = 5       ; 最小业务线程数
+
+// conf/orm.conf — 连接池配置
+[default]
+maxpool = 20          ; 数据库连接池大小</code></pre>
+
+    <h4>合理设置 threadmax/threadmin、cothreadnum</h4>
+    <ul>
+        <li><code>cothreadnum</code>：建议设置为 CPU 物理核心数，充分利用多核 I/O 处理能力</li>
+        <li><code>threadmax</code>：根据业务并发量调整，建议范围 512-2048</li>
+        <li><code>threadmin</code>：建议设置为 5-10，减少线程创建开销</li>
+    </ul>
+    <div class="tip-box">
+        💡 <strong>调优建议</strong>：I/O 协程线程数 = CPU 核心数，可以最大化 I/O 处理效率；业务线程数根据实际并发压力调整。
+    </div>
+
+    <h3 id="db-optimization">2. 数据库优化</h3>
+    <h4>使用连接池(maxpool)提升吞吐</h4>
+    <p>通过 <code>maxpool</code> 参数配置数据库连接池，复用连接避免频繁建立和断开的开销：</p>
+    <pre><code>// conf/orm.conf — 完整连接池配置
+[default]
+type    = main
+host    = 127.0.0.1
+port    = 3306
+dbname  = hello_world
+user    = benchmarkdbuser
+maxpool = 20          ; 主库连接池大小
+dbtype  = mysql
+
+[second]              ; 从库配置（读写分离）
+type    = second
+host    = 127.0.0.1
+port    = 3306
+maxpool = 20          ; 从库连接池大小（读多写少场景可适当增大）</code></pre>
+
+    <h4>合理的索引设计</h4>
+    <ul>
+        <li>为 <code>WHERE</code>、<code>JOIN</code>、<code>ORDER BY</code> 涉及的字段创建索引</li>
+        <li>使用组合索引时遵循最左前缀原则</li>
+        <li>避免在小表上过度索引</li>
+        <li>定期使用 <code>ANALYZE TABLE</code> 更新统计信息</li>
+    </ul>
+
+    <h4>避免 N+1 查询</h4>
+    <p>使用 <code>IN</code> 查询或批量 <code>fetch</code> 替代循环中的单次查询：</p>
+    <pre><code>// ❌ 错误：N+1 查询
+for (auto& user : users) {
+    auto order = orm::Order().where("userid", user.id).fetch_one();
+}
+
+// ✅ 正确：批量查询
+auto orders = orm::Order().where("userid", "in", user_ids).fetch();
+
+// ✅ 正确：使用 ORM 的 join 功能
+auto users_with_orders = orm::User()
+    .join("orders", "users.id = orders.userid")
+    .fetch();</code></pre>
+
+    <h3 id="static-opt">3. 静态资源优化</h3>
+    <h4>开启 gzip/br 压缩：static_file_compress_cache</h4>
+    <p>Paozhu 内置 gzip 和 Brotli 压缩支持，可通过配置启用：</p>
+    <pre><code>// conf/server.conf — 启用静态资源压缩
+[default]
+static_file_compress_cache = 1   ; 启用压缩缓存（gzip/br）</code></pre>
+
+    <h4>静态资源磁盘缓存</h4>
+    <p>对于不经常变化的静态资源，可以开启磁盘缓存来避免重复压缩和读取：</p>
+    <pre><code>// conf/server.conf — 磁盘缓存配置
+[default]
+staticfile_cache_num = 100   ; 缓存 100 个静态资源文件到磁盘</code></pre>
+
+    <h4>CDN 加速</h4>
+    <ul>
+        <li>将静态资源（CSS、JS、图片）部署到 CDN 边缘节点</li>
+        <li>设置合理的 <code>Cache-Control</code> 响应头</li>
+        <li>使用 CDN 的 HTTPS 和 HTTP/2 加速特性</li>
+    </ul>
+
+    <h3 id="rate-limit">4. 流量限制</h3>
+    <h4>内置平滑移动平均线二段式限流</h4>
+    <p>Paozhu 内置基于平滑移动平均线（SMA）的二段式限流机制，在保护服务器的同时不影响正常流量：</p>
+    <ul>
+        <li><strong>第一级：new_wait</strong> — 等待建立的新连接数达到 <code>rate_limit_new_wait_num</code> 阈值后，开始限制新连接</li>
+        <li><strong>第二级：accept_wait</strong> — 连接数继续增长并超过 <code>rate_limit_accept_wait_num</code> 时，限制 accept 接收，按 <code>rate_limit_accept_time</code> 毫秒休眠</li>
+    </ul>
+
+    <h4>rate_limit_* 配置项说明</h4>
+    <pre><code>// conf/server.conf — 连接限流配置
+[default]
+rate_limit_status          = 0    ; 1 开启限流
+rate_limit_new_wait_num    = 300  ; 第一级：新连接等待数达到阈值后开始限流
+rate_limit_accept_wait_num = 600  ; 第二级：超过该连接数开始限制 accept
+rate_limit_accept_time     = 250  ; accept 休眠毫秒数（最大 1500）
+
+// 连接数限制
+links_restart_process = n9998877ts1te5
+//   当连接数超过 15000 时，在 1:00-5:00 时段内重启进程
+
+// 定时清理
+clean_cron = m5t600
+//   每 5 分钟清理 600 秒前的不活跃连接
+
+// 自动重启
+reboot_cron = d180h5
+//   每 180 天凌晨 5 点自动重启进程</code></pre>
+
+    <h3 id="build-opt">5. 构建优化</h3>
+    <h4>Release 模式开启优化</h4>
+    <p>生产环境编译时使用 Release 模式，开启编译器优化：</p>
+    <pre><code># CMake Release 构建
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+
+# xmake Release 构建
+xmake f -m release
+xmake</code></pre>
+    <ul>
+        <li>Release 模式默认启用 <code>-O3</code> 优化</li>
+        <li>自动启用 LTO（链接时优化）</li>
+        <li>去除调试符号，减小二进制体积</li>
+    </ul>
+
+    <h4>Debug 模式使用 AddressSanitizer 定位问题</h4>
+    <p>开发调试时建议使用 Debug 模式并开启 AddressSanitizer（ASAN），可以有效检测内存错误：</p>
+    <pre><code># CMake Debug 构建（启用 ASAN）
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON
+make -j$(nproc)
+
+# 运行 Debug 模式
+./paozhu conf/server.conf
+
+# ASAN 选项配置
+export ASAN_OPTIONS=detect_leaks=1:check_initialization_order=1</code></pre>
+    <div class="tip-box">
+        💡 ASAN 可以检测：内存泄漏、使用已释放内存、缓冲区溢出、使用未初始化内存等问题，配合 Paozhu 框架的智能指针设计，基本杜绝内存问题。
+    </div>
+
+    <h2 id="deployment-guide">【部署指南】</h2>
+
+    <h3 id="dev-mode">1. 开发模式</h3>
+    <p>开发模式直接运行，便于调试和快速迭代：</p>
+    <pre><code># 开发模式启动（前台运行）
+./paozhu conf/server.conf</code></pre>
+    <div class="tip-box">
+        💡 开发模式会输出详细的日志信息，便于排查问题。适用于本地开发和测试环境。
+    </div>
+
+    <h3 id="prod-mode">2. 生产模式（守护进程）</h3>
+    <p>生产环境推荐使用守护进程模式运行，在 <code>server.conf</code> 中设置 <code>deamon_enable = 1</code> 后启动，框架会 fork 子进程并后台运行：</p>
+    <pre><code># 生产守护进程模式（server.conf 中设置 deamon_enable = 1）
+./paozhu /etc/paozhu/server.conf</code></pre>
+    <ul>
+        <li>进程在后台运行，不占用终端</li>
+        <li>支持通过 <code>reboot_cron</code> 定时自动重启</li>
+        <li>支持通过 <code>touch log/restart_server</code> 手动触发重启</li>
+        <li>日志输出到 <code>log/</code> 目录</li>
+    </ul>
+
+    <h3 id="systemd-config">3. systemd 服务配置示例</h3>
+    <p>在 Linux 系统中推荐使用 systemd 管理服务，实现开机自启和自动重启：</p>
+    <pre><code># /etc/systemd/system/paozhu.service
+[Unit]
+Description=Paozhu Web Framework
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/paozhu /etc/paozhu/server.conf
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+    <p>启动和管理服务：</p>
+    <pre><code># 重新加载 systemd 配置
+sudo systemctl daemon-reload
+
+# 启动服务
+sudo systemctl start paozhu
+
+# 设置开机自启
+sudo systemctl enable paozhu
+
+# 查看服务状态
+sudo systemctl status paozhu
+
+# 查看日志
+sudo journalctl -u paozhu -f
+
+# 停止服务
+sudo systemctl stop paozhu
+
+# 重启服务
+sudo systemctl restart paozhu</code></pre>
+
+    <h3 id="nginx-proxy">4. Nginx 反向代理配置示例</h3>
+    <p>使用 Nginx 作为反向代理可以提供更好的静态资源处理、负载均衡和 SSL 终结：</p>
+    <pre><code># /etc/nginx/conf.d/paozhu.conf
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    # 强制 HTTPS 跳转
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com;
+
+    # SSL 证书配置
+    ssl_certificate     /etc/nginx/ssl/yourdomain.com.pem;
+    ssl_certificate_key /etc/nginx/ssl/yourdomain.com.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # 反向代理到 Paozhu 后端
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket 支持
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # 静态资源直接由 Nginx 处理
+    location ~* \.(css|js|jpg|jpeg|png|gif|ico|svg|woff2?)$ {
+        root /var/www/static;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}</code></pre>
+    <div class="tip-box">
+        💡 使用 Nginx 反向代理时，建议将 SSL 终结在 Nginx 层，后端 Paozhu 以 HTTP 协议监听，这样可以利用 Nginx 的 HTTP/2 和 SSL 优化。
+    </div>
+
+    <h3 id="https-cert">5. HTTPS 证书配置</h3>
+
+    <h4>使用 Paozhu 内置 ACME 自动续期（推荐）</h4>
+    <p>Paozhu 框架内置了 ACME 客户端，通过 <code>conf/acme.conf</code> 配置文件即可实现 SSL 证书的自动申请和续期：</p>
+    <pre><code>// conf/acme.conf — ACME 证书配置
+[info]
+acme_path  = ./acme          ; ACME 工作目录，存放申请中间文件
+cert_path  = ./conf          ; 证书存储目录
+email      = admin@yourdomain.com  ; 必须设置邮箱
+days_remain = 10             ; 剩余多少天开始更新证书
+
+[zerossl]
+server_url = https://acme.zerossl.com/v2/DV90  ; ZeroSSL 接口
+eab_api    = https://api.zerossl.com/acme/eab-credentials-email
+; 首次申请后自动填充
+eab_kid    = 
+eab_hmac_key = </code></pre>
+
+    <p>在 <code>conf/server.conf</code> 中启用 ACME 自动续期：</p>
+    <pre><code>// conf/server.conf — 启用 ACME 自动续期
+acme_auto = 1                ; 开启 ACME 自动申请和续期
+acme_every_day = 7           ; 每天几点运行一次（24 小时制）
+acme_every_num = 5           ; 每次处理几个域名</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>说明</strong>：开启 <code>acme_auto = 1</code> 后，框架会在指定时间检查证书有效期，当剩余天数小于 <code>days_remain</code> 时自动申请新证书。首次申请后会自动保存 EAB 凭证到 <code>acme.conf</code>，后续续期无需重复配置。
+    </div>
+
+    <h4>使用 certbot 等 ACME 客户端（Nginx 反向代理场景）</h4>
+    <p>当使用 Nginx 作为反向代理时，也可以使用 certbot 自动获取 Let's Encrypt 免费证书：</p>
+    <pre><code># 安装 certbot
+sudo apt install certbot python3-certbot-nginx
+
+# 自动获取证书并配置 Nginx
+sudo certbot --nginx -d yourdomain.com
+
+# 自动续期（certbot 默认配置定时任务）
+sudo certbot renew --dry-run</code></pre>
+
+    <h4>手动配置 certificate_chain_file 和 private_key_file</h4>
+    <p>也可以直接在 Paozhu 配置文件中指定证书路径：</p>
+    <pre><code>// conf/server.conf — SSL 证书配置
+[default]
+httpsport = 443
+
+certificate_chain_file = /path/to/fullchain.pem
+private_key_file       = /path/to/privkey.pem
+
+// 可选：SSL 协议和加密套件
+ssl_protocols = TLSv1.2:TLSv1.3
+ssl_ciphers   = HIGH:!aNULL:!MD5</code></pre>
+
+    <h3 id="multi-domain">6. 多域名配置</h3>
+    <h4>mainhost 配置主域名</h4>
+    <p>通过 <code>mainhost</code> 配置主域名，框架会绑定到该域名的请求：</p>
+    <pre><code>// conf/server.conf — 多域名配置
+[default]
+mainhost = yourdomain.com
+httpport = 80
+wwwpath  = /var/www/yourdomain</code></pre>
+
+    <h4>虚拟主机支持</h4>
+    <p>Paozhu 支持基于域名的虚拟主机，不同域名可以绑定不同的 wwwpath 和配置：</p>
+    <pre><code>// conf/server.conf — 虚拟主机配置
+[www.yourdomain.com]
+wwwpath = /var/www/yourdomain
+mainhost = www.yourdomain.com
+
+[api.yourdomain.com]
+wwwpath = /var/www/api
+mainhost = api.yourdomain.com
+
+[shop.yourdomain.com]
+wwwpath = /var/www/shop
+mainhost = shop.yourdomain.com
+httpport = 8080</code></pre>
+
+    <h2 id="benchmark-tools">【压测工具】</h2>
+
+    <h3 id="ab-tool">ab 命令使用方法</h3>
+    <p><code>ab</code>（Apache Benchmark）是 Apache 自带的简单压测工具，适合快速评估单机性能：</p>
+    <pre><code># 安装
+sudo apt install apache2-utils    # Debian/Ubuntu
+sudo dnf install httpd-tools      # CentOS/RHEL
+
+# 基本用法
+# -n: 总请求数  -c: 并发数
+ab -n 100000 -c 100 http://localhost/plaintext
+
+# 常用参数
+ab -n 100000 -c 200 -k http://localhost/plaintext
+#   -k: 开启 Keep-Alive
+ab -n 50000 -c 50 -p post_data.txt -T "application/x-www-form-urlencoded" http://localhost/api/submit
+#   -p: POST 数据文件
+ab -n 10000 -c 10 https://yourdomain.com/
+#   HTTPS 测试</code></pre>
+
+    <h3 id="h2load-tool">h2load HTTP/2 压测</h3>
+    <p><code>h2load</code> 是 nghttp2 提供的 HTTP/2 专用压测工具：</p>
+    <pre><code># 安装 nghttp2
+sudo apt install nghttp2        # Debian/Ubuntu
+sudo brew install nghttp2       # macOS
+
+# 基本用法
+# -n: 总请求数  -c: 并发客户端数  -m: 每个客户端的并发流数
+h2load -n 100000 -c 100 -m 10 https://localhost/plaintext
+
+# 高级用法
+h2load -n 1000000 -c 200 -m 50 --npn-list h2 https://yourdomain.com/
+#   --npn-list: 指定 NPN 协议列表
+h2load -n 50000 -c 50 -m 5 https://localhost/api/data -H "User-Agent: Benchmark"
+#   -H: 添加自定义请求头</code></pre>
+
+    <h3 id="h2spec-tool">h2spec HTTP/2 兼容性测试</h3>
+    <p><code>h2spec</code> 是一个 HTTP/2 规范兼容性测试工具，用于验证服务器是否符合 HTTP/2 标准：</p>
+    <pre><code># 安装 h2spec
+# 从 GitHub 下载
+wget https://github.com/summerwind/h2spec/releases/download/v0.7.6/h2spec_linux_amd64.tar.gz
+tar -xf h2spec_linux_amd64.tar.gz
+chmod +x h2spec
+sudo mv h2spec /usr/local/bin/
+
+# macOS 使用 brew
+brew install h2spec
+
+# 基本用法 - 测试 HTTP/2 兼容性
+h2spec -p 80 http2
+#   -p: 端口号 (默认 80)
+#   http2: 测试 HTTP/2 规范
+
+# 指定主机和端口测试
+h2spec -h www.xx.com -p 80 http2
+#   -h: 主机名
+#   -p: 端口号
+
+# 测试指定主机的 HTTPS HTTP/2
+h2spec -h www.xx.com -p 443 https
+
+# 仅测试特定的 HTTP/2 功能
+h2spec -p 80 http2 -t settings,flow-control,compression
+#   -t: 指定测试类型</code></pre>
+
+    <h3 id="benchmark-results">基准测试结果参考</h3>
+    <p>以下是在中等配置服务器上的参考压测结果（实际性能因硬件和配置而异）：</p>
+
+    <table class="info-table">
+        <thead>
+            <tr>
+                <th>测试场景</th>
+                <th>工具</th>
+                <th>并发数</th>
+                <th>QPS (请求/秒)</th>
+                <th>平均延迟</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Plaintext (纯文本)</td>
+                <td>ab</td>
+                <td>100</td>
+                <td>~80,000</td>
+                <td>~1.2ms</td>
+            </tr>
+            <tr>
+                <td>JSON API</td>
+                <td>ab</td>
+                <td>100</td>
+                <td>~65,000</td>
+                <td>~1.5ms</td>
+            </tr>
+            <tr>
+                <td>Single DB Query</td>
+                <td>ab</td>
+                <td>50</td>
+                <td>~15,000</td>
+                <td>~6ms</td>
+            </tr>
+            <tr>
+                <td>HTTP/2 Plaintext</td>
+                <td>h2load</td>
+                <td>100×10</td>
+                <td>~150,000</td>
+                <td>~0.6ms</td>
+            </tr>
+            <tr>
+                <td>HTTP/2 JSON API</td>
+                <td>h2load</td>
+                <td>100×10</td>
+                <td>~120,000</td>
+                <td>~0.8ms</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="tip-box">
+        💡 <strong>注意</strong>：以上数据仅供参考。实际性能取决于硬件配置、操作系统、编译器优化级别和具体业务逻辑。建议在目标环境下进行真实压测。
+    </div>
+
+    <h2 id="troubleshooting">【故障排除】</h2>
+
+    <h3 id="ts-startup">启动失败</h3>
+    <p><strong>可能原因</strong>：配置文件路径错误、端口被占用、权限不足。</p>
+    <ul>
+        <li>检查配置文件路径是否正确：<code>ls -la conf/server.conf</code></li>
+        <li>检查端口是否被占用：<code>lsof -i :80</code> 或 <code>netstat -tlnp | grep 80</code></li>
+        <li>使用其他端口测试：修改 <code>httpport = 8080</code></li>
+        <li>检查日志文件获取详细错误信息：<code>cat log/error.log</code></li>
+        <li>开发模式下直接运行：<code>./paozhu conf/server.conf</code> 查看控制台输出</li>
+    </ul>
+    <pre><code># 排查示例
+# 1. 检查配置文件是否存在
+ls -la /etc/paozhu/server.conf
+
+# 2. 检查端口占用
+sudo ss -tlnp | grep 80
+
+# 3. 检查权限
+ls -la /usr/local/bin/paozhu
+
+# 4. 使用开发模式查看详细错误
+./paozhu /etc/paozhu/server.conf</code></pre>
+
+    <h3 id="ts-route">路由未命中</h3>
+    <p><strong>可能原因</strong>：注解或手动注册不正确、URL 拼写错误、路由表未正确生成。</p>
+    <ul>
+        <li>确认 <code>//@urlpath</code> 注解格式正确：<code>//@urlpath(pre, action)</code></li>
+        <li>确认控制器文件在 <code>controller/src/</code> 目录下</li>
+        <li>确认注解后的文件名和路径生成正确</li>
+        <li>检查生成的 <code>common/autocontrolmethod.hpp</code> 文件</li>
+        <li>如果使用手动注册，确认 <code>common/reghttpmethod.hpp</code> 中的 <code>_inithttpmethodregto</code> 函数正确调用</li>
+    </ul>
+    <div class="warn-box">
+        ⚠️ 注意：修改控制器注解后需要重新编译项目，框架在编译时扫描注解并生成路由映射。
+    </div>
+
+    <h3 id="ts-db">数据库连接失败</h3>
+    <p><strong>可能原因</strong>：数据库配置错误、网络不通、权限不足、数据库服务未启动。</p>
+    <ul>
+        <li>检查 <code>conf/orm.conf</code> 中的数据库配置（host、port、user、password）</li>
+        <li>确认数据库服务正在运行：<code>systemctl status mysql</code></li>
+        <li>测试网络连通性：<code>ping 127.0.0.1</code> 或 <code>telnet 127.0.0.1 3306</code></li>
+        <li>确认数据库用户权限：<code>GRANT ALL ON dbname.* TO 'user'@'host';</code></li>
+        <li>检查防火墙规则：<code>iptables -L -n</code> 或 <code>ufw status</code></li>
+        <li>检查连接池配置 <code>maxpool</code> 是否合理</li>
+    </ul>
+    <pre><code># 排查示例
+# 1. 测试数据库连接
+mysql -h 127.0.0.1 -P 3306 -u root -p
+
+# 2. 检查数据库配置
+cat conf/orm.conf
+
+# 3. 查看数据库服务器状态
+sudo systemctl status mysql
+
+# 4. 检查防火墙
+sudo iptables -L -n | grep 3306</code></pre>
+
+    <h3 id="ts-static">静态资源 404</h3>
+    <p><strong>可能原因</strong>：wwwpath 路径错误、文件不存在、权限不足。</p>
+    <ul>
+        <li>检查 <code>wwwpath</code> 配置是否指向正确的静态资源目录</li>
+        <li>确认静态文件实际存在于 wwwpath 目录下</li>
+        <li>检查目录和文件的读取权限：<code>chmod -R 755 wwwpath</code></li>
+        <li>如果使用 Nginx 反向代理，确认 Nginx 的 <code>root</code> 指令正确</li>
+        <li>检查 URL 路径与文件路径的映射关系</li>
+    </ul>
+    <pre><code># 排查示例
+# 1. 检查 wwwpath 配置
+grep wwwpath conf/server.conf
+
+# 2. 检查文件是否存在
+ls -la /var/www/html/css/style.css
+
+# 3. 检查权限
+namei -l /var/www/html/css/style.css</code></pre>
+
+    <h3 id="ts-session">Session 失效</h3>
+    <p><strong>可能原因</strong>：session 配置错误、Cookie 设置问题、跨域限制。</p>
+    <ul>
+        <li>检查 session 相关配置：session 存储路径、有效期、加密密钥</li>
+        <li>确认 Cookie 的 <code>domain</code> 和 <code>path</code> 设置正确</li>
+        <li>检查是否开启了 <code>secure</code> 但使用了 HTTP</li>
+        <li>检查是否开启了 <code>httponly</code> 导致 JavaScript 无法访问</li>
+        <li>确认客户端 Cookie 没有被浏览器拦截</li>
+        <li>多域名场景下，确认 session 配置在各域名间一致</li>
+    </ul>
+
+    <h3 id="ts-websocket">WebSocket 连接失败</h3>
+    <p><strong>可能原因</strong>：WebSocket 路径未注册、反向代理配置缺失、Upgrade 头未设置。</p>
+    <ul>
+        <li>确认 WebSocket 路径已正确注册（<code>//@urlpath</code> 注解或工厂函数）</li>
+        <li>检查 Nginx 反向代理是否配置了 Upgrade 支持：
+            <pre><code>proxy_http_version 1.1;
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection "upgrade";</code></pre>
+        </li>
+        <li>确认客户端连接 URL 正确：<code>ws://host/path</code> 或 <code>wss://host/path</code></li>
+        <li>检查 WebSocket 认证中间件是否阻止了连接</li>
+        <li>查看日志确认 WebSocket 握手是否成功</li>
+    </ul>
+
+    <div class="highlight-box">
+        <strong>🎯 通用排查步骤：</strong>
+        <ol>
+            <li>查看错误日志：<code>tail -f log/error.log</code></li>
+            <li>开启 Debug 模式：<code>./paozhu conf/server.conf</code></li>
+            <li>使用 curl 测试接口：<code>curl -v http://localhost/path</code></li>
+            <li>检查系统资源：<code>free -m</code>, <code>top</code>, <code>df -h</code></li>
+            <li>检查文件描述符限制：<code>ulimit -n</code></li>
+        </ol>
+    </div>
+
+    <a href="index.html" class="back-to-index">← 返回首页</a>
+    `;
+
+    const enFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">⚡ Paozhu Performance & Deployment Guide</h1>
+        <p style="opacity: 0.8;">I/O Optimization · Database Tuning · Production Deploy · Troubleshooting</p>
+    </div>
+
+    <h2 id="perf-optimization">Performance Optimization</h2>
+
+    <h3 id="io-model-opt">1. I/O Model Optimization</h3>
+    <h4>Separating I/O and Computation</h4>
+    <p>Paozhu uses a coroutine-driven I/O model, separating I/O operations and business computation into different thread pools:</p>
+    <ul>
+        <li><strong>I/O uses coroutine pool</strong>: Network read/write, async database queries and other I/O-intensive operations execute in the coroutine pool, waiting in a coroutine manner without blocking threads</li>
+        <li><strong>User code runs in a separate thread pool</strong>: Synchronous controllers and CPU-intensive computations execute in a separate business thread pool, avoiding I/O processing blocks</li>
+    </ul>
+    <pre><code>// conf/server.conf — Thread pool configuration
+[default]
+cothreadnum = 8        ; I/O coroutine threads (typically = CPU cores)
+threadmax   = 1024    ; Max business threads
+threadmin   = 5       ; Min business threads
+
+// conf/orm.conf — Connection pool configuration
+[default]
+maxpool = 20          ; Database connection pool size</code></pre>
+
+    <h4>Properly Setting threadmax/threadmin and cothreadnum</h4>
+    <ul>
+        <li><code>cothreadnum</code>: Recommend setting to the number of CPU physical cores to maximize multi-core I/O processing</li>
+        <li><code>threadmax</code>: Adjust based on actual concurrent volume, recommended range 512-2048</li>
+        <li><code>threadmin</code>: Recommend setting to 5-10 to reduce thread creation overhead</li>
+    </ul>
+    <div class="tip-box">
+        💡 <strong>Tuning Tip</strong>: Set I/O coroutine threads = CPU cores to maximize I/O efficiency; adjust business threads based on actual concurrency load.
+    </div>
+
+    <h3 id="db-optimization">2. Database Optimization</h3>
+    <h4>Using Connection Pool (maxpool) for Throughput</h4>
+    <p>Configure the database connection pool via the <code>maxpool</code> parameter to reuse connections and avoid the overhead of frequent creation and teardown:</p>
+    <pre><code>// conf/orm.conf — Full connection pool configuration
+[default]
+type    = main
+host    = 127.0.0.1
+port    = 3306
+dbname  = hello_world
+user    = benchmarkdbuser
+maxpool = 20          ; Main database pool size
+dbtype  = mysql
+
+[second]              ; Replica configuration (read-write splitting)
+type    = second
+host    = 127.0.0.1
+port    = 3306
+maxpool = 20          ; Replica pool size (can be increased for read-heavy scenarios)</code></pre>
+
+    <h4>Proper Index Design</h4>
+    <ul>
+        <li>Create indexes for fields used in <code>WHERE</code>, <code>JOIN</code>, and <code>ORDER BY</code></li>
+        <li>Follow the leftmost prefix rule when using composite indexes</li>
+        <li>Avoid over-indexing on small tables</li>
+        <li>Run <code>ANALYZE TABLE</code> periodically to update statistics</li>
+    </ul>
+
+    <h4>Avoiding N+1 Queries</h4>
+    <p>Use <code>IN</code> queries or batch <code>fetch</code> instead of single queries in loops:</p>
+    <pre><code>// ❌ Wrong: N+1 queries
+for (auto& user : users) {
+    auto order = orm::Order().where("userid", user.id).fetch_one();
+}
+
+// ✅ Correct: Batch queries
+auto orders = orm::Order().where("userid", "in", user_ids).fetch();
+
+// ✅ Correct: Using ORM join
+auto users_with_orders = orm::User()
+    .join("orders", "users.id = orders.userid")
+    .fetch();</code></pre>
+
+    <h3 id="static-opt">3. Static Resource Optimization</h3>
+    <h4>Enabling gzip/br Compression: static_file_compress_cache</h4>
+    <p>Paozhu has built-in gzip and Brotli compression support, which can be enabled via configuration:</p>
+    <pre><code>// conf/server.conf — Enable static resource compression
+[default]
+static_file_compress_cache = 1   ; Enable compression cache (gzip/br)</code></pre>
+
+    <h4>Static Resource Disk Cache</h4>
+    <p>For static resources that don't change frequently, enable disk caching to avoid repeated compression and reading:</p>
+    <pre><code>// conf/server.conf — Disk cache configuration
+[default]
+staticfile_cache_num = 100   ; Cache 100 static resource files to disk</code></pre>
+
+    <h4>CDN Acceleration</h4>
+    <ul>
+        <li>Deploy static resources (CSS, JS, images) to CDN edge nodes</li>
+        <li>Set appropriate <code>Cache-Control</code> response headers</li>
+        <li>Use CDN's HTTPS and HTTP/2 acceleration features</li>
+    </ul>
+
+    <h3 id="rate-limit">4. Rate Limiting</h3>
+    <h4>Built-in SMA Two-Stage Rate Limiting</h4>
+    <p>Paozhu features a built-in two-stage rate limiting mechanism based on the Simple Moving Average (SMA) that protects servers without impacting normal traffic:</p>
+    <ul>
+        <li><strong>Level 1: new_wait</strong> — Once pending new connections reach the <code>rate_limit_new_wait_num</code> threshold, new connections start being throttled</li>
+        <li><strong>Level 2: accept_wait</strong> — When the connection count keeps growing past <code>rate_limit_accept_wait_num</code>, accept is throttled and sleeps for <code>rate_limit_accept_time</code> milliseconds</li>
+    </ul>
+
+    <h4>rate_limit_* Configuration Options</h4>
+    <pre><code>// conf/server.conf — Connection rate limiting configuration
+[default]
+rate_limit_status          = 0    ; 1 to enable rate limiting
+rate_limit_new_wait_num    = 300  ; Level 1: throttle after new pending connections reach the threshold
+rate_limit_accept_wait_num = 600  ; Level 2: throttle accept after this connection count
+rate_limit_accept_time     = 250  ; accept sleep milliseconds (max 1500)
+
+// Connection limit
+links_restart_process = n9998877ts1te5
+//   Restart process when connections exceed 15000 during 1:00-5:00
+
+// Scheduled cleanup
+clean_cron = m5t600
+//   Clean up inactive connections older than 600 seconds every 5 minutes
+
+// Auto-restart
+reboot_cron = d180h5
+//   Auto-restart every 180 days at 5 AM</code></pre>
+
+    <h3 id="build-opt">5. Build Optimization</h3>
+    <h4>Release Mode with Optimizations</h4>
+    <p>For production, use Release mode to enable compiler optimizations:</p>
+    <pre><code># CMake Release build
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+
+# xmake Release build
+xmake f -m release
+xmake</code></pre>
+    <ul>
+        <li>Release mode enables <code>-O3</code> optimization by default</li>
+        <li>Automatically enables LTO (Link Time Optimization)</li>
+        <li>Strips debug symbols, reducing binary size</li>
+    </ul>
+
+    <h4>Debug Mode with AddressSanitizer for Troubleshooting</h4>
+    <p>For development and debugging, use Debug mode with AddressSanitizer (ASAN) to effectively detect memory errors:</p>
+    <pre><code># CMake Debug build (with ASAN)
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON
+make -j$(nproc)
+
+# Run in Debug mode
+./paozhu conf/server.conf
+
+# ASAN options
+export ASAN_OPTIONS=detect_leaks=1:check_initialization_order=1</code></pre>
+    <div class="tip-box">
+        💡 ASAN can detect: memory leaks, use-after-free, buffer overflow, use of uninitialized memory, etc. Combined with Paozhu's smart pointer design, memory issues are essentially eliminated.
+    </div>
+
+    <h2 id="deployment-guide">Deployment Guide</h2>
+
+    <h3 id="dev-mode">1. Development Mode</h3>
+    <p>Development mode runs directly, ideal for debugging and rapid iteration:</p>
+    <pre><code># Start in development mode (foreground)
+./paozhu conf/server.conf</code></pre>
+    <div class="tip-box">
+        💡 Development mode outputs detailed log information for troubleshooting. Suitable for local development and testing environments.
+    </div>
+
+    <h3 id="prod-mode">2. Production Mode (Daemon Process)</h3>
+    <p>Production environments recommend daemon mode: set <code>deamon_enable = 1</code> in <code>server.conf</code>, then start it. The framework forks a child process and runs in the background:</p>
+    <pre><code># Production daemon mode (set deamon_enable = 1 in server.conf)
+./paozhu /etc/paozhu/server.conf</code></pre>
+    <ul>
+        <li>Process runs in the background, no terminal occupancy</li>
+        <li>Supports automatic restart via <code>reboot_cron</code></li>
+        <li>Supports manual restart via <code>touch log/restart_server</code></li>
+        <li>Logs are output to the <code>log/</code> directory</li>
+    </ul>
+
+    <h3 id="systemd-config">3. systemd Service Configuration Example</h3>
+    <p>On Linux, using systemd to manage services is recommended for auto-start and automatic restart:</p>
+    <pre><code># /etc/systemd/system/paozhu.service
+[Unit]
+Description=Paozhu Web Framework
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/paozhu /etc/paozhu/server.conf
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+    <p>Start and manage the service:</p>
+    <pre><code># Reload systemd configuration
+sudo systemctl daemon-reload
+
+# Start the service
+sudo systemctl start paozhu
+
+# Enable auto-start on boot
+sudo systemctl enable paozhu
+
+# Check service status
+sudo systemctl status paozhu
+
+# View logs
+sudo journalctl -u paozhu -f
+
+# Stop the service
+sudo systemctl stop paozhu
+
+# Restart the service
+sudo systemctl restart paozhu</code></pre>
+
+    <h3 id="nginx-proxy">4. Nginx Reverse Proxy Configuration Example</h3>
+    <p>Using Nginx as a reverse proxy provides better static resource handling, load balancing, and SSL termination:</p>
+    <pre><code># /etc/nginx/conf.d/paozhu.conf
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    # Force HTTPS redirect
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com;
+
+    # SSL certificate configuration
+    ssl_certificate     /etc/nginx/ssl/yourdomain.com.pem;
+    ssl_certificate_key /etc/nginx/ssl/yourdomain.com.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Reverse proxy to Paozhu backend
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Static resources handled directly by Nginx
+    location ~* \.(css|js|jpg|jpeg|png|gif|ico|svg|woff2?)$ {
+        root /var/www/static;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}</code></pre>
+    <div class="tip-box">
+        💡 When using Nginx as a reverse proxy, terminate SSL at the Nginx layer and have Paozhu listen via HTTP to take advantage of Nginx's HTTP/2 and SSL optimizations.
+    </div>
+
+    <h3 id="https-cert">5. HTTPS Certificate Configuration</h3>
+
+    <h4>Using Paozhu Built-in ACME Auto-Renewal (Recommended)</h4>
+    <p>Paozhu has a built-in ACME client that can automatically apply for and renew SSL certificates through the <code>conf/acme.conf</code> configuration file:</p>
+    <pre><code>// conf/acme.conf — ACME certificate configuration
+[info]
+acme_path  = ./acme          ; ACME working directory for intermediate files
+cert_path  = ./conf          ; Certificate storage directory
+email      = admin@yourdomain.com  ; Email address (required)
+days_remain = 10             ; Days remaining before certificate renewal
+
+[zerossl]
+server_url = https://acme.zerossl.com/v2/DV90  ; ZeroSSL endpoint
+eab_api    = https://api.zerossl.com/acme/eab-credentials-email
+; Auto-filled after first application
+eab_kid    = 
+eab_hmac_key = </code></pre>
+
+    <p>Enable ACME auto-renewal in <code>conf/server.conf</code>:</p>
+    <pre><code>// conf/server.conf — Enable ACME auto-renewal
+acme_auto = 1                ; Enable ACME automatic application and renewal
+acme_every_day = 7           ; Run at what time each day (24-hour format)
+acme_every_num = 5           ; Process how many domains each time</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>Note</strong>: When <code>acme_auto = 1</code> is enabled, the framework checks certificate validity at the specified time and automatically applies for a new certificate when remaining days are less than <code>days_remain</code>. After the first application, EAB credentials are automatically saved to <code>acme.conf</code>, and no repeated configuration is needed for subsequent renewals.
+    </div>
+
+    <h4>Using ACME Clients like certbot (Nginx Reverse Proxy Scenario)</h4>
+    <p>When using Nginx as a reverse proxy, you can also use certbot to automatically obtain free Let's Encrypt certificates:</p>
+    <pre><code># Install certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Auto-obtain certificate and configure Nginx
+sudo certbot --nginx -d yourdomain.com
+
+# Auto-renewal (certbot configures scheduled tasks by default)
+sudo certbot renew --dry-run</code></pre>
+
+    <h4>Manually Configuring certificate_chain_file and private_key_file</h4>
+    <p>You can also specify certificate paths directly in the Paozhu configuration:</p>
+    <pre><code>// conf/server.conf — SSL certificate configuration
+[default]
+httpsport = 443
+
+certificate_chain_file = /path/to/fullchain.pem
+private_key_file       = /path/to/privkey.pem
+
+// Optional: SSL protocol and cipher suites
+ssl_protocols = TLSv1.2:TLSv1.3
+ssl_ciphers   = HIGH:!aNULL:!MD5</code></pre>
+
+    <h3 id="multi-domain">6. Multi-Domain Configuration</h3>
+    <h4>Configuring Primary Domain with mainhost</h4>
+    <p>Use <code>mainhost</code> to configure the primary domain, and the framework will bind to requests for that domain:</p>
+    <pre><code>// conf/server.conf — Multi-domain configuration
+[default]
+mainhost = yourdomain.com
+httpport = 80
+wwwpath  = /var/www/yourdomain</code></pre>
+
+    <h4>Virtual Host Support</h4>
+    <p>Paozhu supports domain-based virtual hosts, where different domains can bind to different wwwpaths and configurations:</p>
+    <pre><code>// conf/server.conf — Virtual host configuration
+[www.yourdomain.com]
+wwwpath = /var/www/yourdomain
+mainhost = www.yourdomain.com
+
+[api.yourdomain.com]
+wwwpath = /var/www/api
+mainhost = api.yourdomain.com
+
+[shop.yourdomain.com]
+wwwpath = /var/www/shop
+mainhost = shop.yourdomain.com
+httpport = 8080</code></pre>
+
+    <h2 id="benchmark-tools">Benchmark Tools</h2>
+
+    <h3 id="ab-tool">Using ab (Apache Benchmark)</h3>
+    <p><code>ab</code> (Apache Benchmark) is a simple benchmark tool bundled with Apache, suitable for quickly evaluating single-machine performance:</p>
+    <pre><code># Installation
+sudo apt install apache2-utils    # Debian/Ubuntu
+sudo dnf install httpd-tools      # CentOS/RHEL
+
+# Basic usage
+# -n: total requests  -c: concurrency
+ab -n 100000 -c 100 http://localhost/plaintext
+
+# Common parameters
+ab -n 100000 -c 200 -k http://localhost/plaintext
+#   -k: Enable Keep-Alive
+ab -n 50000 -c 50 -p post_data.txt -T "application/x-www-form-urlencoded" http://localhost/api/submit
+#   -p: POST data file
+ab -n 10000 -c 10 https://yourdomain.com/
+#   HTTPS testing</code></pre>
+
+    <h3 id="h2load-tool">Using h2load for HTTP/2 Benchmarking</h3>
+    <p><code>h2load</code> is an HTTP/2-specific benchmark tool provided by nghttp2:</p>
+    <pre><code># Install nghttp2
+sudo apt install nghttp2        # Debian/Ubuntu
+brew install nghttp2            # macOS
+
+# Basic usage
+# -n: total requests  -c: concurrent clients  -m: concurrent streams per client
+h2load -n 100000 -c 100 -m 10 https://localhost/plaintext
+
+# Advanced usage
+h2load -n 1000000 -c 200 -m 50 --npn-list h2 https://yourdomain.com/
+#   --npn-list: Specify NPN protocol list
+h2load -n 50000 -c 50 -m 5 https://localhost/api/data -H "User-Agent: Benchmark"
+#   -H: Add custom request headers</code></pre>
+
+    <h3 id="h2spec-tool">h2spec HTTP/2 Compatibility Testing</h3>
+    <p><code>h2spec</code> is an HTTP/2 specification compliance testing tool that validates server conformance with the HTTP/2 standard:</p>
+    <pre><code># Install h2spec
+# Download from GitHub
+wget https://github.com/summerwind/h2spec/releases/download/v0.7.6/h2spec_linux_amd64.tar.gz
+tar -xf h2spec_linux_amd64.tar.gz
+chmod +x h2spec
+sudo mv h2spec /usr/local/bin/
+
+# Install via brew on macOS
+brew install h2spec
+
+# Basic usage - Test HTTP/2 compatibility
+h2spec -p 80 http2
+#   -p: Port number (default 80)
+#   http2: Test HTTP/2 specification
+
+# Test with specified host and port
+h2spec -h www.xx.com -p 80 http2
+#   -h: Hostname
+#   -p: Port number
+
+# Test HTTPS HTTP/2 on specified host
+h2spec -h www.xx.com -p 443 https
+
+# Test specific HTTP/2 features only
+h2spec -p 80 http2 -t settings,flow-control,compression
+#   -t: Specify test types</code></pre>
+
+    <h3 id="benchmark-results">Benchmark Results Reference</h3>
+    <p>The following are reference benchmark results on a mid-range server (actual performance varies by hardware and configuration):</p>
+
+    <table class="info-table">
+        <thead>
+            <tr>
+                <th>Scenario</th>
+                <th>Tool</th>
+                <th>Concurrency</th>
+                <th>QPS (req/s)</th>
+                <th>Avg Latency</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Plaintext</td>
+                <td>ab</td>
+                <td>100</td>
+                <td>~80,000</td>
+                <td>~1.2ms</td>
+            </tr>
+            <tr>
+                <td>JSON API</td>
+                <td>ab</td>
+                <td>100</td>
+                <td>~65,000</td>
+                <td>~1.5ms</td>
+            </tr>
+            <tr>
+                <td>Single DB Query</td>
+                <td>ab</td>
+                <td>50</td>
+                <td>~15,000</td>
+                <td>~6ms</td>
+            </tr>
+            <tr>
+                <td>HTTP/2 Plaintext</td>
+                <td>h2load</td>
+                <td>100×10</td>
+                <td>~150,000</td>
+                <td>~0.6ms</td>
+            </tr>
+            <tr>
+                <td>HTTP/2 JSON API</td>
+                <td>h2load</td>
+                <td>100×10</td>
+                <td>~120,000</td>
+                <td>~0.8ms</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="tip-box">
+        💡 <strong>Note</strong>: The above data is for reference only. Actual performance depends on hardware, OS, compiler optimization level, and specific business logic. Real benchmarking in the target environment is recommended.
+    </div>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+
+    <h3 id="ts-startup">Startup Failure</h3>
+    <p><strong>Possible causes</strong>: Incorrect config file path, port occupied, insufficient permissions.</p>
+    <ul>
+        <li>Check if the config file path is correct: <code>ls -la conf/server.conf</code></li>
+        <li>Check if the port is occupied: <code>lsof -i :80</code> or <code>netstat -tlnp | grep 80</code></li>
+        <li>Test with a different port: change <code>httpport = 8080</code></li>
+        <li>Check log files for detailed error information: <code>cat log/error.log</code></li>
+        <li>Run in development mode: <code>./paozhu conf/server.conf</code> to view console output</li>
+    </ul>
+    <pre><code># Debugging example
+# 1. Check if config file exists
+ls -la /etc/paozhu/server.conf
+
+# 2. Check port usage
+sudo ss -tlnp | grep 80
+
+# 3. Check permissions
+ls -la /usr/local/bin/paozhu
+
+# 4. Use development mode to see detailed errors
+./paozhu /etc/paozhu/server.conf</code></pre>
+
+    <h3 id="ts-route">Route Not Matched</h3>
+    <p><strong>Possible causes</strong>: Incorrect annotation or manual registration, URL typo, routing table not correctly generated.</p>
+    <ul>
+        <li>Confirm the <code>//@urlpath</code> annotation format is correct: <code>//@urlpath(pre, action)</code></li>
+        <li>Confirm the controller file is in the <code>controller/src/</code> directory</li>
+        <li>Confirm the annotation-generated file and path are correct</li>
+        <li>Check the generated <code>common/autocontrolmethod.hpp</code> file</li>
+        <li>If using manual registration, confirm the <code>_inithttpmethodregto</code> function in <code>common/reghttpmethod.hpp</code> is called correctly</li>
+    </ul>
+    <div class="warn-box">
+        ⚠️ Note: After modifying controller annotations, the project must be recompiled. The framework scans annotations and generates route mappings at compile time.
+    </div>
+
+    <h3 id="ts-db">Database Connection Failure</h3>
+    <p><strong>Possible causes</strong>: Incorrect database configuration, network unreachable, insufficient permissions, database service not running.</p>
+    <ul>
+        <li>Check database configuration in <code>conf/orm.conf</code> (host, port, user, password)</li>
+        <li>Confirm the database service is running: <code>systemctl status mysql</code></li>
+        <li>Test network connectivity: <code>ping 127.0.0.1</code> or <code>telnet 127.0.0.1 3306</code></li>
+        <li>Confirm database user permissions: <code>GRANT ALL ON dbname.* TO 'user'@'host';</code></li>
+        <li>Check firewall rules: <code>iptables -L -n</code> or <code>ufw status</code></li>
+        <li>Check if the connection pool configuration <code>maxpool</code> is reasonable</li>
+    </ul>
+    <pre><code># Debugging example
+# 1. Test database connection
+mysql -h 127.0.0.1 -P 3306 -u root -p
+
+# 2. Check database configuration
+cat conf/orm.conf
+
+# 3. Check database server status
+sudo systemctl status mysql
+
+# 4. Check firewall
+sudo iptables -L -n | grep 3306</code></pre>
+
+    <h3 id="ts-static">Static Resource 404</h3>
+    <p><strong>Possible causes</strong>: Incorrect wwwpath, file not found, insufficient permissions.</p>
+    <ul>
+        <li>Check if <code>wwwpath</code> points to the correct static resource directory</li>
+        <li>Confirm the static file actually exists in the wwwpath directory</li>
+        <li>Check directory and file read permissions: <code>chmod -R 755 wwwpath</code></li>
+        <li>If using Nginx reverse proxy, confirm Nginx's <code>root</code> directive is correct</li>
+        <li>Check URL path to file path mapping</li>
+    </ul>
+    <pre><code># Debugging example
+# 1. Check wwwpath config
+grep wwwpath conf/server.conf
+
+# 2. Check if file exists
+ls -la /var/www/html/css/style.css
+
+# 3. Check permissions
+namei -l /var/www/html/css/style.css</code></pre>
+
+    <h3 id="ts-session">Session Expiration</h3>
+    <p><strong>Possible causes</strong>: Incorrect session configuration, cookie settings issues, cross-origin restrictions.</p>
+    <ul>
+        <li>Check session configuration: storage path, expiration, encryption key</li>
+        <li>Confirm Cookie <code>domain</code> and <code>path</code> settings are correct</li>
+        <li>Check if <code>secure</code> is enabled but using HTTP</li>
+        <li>Check if <code>httponly</code> is enabled preventing JavaScript access</li>
+        <li>Confirm client cookies are not blocked by the browser</li>
+        <li>In multi-domain scenarios, ensure session configuration is consistent across domains</li>
+    </ul>
+
+    <h3 id="ts-websocket">WebSocket Connection Failure</h3>
+    <p><strong>Possible causes</strong>: WebSocket path not registered, missing reverse proxy configuration, Upgrade header not set.</p>
+    <ul>
+        <li>Confirm WebSocket path is correctly registered (<code>//@urlpath</code> annotation or factory function)</li>
+        <li>Check if Nginx reverse proxy has Upgrade support configured:
+            <pre><code>proxy_http_version 1.1;
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection "upgrade";</code></pre>
+        </li>
+        <li>Confirm client connection URL is correct: <code>ws://host/path</code> or <code>wss://host/path</code></li>
+        <li>Check if WebSocket authentication middleware is blocking the connection</li>
+        <li>Check logs to confirm WebSocket handshake succeeded</li>
+    </ul>
+
+    <div class="highlight-box">
+        <strong>🎯 General Troubleshooting Steps:</strong>
+        <ol>
+            <li>Check error logs: <code>tail -f log/error.log</code></li>
+            <li>Enable Debug mode: <code>./paozhu conf/server.conf</code></li>
+            <li>Test API with curl: <code>curl -v http://localhost/path</code></li>
+            <li>Check system resources: <code>free -m</code>, <code>top</code>, <code>df -h</code></li>
+            <li>Check file descriptor limits: <code>ulimit -n</code></li>
+        </ol>
+    </div>
+
+    <a href="index.html" class="back-to-index">← Back to Home</a>
+    `;
+
+    document.getElementById('content-cn').innerHTML = cnFullContent;
+    document.getElementById('content-en').innerHTML = enFullContent;
+
+    function buildHierarchyNav(lang) {
+        const container = document.getElementById('dynamic-nav');
+        const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+        if (!contentDiv) {
+            container.innerHTML = '<p>Content not found</p>';
+            return;
+        }
+        const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+        if (headings.length === 0) {
+            container.innerHTML = '<p style="padding: 1rem;">No sections</p>';
+            return;
+        }
+
+        const root = { children: [] };
+        let stack = [root];
+
+        headings.forEach(heading => {
+            let level = parseInt(heading.tagName[1]);
+            const id = heading.id;
+            let title = heading.innerText.trim();
+            if (!title) title = heading.textContent.trim() || "Section";
+            const node = { level, id, title, children: [] };
+            while (stack.length > 0 && stack[stack.length-1].level >= level) {
+                stack.pop();
+            }
+            const parent = stack[stack.length-1];
+            parent.children.push(node);
+            stack.push(node);
+        });
+
+        function renderTree(nodes) {
+            if (!nodes.length) return '';
+            let html = '<ul class="nav-tree no-bullet">';
+            nodes.forEach(node => {
+                const hasChildren = node.children.length > 0;
+                const liClass = `level-${node.level}`;
+                html += `<li class="${liClass}">`;
+                html += `<div class="tree-item"><a href="#${node.id}" data-id="${node.id}" class="nav-link">${escapeHtml(node.title)}</a></div>`;
+                if (hasChildren) {
+                    html += renderTree(node.children);
+                }
+                html += `</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        const navHtml = renderTree(root.children);
+        container.innerHTML = navHtml || '<p>No navigation</p>';
+
+        attachNavEvents(contentDiv);
+    }
+
+    function attachNavEvents(contentDiv) {
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            link.removeEventListener('click', navClickHandler);
+            link.addEventListener('click', navClickHandler);
+        });
+        function navClickHandler(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-id');
+            const targetElem = contentDiv.querySelector(`#${targetId}`);
+            if (targetElem) {
+                targetElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                history.pushState(null, null, `#${targetId}`);
+            }
+            if (window.innerWidth <= 860) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active-link'));
+            this.classList.add('active-link');
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    if (id) {
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active-link');
+                            if (link.getAttribute('data-id') === id) {
+                                link.classList.add('active-link');
+                            }
+                        });
+                    }
+                }
+            });
+        }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+
+        const allHeadings = contentDiv.querySelectorAll('[id]');
+        allHeadings.forEach(el => observer.observe(el));
+    }
+
+    let currentLang = 'cn';
+    function switchLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+        if (lang === 'cn') {
+            document.getElementById('content-cn').classList.add('active-lang');
+        } else {
+            document.getElementById('content-en').classList.add('active-lang');
+        }
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        buildHierarchyNav(lang);
+        window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang) switchLanguage(lang);
+        });
+    });
+
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+
+    const topBtn = document.getElementById('scrollTopBtn');
+    topBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // URL hash 检测语言切换
+    const hashLang = window.location.hash;
+    if (hashLang === '#english' || hashLang === '#en') {
+        switchLanguage('en');
+    } else if (hashLang === '#chinese' || hashLang === '#zh') {
+        switchLanguage('cn');
+    } else {
+        buildHierarchyNav('cn');
+    }
+</script>
+</body>
+</html>
