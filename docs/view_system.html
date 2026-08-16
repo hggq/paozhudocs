@@ -472,6 +472,47 @@ peer->view("superadmin/system");</code></pre>
             <strong>🏗️ 最佳实践：</strong> 建议按业务模块组织视图文件，每个模块有独立的目录，便于维护和权限控制。
         </div>
 
+        <h2 id="theme_view">主题视图 (theme_view)</h2>
+        <p><code>theme_view</code> 是支持多主题/多租户的视图渲染方法。与 <code>view</code> 的区别是会自动根据当前域名配置的 <code>themes</code> 值添加路径前缀：</p>
+        <pre><code>// view: 直接渲染 view/front/producthome.html
+peer->view("front/producthome");
+
+// theme_view: 如果当前域名配置了 themes = "saas1"
+// 则实际渲染 view/saas1/front/producthome.html
+// 如果没有配置 themes，则等价于 peer->view("front/producthome")
+peer->theme_view("front/producthome");</code></pre>
+        <div class="note-box">
+            <strong>🎨 主题视图：</strong> <code>theme_view</code> 的声明位于 <code>vendor/httpserver/include/httppeer.h</code>，使用示例：
+        </div>
+        <pre><code>peer->theme_view("front/producthome");
+peer->theme_view("front/productcatalogue");
+peer->theme_view("front/producttopic");
+peer->theme_view("front/productlist");
+peer->theme_view("front/productbrand");
+peer->theme_view("front/productsearch");</code></pre>
+
+        <h3 id="theme_config">配置方式</h3>
+        <p>在域名配置文件中为对应域名添加 <code>themes</code> 与 <code>themes_url</code> 配置：</p>
+        <pre><code>[saas1.example.com]
+themes = saas1              ; 主题目录名，会被添加到视图路径前
+themes_url = /saas1/        ; 主题的静态资源 URL 前缀</code></pre>
+
+        <h3 id="theme_api">配套 API</h3>
+        <pre><code>// 获取当前域名的主题名
+std::string theme = peer->get_theme();     // 返回 "saas1" 或 ""
+
+// 手动拼接主题路径后使用 view（不推荐，仅作兼容用途）
+std::string viewfile = peer->get_theme();
+if (!viewfile.empty()) viewfile += "/";
+viewfile += "front/productcatalogue";
+peer->view(viewfile);  // 等价于 peer->theme_view("front/productcatalogue")
+
+// 获取当前域名的主题 URL 前缀（用于模板中的静态资源）
+std::string themeUrl = peer->get_themeurl();  // 返回 "/saas1/" 或 ""</code></pre>
+        <div class="note-box">
+            <strong>🏗️ 使用场景：</strong> 同一个系统服务多个租户（SaaS），每个租户有独立的域名和主题模板目录（如 <code>view/saas1/</code>、<code>view/saas2/</code>），控制器代码统一使用 <code>theme_view</code> 即可，无需关心具体主题名。
+        </div>
+
         <h2 id="json_response">JSON 响应</h2>
         <p>当不需要使用视图渲染，而是直接返回 JSON 数据时，可以不调用 <code>peer->view()</code> 方法，直接设置输出内容：</p>
         <pre><code>//@urlpath(null, api_example)
@@ -688,6 +729,47 @@ peer->view("cms/article/list");
 peer->view("superadmin/system");</code></pre>
         <div class="note-box">
             <strong>🏗️ Best Practice:</strong> Organize view files by business module, with each module having its own directory for easier maintenance and permission control.
+        </div>
+
+        <h2 id="theme_view">Themed Views (theme_view)</h2>
+        <p><code>theme_view</code> is a view rendering method that supports multi-theme / multi-tenant setups. Unlike <code>view</code>, it automatically adds a path prefix based on the <code>themes</code> configuration of the current domain:</p>
+        <pre><code>// view: renders view/front/producthome.html directly
+peer->view("front/producthome");
+
+// theme_view: if the current domain has themes = "saas1",
+// it actually renders view/saas1/front/producthome.html.
+// If no themes is set, it is equivalent to peer->view("front/producthome").
+peer->theme_view("front/producthome");</code></pre>
+        <div class="note-box">
+            <strong>🎨 Themed view:</strong> The declaration of <code>theme_view</code> is in <code>vendor/httpserver/include/httppeer.h</code>. Usage examples:
+        </div>
+        <pre><code>peer->theme_view("front/producthome");
+peer->theme_view("front/productcatalogue");
+peer->theme_view("front/producttopic");
+peer->theme_view("front/productlist");
+peer->theme_view("front/productbrand");
+peer->theme_view("front/productsearch");</code></pre>
+
+        <h3 id="theme_config">Configuration</h3>
+        <p>Add the <code>themes</code> and <code>themes_url</code> settings for the corresponding domain in the domain configuration file:</p>
+        <pre><code>[saas1.example.com]
+themes = saas1              ; Theme directory name, prepended to view paths
+themes_url = /saas1/        ; Static resource URL prefix for the theme</code></pre>
+
+        <h3 id="theme_api">Related APIs</h3>
+        <pre><code>// Get the current domain's theme name
+std::string theme = peer->get_theme();     // Returns "saas1" or ""
+
+// Manually concatenate theme path and then use view (not recommended, only for compatibility)
+std::string viewfile = peer->get_theme();
+if (!viewfile.empty()) viewfile += "/";
+viewfile += "front/productcatalogue";
+peer->view(viewfile);  // Equivalent to peer->theme_view("front/productcatalogue")
+
+// Get the current domain's theme URL prefix (for static assets in templates)
+std::string themeUrl = peer->get_themeurl();  // Returns "/saas1/" or ""</code></pre>
+        <div class="note-box">
+            <strong>🏗️ Use cases:</strong> Serving the same system to multiple tenants (SaaS) with different domains and theme template directories (e.g., <code>view/saas1/</code>, <code>view/saas2/</code>). Controllers use <code>theme_view</code> uniformly without caring about the specific theme name.
         </div>
 
         <h2 id="json_response">JSON Response</h2>
