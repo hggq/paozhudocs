@@ -724,7 +724,7 @@
         }
     </style>
 </head>
-<body>
+<body class="lang-en">
     <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
     
     <div class="docs-wrapper">
@@ -736,8 +736,8 @@
             </div>
 
             <div class="lang-switch">
-                <button class="lang-btn active" onclick="switchLang('zh')">🇨🇳 中文</button>
-                <button class="lang-btn" onclick="switchLang('en')">🇬🇧 English</button>
+                <button class="lang-btn" onclick="switchLang('zh')">🇨🇳 中文</button>
+                <button class="lang-btn active" onclick="switchLang('en')">🇬🇧 English</button>
             </div>
 
             <nav>
@@ -1517,9 +1517,10 @@ make</code></pre>
                 switchLang('en');
             } else if (hashLang === '#chinese' || hashLang === '#zh') {
                 switchLang('zh');
-            } else if (savedLang === 'en') {
-                switchLang('en');
+            } else if (savedLang === 'zh') {
+                switchLang('zh');
             }
+            // 默认英文，无需额外处理
         });
     </script>
 </body>
