@@ -715,17 +715,6 @@ acme_every_num = 5           ; 每次处理几个域名</code></pre>
         💡 <strong>说明</strong>：开启 <code>acme_auto = 1</code> 后，框架会在指定时间检查证书有效期，当剩余天数小于 <code>days_remain</code> 时自动申请新证书。首次申请后会自动保存 EAB 凭证到 <code>acme.conf</code>，后续续期无需重复配置。
     </div>
 
-    <h4>使用 certbot 等 ACME 客户端（Nginx 反向代理场景）</h4>
-    <p>当使用 Nginx 作为反向代理时，也可以使用 certbot 自动获取 Let's Encrypt 免费证书：</p>
-    <pre><code># 安装 certbot
-sudo apt install certbot python3-certbot-nginx
-
-# 自动获取证书并配置 Nginx
-sudo certbot --nginx -d yourdomain.com
-
-# 自动续期（certbot 默认配置定时任务）
-sudo certbot renew --dry-run</code></pre>
-
     <h4>手动配置 certificate_chain_file 和 private_key_file</h4>
     <p>也可以直接在 Paozhu 配置文件中指定证书路径：</p>
     <pre><code>// conf/server.conf — SSL 证书配置
@@ -1293,17 +1282,6 @@ acme_every_num = 5           ; Process how many domains each time</code></pre>
     <div class="tip-box">
         💡 <strong>Note</strong>: When <code>acme_auto = 1</code> is enabled, the framework checks certificate validity at the specified time and automatically applies for a new certificate when remaining days are less than <code>days_remain</code>. After the first application, EAB credentials are automatically saved to <code>acme.conf</code>, and no repeated configuration is needed for subsequent renewals.
     </div>
-
-    <h4>Using ACME Clients like certbot (Nginx Reverse Proxy Scenario)</h4>
-    <p>When using Nginx as a reverse proxy, you can also use certbot to automatically obtain free Let's Encrypt certificates:</p>
-    <pre><code># Install certbot
-sudo apt install certbot python3-certbot-nginx
-
-# Auto-obtain certificate and configure Nginx
-sudo certbot --nginx -d yourdomain.com
-
-# Auto-renewal (certbot configures scheduled tasks by default)
-sudo certbot renew --dry-run</code></pre>
 
     <h4>Manually Configuring certificate_chain_file and private_key_file</h4>
     <p>You can also specify certificate paths directly in the Paozhu configuration:</p>
