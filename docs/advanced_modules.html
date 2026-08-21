@@ -484,10 +484,7 @@ zip.close();</code></pre>
 
     <h3 id="sms-example">使用示例</h3>
     <p>基于 <code>controller/src/test_sendsms.cpp</code> 的示例（阿里云短信）：</p>
-    <pre><code>#include <chrono>
-#include <thread>
-#include <tuple>
-#include "httppeer.h"
+    <pre><code>#include "httppeer.h"
 #include "test_sendsms.h"
 #ifdef ENABLE_SMS
 #include "sms.h"
@@ -521,6 +518,87 @@ std::string testsendsms(std::shared_ptr<httppeer> peer)
 
     <div class="warning-box">
         ⚠️ <strong>安全提示</strong>：AccessKeyId 和 AccessKeySecret 属于敏感信息，请勿硬编码在源码中。建议通过配置文件或环境变量读取。
+    </div>
+
+    <h2 id="email-integration">发送邮件</h2>
+    <p>Paozhu 内置了基于 SMTP 协议的邮件发送模块，支持 <strong>同步发送</strong>（<code>send_email</code>）和 <strong>协程异步发送</strong>（<code>async_send_email</code>）两种方式，均支持 SSL/TLS 加密连接、HTML 正文与附件发送。</p>
+
+    <h3 id="email-sync">同步发送邮件（send_email）</h3>
+    <p>同步发送会在当前线程内阻塞直到整个 SMTP 会话结束，适用于对耗时不敏感、并发量较低的场景。基于 <code>controller/src/testsendmail.cpp</code> 的示例：</p>
+    <pre><code>#include "httppeer.h"
+#include "testsendmail.h"
+#include "send_email.h"
+
+//@urlpath(null,testsendmaildo)
+std::string testsendmaildo(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    httppeer &amp;client = peer-&gt;get_peer();
+
+    send_email s;
+
+    // 以下为发送前的参数配置，请替换为真实的值。
+    s.isssl   = false;        // 是否启用 SSL（若开启请将 port 设为 465）
+    s.smpturl = "smtp.163.com"; // SMTP 服务器地址
+    s.port    = 25;           // SMTP 端口（明文 25/587，SSL 465）
+
+    s.username = "XXX@163.com"; // 邮箱账号（发件人账号）
+    s.password = "XXXXXXX";     // 邮箱密码（网易/腾讯需使用授权码）
+
+    s.replyemail = "XXX@163.com";   // 回复邮箱地址
+    s.fromname   = "web site name"; // 发件人显示名称
+
+    s.toemail = client.post["toemail"].to_string(); // 收件人邮箱
+    s.toname  = client.post["toname"].to_string();  // 收件人显示名称
+
+    s.subject = client.post["subject"].to_string(); // 邮件主题
+    s.content = client.post["msgbody"].to_string(); // 邮件正文（默认 HTML 格式）
+
+    // s.addattachments("会议议程安排.docx"); // 可选：添加附件
+
+    if (s.send()) // 同步发送：阻塞直到发送完成
+    {
+        client &lt;&lt; "&lt;p&gt;send ok&lt;/p&gt;";
+    }
+    else
+    {
+        client &lt;&lt; "&lt;p&gt;" &lt;&lt; s.errormsg &lt;&lt; "&lt;/p&gt;"; // 失败原因
+    }
+    return "";
+}</code></pre>
+    <p>也可以使用带参数的构造函数，一步完成配置：</p>
+    <pre><code>http::send_email mail("smtp.163.com", "user@163.com", "authcode", 25, false);
+mail.fromname   = "网站名称";
+mail.replyemail = "user@163.com";
+mail.toemail    = "someone@example.com";
+mail.toname     = "收件人";
+mail.subject    = "邮件主题";
+mail.content    = "&lt;h1&gt;邮件正文&lt;/h1&gt;"; // 正文（默认 HTML 格式）
+mail.addattachments("/path/to/file.docx"); // 可选：添加附件
+bool ok = mail.send(); // 同步发送
+if (!ok) { std::cout &lt;&lt; mail.errormsg; } // 失败原因</code></pre>
+
+    <h3 id="email-async">协程异步发送邮件（async_send_email）</h3>
+    <p>异步发送基于 ASIO 协程（<code>awaitable</code>），通过 <code>co_await</code> 挂起等待 SMTP 会话完成，不阻塞当前执行线程，适合高并发场景。</p>
+    <pre><code>#include "async_send_email.h"
+
+http::async_send_email mail("smtp.163.com", "user@163.com", "authcode", 25, true);
+mail.fromname   = "网站名称";
+mail.replyemail = "user@163.com";
+mail.toemail    = "someone@example.com";
+mail.toname     = "收件人";
+mail.subject    = "邮件主题";
+mail.content    = "&lt;h1&gt;邮件正文&lt;/h1&gt;";
+mail.addattachments("/path/to/file.docx"); // 可选：添加附件
+
+bool ok = co_await mail.async_send(); // 协程挂起，不阻塞当前线程
+if (!ok) { std::cout &lt;&lt; mail.errormsg; } // 失败原因</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>提示</strong>：<code>async_send_email</code> 内部使用全局 <code>io_context</code>（<code>client_context</code>），无需自行传入；返回的 <code>awaitable&lt;bool&gt;</code> 需在协程（<code>co_await</code>）上下文中使用。
+    </div>
+
+    <div class="warning-box">
+        ⚠️ <strong>安全提示</strong>：邮箱密码属于敏感信息，网易/腾讯等邮箱需开启 SMTP 服务并使用"授权码"而非登录密码，请勿将密码硬编码在源码中。
     </div>
 
     <h2 id="payment-integration">支付集成 <span class="module-tag">ENABLE_WEBPAY</span></h2>
@@ -906,6 +984,87 @@ std::string testsendsms(std::shared_ptr<httppeer> peer)
 
     <div class="warning-box">
         ⚠️ <strong>Security Warning</strong>: AccessKeyId and AccessKeySecret are sensitive credentials. Do not hardcode them in source code. Use configuration files or environment variables instead.
+    </div>
+
+    <h2 id="email-integration">Sending Email</h2>
+    <p>Paozhu includes a built-in SMTP email module supporting both <strong>synchronous</strong> (<code>send_email</code>) and <strong>coroutine-based asynchronous</strong> (<code>async_send_email</code>) sending. Both support SSL/TLS encrypted connections, HTML bodies, and attachments.</p>
+
+    <h3 id="email-sync">Synchronous Email Sending (send_email)</h3>
+    <p>Synchronous sending blocks the current thread until the entire SMTP session completes. It suits scenarios that are not latency-sensitive and have low concurrency. Based on <code>controller/src/testsendmail.cpp</code>:</p>
+    <pre><code>#include "httppeer.h"
+#include "testsendmail.h"
+#include "send_email.h"
+
+//@urlpath(null,testsendmaildo)
+std::string testsendmaildo(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    httppeer &amp;client = peer-&gt;get_peer();
+
+    send_email s;
+
+    // Configure these parameters with real values before sending.
+    s.isssl   = false;          // enable SSL or not (if enabled, set port to 465)
+    s.smpturl = "smtp.163.com"; // SMTP server address
+    s.port    = 25;             // SMTP port (plain 25/587, SSL 465)
+
+    s.username = "XXX@163.com"; // mailbox account (sender account)
+    s.password = "XXXXXXX";     // mailbox password (NetEase/Tencent require an auth code)
+
+    s.replyemail = "XXX@163.com";   // reply-to email address
+    s.fromname   = "web site name"; // sender display name
+
+    s.toemail = client.post["toemail"].to_string(); // recipient email
+    s.toname  = client.post["toname"].to_string();  // recipient display name
+
+    s.subject = client.post["subject"].to_string(); // email subject
+    s.content = client.post["msgbody"].to_string(); // email body (HTML by default)
+
+    // s.addattachments("agenda.docx"); // optional: add an attachment
+
+    if (s.send()) // synchronous send: blocks until finished
+    {
+        client &lt;&lt; "&lt;p&gt;send ok&lt;/p&gt;";
+    }
+    else
+    {
+        client &lt;&lt; "&lt;p&gt;" &lt;&lt; s.errormsg &lt;&lt; "&lt;/p&gt;"; // failure reason
+    }
+    return "";
+}</code></pre>
+    <p>You can also use the parameterized constructor to configure everything in one step:</p>
+    <pre><code>http::send_email mail("smtp.163.com", "user@163.com", "authcode", 25, false);
+mail.fromname   = "Site Name";
+mail.replyemail = "user@163.com";
+mail.toemail    = "someone@example.com";
+mail.toname     = "Recipient";
+mail.subject    = "Email Subject";
+mail.content    = "&lt;h1&gt;Email Body&lt;/h1&gt;"; // body (HTML by default)
+mail.addattachments("/path/to/file.docx"); // optional: add an attachment
+bool ok = mail.send(); // synchronous send
+if (!ok) { std::cout &lt;&lt; mail.errormsg; } // failure reason</code></pre>
+
+    <h3 id="email-async">Coroutine Asynchronous Sending (async_send_email)</h3>
+    <p>Asynchronous sending is built on ASIO coroutines (<code>awaitable</code>). It suspends via <code>co_await</code> until the SMTP session finishes, without blocking the current thread, making it ideal for high-concurrency scenarios.</p>
+    <pre><code>#include "async_send_email.h"
+
+http::async_send_email mail("smtp.163.com", "user@163.com", "authcode", 25, true);
+mail.fromname   = "Site Name";
+mail.replyemail = "user@163.com";
+mail.toemail    = "someone@example.com";
+mail.toname     = "Recipient";
+mail.subject    = "Email Subject";
+mail.content    = "&lt;h1&gt;Email Body&lt;/h1&gt;";
+mail.addattachments("/path/to/file.docx"); // optional: add an attachment
+
+bool ok = co_await mail.async_send(); // suspend coroutine, does not block the thread
+if (!ok) { std::cout &lt;&lt; mail.errormsg; } // failure reason</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>Tip</strong>: <code>async_send_email</code> internally uses the global <code>io_context</code> (<code>client_context</code>), so you don't need to pass one. The returned <code>awaitable&lt;bool&gt;</code> must be used inside a coroutine (<code>co_await</code>) context.
+    </div>
+
+    <div class="warning-box">
+        ⚠️ <strong>Security Warning</strong>: Mailbox passwords are sensitive. NetEase/Tencent mailboxes require SMTP to be enabled and an "auth code" rather than the login password. Do not hardcode passwords in source code.
     </div>
 
     <h2 id="payment-integration">Payment Integration <span class="module-tag">ENABLE_WEBPAY</span></h2>
