@@ -354,11 +354,11 @@
     </div>
 
     <h2 id="orm-overview">ORM 概述</h2>
-    <p>Paozhu 内置的 ORM 系统，自研解析数据库协议，方便支持协程，支持 <code>MySQL</code> 和 <code>PostgreSQL</code> 数据库。通过配置文件 <code>orm.conf</code> 进行多数据源管理。</p>
+    <p>Paozhu 内置的 ORM 系统，自研解析数据库协议，方便支持协程，支持 <code>MySQL</code> <code>PostgreSQL</code> 和 <code>SQLite</code> 数据库。通过配置文件 <code>orm.conf</code> 进行多数据源管理。</p>
 
     <h3 id="built-in-client">内置数据库客户端</h3>
     <ul>
-        <li>采用<strong>自研数据库连接协议</strong>，支持 MySQL 和 PostgreSQL，无需额外安装 MySQL Connector/C++ 或 libpq</li>
+        <li>采用<strong>自研数据库连接协议</strong>，支持 MySQL PostgreSQL 和 SQLite，无需额外安装 MySQL Connector/C++ 或 libpq</li>
         <li>支持 <strong>MySQL 8.0.4 以上版本</strong>（支持 <code>caching_sha2_password</code> 认证插件）</li>
         <li>支持 <strong>MariaDB 12.1+</strong>（12.1 版本开始支持 <code>caching_sha2_password</code> 认证插件，与 MySQL 8.0 默认认证方式兼容）</li>
         <li>自研协议同时支持 <strong>C++20 协程（异步）</strong>和<strong>同步</strong>两种调用方式，可在同一项目中混用</li>
@@ -1150,11 +1150,11 @@ if (ulink->begin_commit())
     </div>
 
     <h2 id="orm-overview">ORM Overview</h2>
-    <p>Paozhu's built-in ORM system, with self-developed database protocol parsing, facilitates support for coroutines, <code>MySQL</code> and <code>PostgreSQL</code> databases. Multiple data sources can be managed through the <code>orm.conf</code> configuration file.</p>
+    <p>Paozhu's built-in ORM system, with self-developed database protocol parsing, facilitates support for coroutines, <code>MySQL</code> <code>PostgreSQL</code> and <code>SQLite</code> databases. Multiple data sources can be managed through the <code>orm.conf</code> configuration file.</p>
 
     <h3 id="built-in-client">Built-in Database Client</h3>
     <ul>
-        <li>Uses a <strong>self-developed database connection protocol</strong> supporting MySQL and PostgreSQL — no need to install MySQL Connector/C++ or libpq separately</li>
+        <li>Uses a <strong>self-developed database connection protocol</strong> supporting MySQL PostgreSQL and SQLite — no need to install MySQL Connector/C++ or libpq separately</li>
         <li>Supports <strong>MySQL 8.0.4+</strong> (with <code>caching_sha2_password</code> authentication plugin)</li>
         <li>Supports <strong>MariaDB 12.1+</strong> (version 12.1+ supports <code>caching_sha2_password</code> authentication plugin, compatible with MySQL 8.0 default authentication)</li>
         <li>The self-developed protocol supports both <strong>C++20 coroutines (async)</strong> and <strong>synchronous</strong> invocation modes, which can be mixed in the same project</li>
