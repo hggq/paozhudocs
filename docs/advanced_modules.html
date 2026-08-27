@@ -802,6 +802,100 @@ std::string wx_get_phone(std::shared_ptr<httppeer> peer)
         <li><strong>接口频率限制</strong>：注意各接口的调用频率限制，合理缓存数据</li>
     </ul>
 
+    <h2 id="charts-integration">SVG 图表生成 <span class="module-tag">ENABLE_CHART</span></h2>
+    <p>Paozhu 内置 <code>pzcharts</code> SVG 图表生成库，纯 C++ 实现，无需任何前端依赖即可生成 17 种类型的 SVG 图表。该库算法提取自 ECharts 6.1.0，支持在控制器中直接输出 SVG 图像到浏览器。</p>
+
+    <h3 id="charts-enable">启用模块</h3>
+    <p>在编译时添加 <code>-DENABLE_CHART=ON</code> 选项：</p>
+    <pre><code>cmake .. -DENABLE_CHART=ON</code></pre>
+
+    <h3 id="charts-classes">全部图表类型与类名</h3>
+    <p>以下是 <code>pzcharts</code> 库支持的所有图表类型及其对应的 C++ 类名：</p>
+    <table>
+        <thead>
+            <tr>
+                <th>序号</th>
+                <th>图表名称（中文）</th>
+                <th>Chart Type (English)</th>
+                <th>C++ 类名</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>1</td><td>基础折线图</td><td>Basic Line Chart</td><td><code>SvgLineChart</code></td></tr>
+            <tr><td>2</td><td>基础平滑折线图</td><td>Basic Smooth Line Chart</td><td><code>SvgSmoothLineChart</code></td></tr>
+            <tr><td>3</td><td>基础柱状图</td><td>Basic Bar Chart</td><td><code>SvgBarChart</code></td></tr>
+            <tr><td>4</td><td>水平条形图</td><td>Horizontal Bar Chart</td><td><code>SvgHorizontalBarChart</code></td></tr>
+            <tr><td>5</td><td>基础散点图</td><td>Basic Scatter Chart</td><td><code>SvgScatterChart</code></td></tr>
+            <tr><td>6</td><td>环形图 / 饼图</td><td>Pie / Donut Chart</td><td><code>SvgPieChart</code></td></tr>
+            <tr><td>7</td><td>基础雷达图</td><td>Basic Radar Chart</td><td><code>SvgRadarChart</code></td></tr>
+            <tr><td>8</td><td>仪表盘（基础/进度/阶段速度/等级）</td><td>Gauge Chart (4 types)</td><td><code>SvgGaugeChart</code></td></tr>
+            <tr><td>9</td><td>漏斗图</td><td>Funnel Chart</td><td><code>SvgFunnelChart</code></td></tr>
+            <tr><td>10</td><td>基础 K 线图</td><td>Basic Candlestick Chart</td><td><code>SvgCandlestickChart</code></td></tr>
+            <tr><td>11</td><td>交错正负轴标签图</td><td>Alternating Labels Bar Chart</td><td><code>SvgNegativeBarChart</code></td></tr>
+            <tr><td>12</td><td>核密度估计图</td><td>Kernel Density Estimation Chart</td><td><code>SvgDensityChart</code></td></tr>
+            <tr><td>13</td><td>九宫格图</td><td>3×3 Grid Chart</td><td><code>SvgGridChart</code></td></tr>
+            <tr><td>14</td><td>乔哈里视窗图</td><td>Johari Window Chart</td><td><code>SvgJohariWindowChart</code></td></tr>
+            <tr><td>15</td><td>热力图</td><td>Heatmap Chart</td><td><code>SvgHeatmapChart</code></td></tr>
+            <tr><td>16</td><td>回归线图</td><td>Regression Chart</td><td><code>SvgRegressionChart</code></td></tr>
+            <tr><td>17</td><td>聚类散点图</td><td>Clustering Scatter Chart</td><td><code>SvgClusteringChart</code></td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="charts-stats">统计分析类</h3>
+    <p><code>pzcharts</code> 还提供了以下统计分析辅助类：</p>
+    <table>
+        <thead>
+            <tr>
+                <th>类名</th>
+                <th>功能说明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><code>LinearRegression</code></td><td>线性/指数/对数/多项式回归分析</td></tr>
+            <tr><td><code>ClusteringProcess</code></td><td>K-Means 聚类算法</td></tr>
+            <tr><td><code>KernelDensity</code></td><td>核密度估计</td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="charts-example-line">示例：基础折线图</h3>
+    <p>基于 <code>controller/src/test_svgchart.cpp</code> 的示例：</p>
+    <pre><code>#ifdef ENABLE_CHART
+#include "svg_chart.h"
+#endif
+
+//@urlpath(null,test_svgchart)
+std::string test_svgchart(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+#ifdef ENABLE_CHART
+    SvgLineChart chart(800, 500);
+    chart.setTitle("Basic Line Chart");
+    chart.setXLabels({"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"});
+    chart.addSeries({820, 932, 901, 934, 1290, 1330, 1320}, "Sales");
+    chart.addSeries({620, 732, 701, 634, 890, 930, 920}, "Orders");
+    client << chart.render();
+#else
+    client << "<p>Please: cmake .. -DENABLE_CHART=ON </p>";
+#endif
+    return "";
+}</code></pre>
+
+    <h3 id="charts-example-bar">示例：基础柱状图</h3>
+    <pre><code>#ifdef ENABLE_CHART
+#include "svg_chart.h"
+#endif
+
+SvgBarChart chart(800, 500);
+chart.setTitle("Basic Bar Chart");
+chart.setXLabels({"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"});
+chart.addSeries({120, 200, 150, 80, 70, 110, 130}, "Sales");
+chart.addSeries({80, 120, 100, 60, 50, 80, 90}, "Orders");
+client << chart.render();</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>提示</strong>：所有图表类均继承自 <code>SvgChart</code> 基类，使用统一的 <code>render()</code> 方法生成 SVG 字符串。生成的 SVG 可直接通过 <code>client <<</code> 输出到浏览器，也可以保存为文件。
+    </div>
+
     <a href="index.html" class="back-to-index">← 返回首页</a>
     `;
 
@@ -1267,6 +1361,99 @@ std::string wx_get_phone(std::shared_ptr<httppeer> peer)
         <li><strong>Payment signature</strong>: Use MD5 or RSA signing to secure payment requests</li>
         <li><strong>Rate limits</strong>: Be aware of rate limits for each API and implement appropriate caching</li>
     </ul>
+
+    <h2 id="charts-integration">SVG Chart Generation <span class="module-tag">ENABLE_CHART</span></h2>
+    <p>Paozhu includes the <code>pzcharts</code> SVG chart generation library. Pure C++ implementation with no frontend dependencies, supporting 17 chart types. The library algorithms are extracted from ECharts 6.1.0, allowing direct output of SVG images to the browser from controllers.</p>
+
+    <h3 id="charts-enable">Enabling the Module</h3>
+    <p>Add the <code>-DENABLE_CHART=ON</code> flag during compilation:</p>
+    <pre><code>cmake .. -DENABLE_CHART=ON</code></pre>
+
+    <h3 id="charts-classes">All Chart Types and Class Names</h3>
+    <p>Here are all chart types supported by the <code>pzcharts</code> library and their corresponding C++ class names:</p>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Chart Type</th>
+                <th>C++ Class Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>1</td><td>Basic Line Chart</td><td><code>SvgLineChart</code></td></tr>
+            <tr><td>2</td><td>Basic Smooth Line Chart</td><td><code>SvgSmoothLineChart</code></td></tr>
+            <tr><td>3</td><td>Basic Bar Chart</td><td><code>SvgBarChart</code></td></tr>
+            <tr><td>4</td><td>Horizontal Bar Chart</td><td><code>SvgHorizontalBarChart</code></td></tr>
+            <tr><td>5</td><td>Basic Scatter Chart</td><td><code>SvgScatterChart</code></td></tr>
+            <tr><td>6</td><td>Pie / Donut Chart</td><td><code>SvgPieChart</code></td></tr>
+            <tr><td>7</td><td>Basic Radar Chart</td><td><code>SvgRadarChart</code></td></tr>
+            <tr><td>8</td><td>Gauge Chart (4 types: Basic / Progress / Stage Speed / Level)</td><td><code>SvgGaugeChart</code></td></tr>
+            <tr><td>9</td><td>Funnel Chart</td><td><code>SvgFunnelChart</code></td></tr>
+            <tr><td>10</td><td>Basic Candlestick Chart</td><td><code>SvgCandlestickChart</code></td></tr>
+            <tr><td>11</td><td>Alternating Labels Bar Chart</td><td><code>SvgNegativeBarChart</code></td></tr>
+            <tr><td>12</td><td>Kernel Density Estimation Chart</td><td><code>SvgDensityChart</code></td></tr>
+            <tr><td>13</td><td>3×3 Grid Chart</td><td><code>SvgGridChart</code></td></tr>
+            <tr><td>14</td><td>Johari Window Chart</td><td><code>SvgJohariWindowChart</code></td></tr>
+            <tr><td>15</td><td>Heatmap Chart</td><td><code>SvgHeatmapChart</code></td></tr>
+            <tr><td>16</td><td>Regression Chart</td><td><code>SvgRegressionChart</code></td></tr>
+            <tr><td>17</td><td>Clustering Scatter Chart</td><td><code>SvgClusteringChart</code></td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="charts-stats">Statistics Analysis Classes</h3>
+    <p>The <code>pzcharts</code> library also provides the following statistics helper classes:</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Class Name</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><code>LinearRegression</code></td><td>Linear / Exponential / Logarithmic / Polynomial regression analysis</td></tr>
+            <tr><td><code>ClusteringProcess</code></td><td>K-Means clustering algorithm</td></tr>
+            <tr><td><code>KernelDensity</code></td><td>Kernel density estimation</td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="charts-example-line">Example: Basic Line Chart</h3>
+    <p>Based on <code>controller/src/test_svgchart.cpp</code>:</p>
+    <pre><code>#ifdef ENABLE_CHART
+#include "svg_chart.h"
+#endif
+
+//@urlpath(null,test_svgchart)
+std::string test_svgchart(std::shared_ptr<httppeer> peer)
+{
+    httppeer &client = peer->get_peer();
+#ifdef ENABLE_CHART
+    SvgLineChart chart(800, 500);
+    chart.setTitle("Basic Line Chart");
+    chart.setXLabels({"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"});
+    chart.addSeries({820, 932, 901, 934, 1290, 1330, 1320}, "Sales");
+    chart.addSeries({620, 732, 701, 634, 890, 930, 920}, "Orders");
+    client << chart.render();
+#else
+    client << "<p>Please: cmake .. -DENABLE_CHART=ON </p>";
+#endif
+    return "";
+}</code></pre>
+
+    <h3 id="charts-example-bar">Example: Basic Bar Chart</h3>
+    <pre><code>#ifdef ENABLE_CHART
+#include "svg_chart.h"
+#endif
+
+SvgBarChart chart(800, 500);
+chart.setTitle("Basic Bar Chart");
+chart.setXLabels({"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"});
+chart.addSeries({120, 200, 150, 80, 70, 110, 130}, "Sales");
+chart.addSeries({80, 120, 100, 60, 50, 80, 90}, "Orders");
+client << chart.render();</code></pre>
+
+    <div class="tip-box">
+        💡 <strong>Tip</strong>: All chart classes inherit from the <code>SvgChart</code> base class, using the unified <code>render()</code> method to generate SVG strings. The generated SVG can be output directly to the browser via <code>client <<</code> or saved to a file.
+    </div>
 
     <a href="index.html" class="back-to-index">← Back to Home</a>
     `;

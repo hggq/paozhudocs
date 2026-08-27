@@ -1272,6 +1272,76 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                             <span><span class="zh">PDF / Excel / Word</span><span class="en">PDF / Excel / Word</span></span>
                         </div>
                     </div>
+                    <div class="feature">
+                        <div class="feature-icon">📊</div>
+                        <div class="feature-text">
+                            <strong><span class="zh">SVG 图表</span><span class="en">SVG Charts</span></strong>
+                            <span><span class="zh">17 种内置图表类型</span><span class="en">17 built-in chart types</span></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SVG Charts Section -->
+            <section class="section">
+                <h2 class="section-title">
+                    <span class="zh">📊 SVG 图表模块</span>
+                    <span class="en">📊 SVG Charts Module</span>
+                </h2>
+                <p class="section-desc">
+                    <span class="zh">Paozhu 内置强大的 SVG 图表生成库 <code>pzcharts</code>，支持 17 种图表类型，纯 C++ 实现，无需任何前端依赖</span>
+                    <span class="en">Paozhu includes the powerful <code>pzcharts</code> SVG chart library with 17 chart types, pure C++ implementation with no frontend dependencies</span>
+                </p>
+
+                <div class="code-showcase">
+                    <p class="code-hint" style="margin-top: 0; margin-bottom: 0.5rem; font-weight: 600;">
+                        <span class="zh">示例 1：基础折线图 (Basic Line Chart)</span>
+                        <span class="en">Example 1: Basic Line Chart</span>
+                    </p>
+<pre><span class="preprocessor">#ifdef</span> <span class="type">ENABLE_CHART</span>
+<span class="preprocessor">#include</span> <span class="string">"svg_chart.h"</span>
+<span class="preprocessor">#endif</span>
+
+<span class="comment">//@urlpath(null,test_svgchart)</span>
+<span class="type">std</span>::<span class="type">string</span> <span class="function">test_svgchart</span>(<span class="type">std</span>::<span class="type">shared_ptr</span><httppeer> peer)
+{
+    httppeer &client = peer-><span class="function">get_peer</span>();
+<span class="preprocessor">#ifdef</span> <span class="type">ENABLE_CHART</span>
+    <span class="type">SvgLineChart</span> <span class="function">chart</span>(<span class="number">800</span>, <span class="number">500</span>);
+    chart.<span class="function">setTitle</span>(<span class="string">"Basic Line Chart"</span>);
+    chart.<span class="function">setXLabels</span>({<span class="string">"Mon"</span>, <span class="string">"Tue"</span>, <span class="string">"Wed"</span>, <span class="string">"Thu"</span>, <span class="string">"Fri"</span>, <span class="string">"Sat"</span>, <span class="string">"Sun"</span>});
+    chart.<span class="function">addSeries</span>({<span class="number">820</span>, <span class="number">932</span>, <span class="number">901</span>, <span class="number">934</span>, <span class="number">1290</span>, <span class="number">1330</span>, <span class="number">1320</span>}, <span class="string">"Sales"</span>);
+    chart.<span class="function">addSeries</span>({<span class="number">620</span>, <span class="number">732</span>, <span class="number">701</span>, <span class="number">634</span>, <span class="number">890</span>, <span class="number">930</span>, <span class="number">920</span>}, <span class="string">"Orders"</span>);
+    client << chart.<span class="function">render</span>();
+<span class="preprocessor">#endif</span>
+    <span class="keyword">return</span> <span class="string">""</span>;
+}</pre>
+                </div>
+
+                <div class="code-showcase">
+                    <p class="code-hint" style="margin-top: 0; margin-bottom: 0.5rem; font-weight: 600;">
+                        <span class="zh">示例 2：基础柱状图 (Basic Bar Chart)</span>
+                        <span class="en">Example 2: Basic Bar Chart</span>
+                    </p>
+<pre><span class="preprocessor">#ifdef</span> <span class="type">ENABLE_CHART</span>
+<span class="preprocessor">#include</span> <span class="string">"svg_chart.h"</span>
+<span class="preprocessor">#endif</span>
+
+<span class="type">SvgBarChart</span> <span class="function">chart</span>(<span class="number">800</span>, <span class="number">500</span>);
+chart.<span class="function">setTitle</span>(<span class="string">"Basic Bar Chart"</span>);
+chart.<span class="function">setXLabels</span>({<span class="string">"Mon"</span>, <span class="string">"Tue"</span>, <span class="string">"Wed"</span>, <span class="string">"Thu"</span>, <span class="string">"Fri"</span>, <span class="string">"Sat"</span>, <span class="string">"Sun"</span>});
+chart.<span class="function">addSeries</span>({<span class="number">120</span>, <span class="number">200</span>, <span class="number">150</span>, <span class="number">80</span>, <span class="number">70</span>, <span class="number">110</span>, <span class="number">130</span>}, <span class="string">"Sales"</span>);
+chart.<span class="function">addSeries</span>({<span class="number">80</span>, <span class="number">120</span>, <span class="number">100</span>, <span class="number">60</span>, <span class="number">50</span>, <span class="number">80</span>, <span class="number">90</span>}, <span class="string">"Orders"</span>);
+client << chart.<span class="function">render</span>();</pre>
+                </div>
+
+                <div class="code-hint" style="margin-top: 1rem; font-size: 0.9rem; color: #64748b;">
+                    <span class="zh">💡 编译时添加 <code>-DENABLE_CHART=ON</code> 即可启用图表模块</span>
+                    <span class="en">💡 Add <code>-DENABLE_CHART=ON</code> during compilation to enable the chart module</span>
+                </div>
+                <div class="code-hint" style="margin-top: 0.5rem; font-size: 0.9rem; color: #64748b;">
+                    <span class="zh">📚 查看全部 17 种图表类型，请访问 <a href="advanced_modules.html" style="color: #2563eb; text-decoration: underline;">高级模块 →</a></span>
+                    <span class="en">📚 For all 17 chart types, visit the <a href="advanced_modules.html#english" style="color: #2563eb; text-decoration: underline;">Advanced Modules →</a></span>
                 </div>
             </section>
 
