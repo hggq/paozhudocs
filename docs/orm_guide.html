@@ -354,7 +354,7 @@
     </div>
 
     <h2 id="orm-overview">ORM 概述</h2>
-    <p>Paozhu 内置的 ORM 系统，自研解析数据库协议，方便支持协程，支持 <code>MySQL</code> <code>PostgreSQL</code> 和 <code>SQLite</code> 数据库。通过配置文件 <code>orm.conf</code> 进行多数据源管理。</p>
+    <p>Paozhu 内置的 ORM 系统，自研解析数据库协议，方便支持协程，支持 <code>MySQL</code> <code>PostgreSQL</code> 和 <code>SQLite</code> 数据库。通过配置文件 <code>conf/orm.conf</code> 进行多数据源管理。</p>
 
     <h3 id="built-in-client">内置数据库客户端</h3>
     <ul>
@@ -445,7 +445,7 @@ sslverify = ON
 sslhost  = db.example.com</code></pre>
 
     <h2 id="create-model">创建模型</h2>
-    <p>Paozhu 使用<strong>命令行工具自动生成</strong> ORM 模型文件，无需手动编写。通过 <code>paozhu_cli orm</code> 命令，根据 <code>orm.conf</code> 中的配置标签自动生成所有表的模型。</p>
+    <p>Paozhu 使用<strong>命令行工具自动生成</strong> ORM 模型文件，无需手动编写。通过 <code>paozhu_cli orm</code> 命令，根据 <code>conf/orm.conf</code> 中的配置标签自动生成所有表的模型。</p>
 
     <h3 id="cli-generate">使用 CLI 工具生成模型</h3>
     <p>首先确保 <code>orm.conf</code> 中已配置好数据库连接标签（如 <code>[cms]</code>、<code>[docs]</code>、<code>[ph]</code>），然后运行：</p>
@@ -1117,6 +1117,7 @@ if (ulink->begin_commit())
     </div>
 
     <h2 id="db-migration">数据库迁移</h2>
+    <p>数据库之间迁移（ MySQL <=> PostgreSQL <=> SQLite）</p>
     <p>使用 CLI 工具在数据库类型之间迁移数据（如 MySQL/CMS 迁移到 PostgreSQL），目标库的表会被自动创建：</p>
     <pre><code># 从 cms 迁移到 pg
 ./bin/paozhu_cli dbconver cms pg
@@ -1150,7 +1151,7 @@ if (ulink->begin_commit())
     </div>
 
     <h2 id="orm-overview">ORM Overview</h2>
-    <p>Paozhu's built-in ORM system, with self-developed database protocol parsing, facilitates support for coroutines, <code>MySQL</code> <code>PostgreSQL</code> and <code>SQLite</code> databases. Multiple data sources can be managed through the <code>orm.conf</code> configuration file.</p>
+    <p>Paozhu's built-in ORM system, with self-developed database protocol parsing, facilitates support for coroutines, <code>MySQL</code> <code>PostgreSQL</code> and <code>SQLite</code> databases. Multiple data sources can be managed through the <code>conf/orm.conf</code> configuration file.</p>
 
     <h3 id="built-in-client">Built-in Database Client</h3>
     <ul>
@@ -1862,6 +1863,7 @@ if (ulink->begin_commit())
     </div>
 
     <h2 id="db-migration">Database Migration</h2>
+    <p>Migration between databases (MySQL <=> PostgreSQL <=> SQLite)</p>
     <p>Use the CLI tool to migrate data between database types (e.g., from MySQL/CMS to PostgreSQL). Target tables are created automatically:</p>
     <pre><code># Migrate from cms to pg
 ./bin/paozhu_cli dbconver cms pg
