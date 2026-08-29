@@ -658,7 +658,7 @@ model.limit(5, 10).fetch();  // 跳过5条，取10条</code></pre>
     <pre><code>// 聚合函数使用自定义结构体
 namespace orm::cust
 {
-    struct SumStruct : orm::Base<SumStruct>
+    struct SumStruct : orm::Base&#60;SumStruct&#62;
     {
         long long total;
         ORM_NAMES(total);
@@ -919,7 +919,7 @@ asio::awaitable<std::string> techempowercached_db(std::shared_ptr<httppeer> peer
 // 1. 定义返回结果结构体
 namespace orm::cust
 {
-    struct LocalusersqlStruct : orm::Base<LocalusersqlStruct>
+    struct LocalusersqlStruct : orm::Base&#60;LocalusersqlStruct&#62;
     {
         unsigned int adminid;
         std::string name;
@@ -992,7 +992,7 @@ if (is_begin)
     <pre><code>// 定义返回结果结构体
 namespace orm::cust
 {
-    struct UserStruct : orm::Base<UserStruct>
+    struct UserStruct : orm::Base&#60;UserStruct&#62;
     {
         unsigned int adminid;
         std::string name;
@@ -1665,7 +1665,7 @@ asio::awaitable<std::string> techempowercached_db(std::shared_ptr<httppeer> peer
 // 1. Define the result structure
 namespace orm::cust
 {
-    struct LocalusersqlStruct : orm::Base<LocalusersqlStruct>
+    struct LocalusersqlStruct : orm::Base&#60;LocalusersqlStruct&#62;
     {
         unsigned int adminid;
         std::string name;
@@ -1738,7 +1738,7 @@ if (is_begin)
     <pre><code>// Define the result structure
 namespace orm::cust
 {
-    struct UserStruct : orm::Base<UserStruct>
+    struct UserStruct : orm::Base&#60;UserStruct&#62;
     {
         unsigned int adminid;
         std::string name;
