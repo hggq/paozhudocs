@@ -981,10 +981,10 @@
 <span class="keyword">namespace</span> <span class="type">http</span>
 {
 <span class="comment">//@urlpath(null,hello)</span>
-<span class="type">std</span>::<span class="type">string</span> <span class="function">testhello</span>(<span class="type">std</span>::<span class="type">shared_ptr</span><httppeer> peer)
+<span class="type">std</span>::<span class="type">string</span> <span class="function">testhello</span>(<span class="type">std</span>::<span class="type">shared_ptr</span>&#60;httppeer&#62; peer)
 {
-    httppeer &client = peer-><span class="function">get_peer</span>();
-    client << <span class="string">" Hello world! Paozhu c++ web framework "</span>;
+    httppeer &client = peer-&#62;<span class="function">get_peer</span>();
+    client &#60;&#60; <span class="string">" Hello world! Paozhu c++ web framework "</span>;
     <span class="keyword">return</span> <span class="string">""</span>;
 }
 }// <span class="comment">namespace http</span></pre>

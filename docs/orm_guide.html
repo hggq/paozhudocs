@@ -563,8 +563,8 @@ articles.whereIn("aid", aid_sql_str).fetch();</code></pre>
 
     <h3 id="query-operators">运算符查询</h3>
     <pre><code>// 支持大于、小于等运算符
-articles.where("addtime", ">", lastweek_time).fetch();
-articles.where("readnum", "<", 100).fetch();
+articles.where("addtime", "&#62;", lastweek_time).fetch();
+articles.where("readnum", "&#60;", 100).fetch();
 articles.where("isopen", "!=", 0).fetch();</code></pre>
 
     <h2 id="insert-data">插入数据</h2>
@@ -579,7 +579,7 @@ articles.setContent("内容");
 
 // save() 返回 [影响行数, 自增ID]
 auto[effectnum, last_id] = articles.save();
-if (effectnum > 0)
+if (effectnum &#62; 0)
 {
     int new_id = articles.getAid();  // 获取新记录ID
     client.goto_url("/cms/list", 3, "添加成功");
@@ -634,10 +634,10 @@ articles.whereIn("aid", aid_sql_str).remove();</code></pre>
 model.whereLike("title", "keyword").fetch();</code></pre>
 
     <h3 id="chain-operator">运算符查询</h3>
-    <pre><code>// 大于 >
+    <pre><code>// 大于 &#62;
 model.whereBT("price", 100).fetch();
 
-// 大于等于 >=
+// 大于等于 &#62;=
 model.whereBE("price", 100).fetch();
 
 // 直接使用运算符
@@ -704,7 +704,7 @@ unsigned int pk = model.getPK();</code></pre>
 model.where("userid", 1).fetch();
 for (auto &record : model.record)
 {
-    std::cout << record.aid << ": " << record.title << std::endl;
+    std::cout &#60;&#60; record.aid &#60;&#60; ": " &#60;&#60; record.title &#60;&#60; std::endl;
 }</code></pre>
 
     <h3 id="access-data">直接访问 data 结构</h3>
@@ -740,7 +740,7 @@ model.save();</code></pre>
     <pre><code>// 在协程中使用异步 ORM
 #include "orm.h"
 
-asio::awaitable<void> handle_request()
+asio::awaitable&#60;void&#62; handle_request()
 {
     auto model = orm::cms::Article();
     
@@ -759,33 +759,33 @@ asio::awaitable<void> handle_request()
     <h4>异步查询单条记录</h4>
     <pre><code>// 随机查询一条 World 记录
 //@urlpath(null,db)
-asio::awaitable<std::string> techempowerdb(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowerdb(std::shared_ptr&#60;httppeer&#62; peer)
 {
-    peer->type("application/json; charset=UTF-8");
+    peer-&#62;type("application/json; charset=UTF-8");
     auto myworld = orm::World();
     unsigned int rd_num = rand_range(1, 10000);
     myworld.where("id", rd_num);
     myworld.limit(1);
     co_await myworld.async_fetch_one();  // 异步查询单条
     
-    peer->output = myworld.data_tojson();
+    peer-&#62;output = myworld.data_tojson();
     co_return "";
 }</code></pre>
 
     <h4>异步批量查询（锁定连接复用）</h4>
     <pre><code>// 多次查询时锁定连接，避免重复连接开销
 //@urlpath(null,queries)
-asio::awaitable<std::string> techempowerqueries(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowerqueries(std::shared_ptr&#60;httppeer&#62; peer)
 {
-    unsigned int get_num = peer->get["queries"].to_int();
+    unsigned int get_num = peer-&#62;get["queries"].to_int();
     if (get_num == 0) get_num = 1;
-    else if (get_num > 500) get_num = 500;
+    else if (get_num &#62; 500) get_num = 500;
     
     auto myworld = orm::World();
     myworld.record.reserve(get_num);
     myworld.lock_conn();  // 锁定连接
     
-    for (unsigned int i = 0; i < get_num; i++)
+    for (unsigned int i = 0; i &#60; get_num; i++)
     {
         myworld.wheresql.clear();
         unsigned int rd_num = rand_range(1, 10000);
@@ -794,14 +794,14 @@ asio::awaitable<std::string> techempowerqueries(std::shared_ptr<httppeer> peer)
     }
     
     myworld.unlock_conn();  // 解锁连接
-    peer->output = myworld.to_json();
+    peer-&#62;output = myworld.to_json();
     co_return "";
 }</code></pre>
 
     <h4>异步查询所有记录</h4>
     <pre><code>// 查询所有 Fortunes 并排序
 //@urlpath(null,fortunes)
-asio::awaitable<std::string> techempowerfortunes(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowerfortunes(std::shared_ptr&#60;httppeer&#62; peer)
 {
     auto myfortune = orm::Fortune();
     co_await myfortune.async_fetch();  // 异步查询所有
@@ -813,43 +813,43 @@ asio::awaitable<std::string> techempowerfortunes(std::shared_ptr<httppeer> peer)
     // 排序
     std::sort(myfortune.record.begin(), myfortune.record.end(), 
               [](const auto &lhs, const auto &rhs) {
-                  return lhs.message < rhs.message;
+                  return lhs.message &#60; rhs.message;
               });
     
     // 输出到视图
-    peer->val["list"].set_array();
+    peer-&#62;val["list"].set_array();
     for (auto &record : myfortune.record)
     {
         obj_val item;
         item["id"] = record.id;
         item["message"] = html_encode(record.message);
-        peer->val["list"].push(item);
+        peer-&#62;val["list"].push(item);
     }
-    peer->view("techempower/fortunes");
+    peer-&#62;view("techempower/fortunes");
     co_return "";
 }</code></pre>
 
     <h4>异步更新操作</h4>
     <pre><code>// 批量更新随机数
 //@urlpath(null,updates)
-asio::awaitable<std::string> techempowerupdates(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowerupdates(std::shared_ptr&#60;httppeer&#62; peer)
 {
-    unsigned int get_num = peer->get["queries"].to_int();
+    unsigned int get_num = peer-&#62;get["queries"].to_int();
     if (get_num == 0) get_num = 1;
-    else if (get_num > 500) get_num = 500;
+    else if (get_num &#62; 500) get_num = 500;
     
     auto myworld = orm::World();
     myworld.record.clear();
     myworld.record.reserve(get_num);
     myworld.lock_conn();  // 锁定连接
     
-    for (unsigned int i = 0; i < get_num; i++)
+    for (unsigned int i = 0; i &#60; get_num; i++)
     {
         myworld.wheresql.clear();
         myworld.where("id", rand_range(1, 10000));
         co_await myworld.async_fetch_append();
         
-        if (myworld.effect() > 0)
+        if (myworld.effect() &#62; 0)
         {
             unsigned int j = myworld.record.size() - 1;
             myworld.data.randomnumber = rand_range(1, 10000);
@@ -859,29 +859,29 @@ asio::awaitable<std::string> techempowerupdates(std::shared_ptr<httppeer> peer)
     }
     
     myworld.unlock_conn();
-    peer->output = myworld.to_json();
+    peer-&#62;output = myworld.to_json();
     co_return "";
 }</code></pre>
 
     <h4>缓存 + 数据库联合查询</h4>
     <pre><code>// 先查缓存，缓存未命中则查数据库
 //@urlpath(null,cached-db)
-asio::awaitable<std::string> techempowercached_db(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowercached_db(std::shared_ptr&#60;httppeer&#62; peer)
 {
-    unsigned int get_num = peer->get["count"].to_int();
+    unsigned int get_num = peer-&#62;get["count"].to_int();
     if (get_num == 0) get_num = 1;
-    else if (get_num > 500) get_num = 500;
+    else if (get_num &#62; 500) get_num = 500;
     
     auto myworld = orm::World();
     std::string mycacheid = "my" + std::to_string(get_num);
     
     // 获取缓存连接
-    pzcache<std::vector<orm::world_info::meta>> &temp_cache = 
-        pzcache<std::vector<orm::world_info::meta>>::conn();
+    pzcache&#60;std::vector&#62;orm::world_info::meta&#62;&#62; &temp_cache = 
+        pzcache&#60;std::vector&#60;orm::world_info::meta&#62;&#62;::conn();
     
     myworld.record.reserve(get_num);
     
-    if (temp_cache.check(mycacheid) > -1)
+    if (temp_cache.check(mycacheid) &#62; -1)
     {
         // 命中缓存
         myworld.record = temp_cache.get(mycacheid);
@@ -889,8 +889,8 @@ asio::awaitable<std::string> techempowercached_db(std::shared_ptr<httppeer> peer
     else
     {
         // 缓存未命中，查询数据库
-        std::vector<unsigned int> cacheid;
-        for (unsigned int i = 0; i < get_num; i++)
+        std::vector&#60;unsigned int&#62; cacheid;
+        for (unsigned int i = 0; i &#60; get_num; i++)
         {
             cacheid.push_back(rand_range(1, 10000));
         }
@@ -929,16 +929,16 @@ namespace orm::cust
 }
 
 // 2. 执行 SQL 查询
-std::vector<orm::cust::LocalusersqlStruct> loaduser;
-auto ulink = std::make_unique<orm::db_conn>("cms");
+std::vector&#60;orm::cust::LocalusersqlStruct&#62; loaduser;
+auto ulink = std::make_unique&#60;orm::db_conn&#62;("cms");
 
 std::string sqlstring = "SELECT adminid,name,nickname FROM sysuser where 1 limit 1";
-ulink->query(sqlstring, loaduser);
+ulink-&#62;query(sqlstring, loaduser);
 
 // 3. 读取结果
 for (auto &row : loaduser)
 {
-    client << "adminid:" << row.adminid << ", name:" << row.name;
+    client &#60;&#60; "adminid:" &#60;&#60; row.adminid &#60;&#60; ", name:" &#60;&#60; row.name;
 }</code></pre>
 
     <div class="tip-box">
@@ -953,38 +953,38 @@ for (auto &row : loaduser)
 #include "orm_query.h"
 
 // 1. 创建独立数据库连接（标签对应 orm.conf 配置）
-auto ulink = std::make_unique<orm::db_conn>("cms");
+auto ulink = std::make_unique&#60;orm::db_conn&#62;("cms");
 
 // 2. 开始事务
-bool is_begin = ulink->begin_commit();
+bool is_begin = ulink-&#62;begin_commit();
 
 if (is_begin)
 {
     try
     {
         // 3. 执行多个数据库操作
-        ulink->edit_query("UPDATE sysuser SET nickname = '新名字' WHERE adminid = 10000");
-        if (ulink->iserror)
+        ulink-&#62;edit_query("UPDATE sysuser SET nickname = '新名字' WHERE adminid = 10000");
+        if (ulink-&#62;iserror)
         {
-            ulink->rollback();  // 出错回滚
+            ulink-&#62;rollback();  // 出错回滚
         }
         else
         {
-            ulink->edit_query("INSERT INTO sysuser (adminid, name) VALUES (10001, 'test')");
-            if (ulink->iserror)
+            ulink-&#62;edit_query("INSERT INTO sysuser (adminid, name) VALUES (10001, 'test')");
+            if (ulink-&#62;iserror)
             {
-                ulink->rollback();  // 出错回滚
+                ulink-&#62;rollback();  // 出错回滚
             }
             else
             {
                 // 4. 提交事务
-                ulink->commit();
+                ulink-&#62;commit();
             }
         }
     }
     catch (const std::exception& e)
     {
-        ulink->rollback();
+        ulink-&#62;rollback();
     }
 }</code></pre>
 
@@ -1002,56 +1002,56 @@ namespace orm::cust
 }
 
 // 事务中查询并修改数据
-auto ulink = std::make_unique<orm::db_conn>("cms");
+auto ulink = std::make_unique&#60;orm::db_conn&#62;("cms");
 orm::cust::UserStruct commit_data;
 
-if (ulink->begin_commit())
+if (ulink-&#62;begin_commit())
 {
     try
     {
         // 更新操作
-        ulink->edit_query("UPDATE sysuser SET nickname = '好听名字' WHERE adminid = 10000");
-        if (!ulink->iserror)
+        ulink-&#62;edit_query("UPDATE sysuser SET nickname = '好听名字' WHERE adminid = 10000");
+        if (!ulink-&#62;iserror)
         {
             // 插入操作
-            ulink->edit_query("INSERT INTO sysuser (adminid, name) VALUES (NULL, 'userroot')");
-            if (!ulink->iserror)
+            ulink-&#62;edit_query("INSERT INTO sysuser (adminid, name) VALUES (NULL, 'userroot')");
+            if (!ulink-&#62;iserror)
             {
                 // 查询操作（使用同一连接）
-                ulink->edit_query(
+                ulink-&#62;edit_query(
                     "SELECT adminid, name, nickname FROM sysuser WHERE adminid = 10000 LIMIT 1",
                     commit_data  // 结果存入结构体
                 );
-                if (!ulink->iserror)
+                if (!ulink-&#62;iserror)
                 {
-                    ulink->commit();  // 提交
+                    ulink-&#62;commit();  // 提交
                 }
                 else
                 {
-                    ulink->rollback();
+                    ulink-&#62;rollback();
                 }
             }
             else
             {
-                ulink->rollback();
+                ulink-&#62;rollback();
             }
         }
         else
         {
-            ulink->rollback();
+            ulink-&#62;rollback();
         }
     }
     catch (const std::exception& e)
     {
-        ulink->rollback();
+        ulink-&#62;rollback();
     }
 }
 
 // 读取结果
 if (commit_data.adminid != 0)
 {
-    std::cout << "adminid: " << commit_data.adminid 
-              << ", name: " << commit_data.name << std::endl;
+    std::cout &#60;&#60; "adminid: " &#60;&#60; commit_data.adminid 
+              &#60;&#60; ", name: " &#60;&#60; commit_data.name &#60;&#60; std::endl;
 }</code></pre>
 
     <h3 id="transaction-orm">使用 ORM 对象生成 SQL</h3>
@@ -1071,24 +1071,24 @@ std::string delete_sql = user_m.commit_remove();
 
 // 然后使用 db_conn 执行这些 SQL 并提交事务
 auto ulink = std::make_unique<orm::db_conn>("cms");
-if (ulink->begin_commit())
+if (ulink-&#62;begin_commit())
 {
-    ulink->edit_query(insert_sql);
-    if (!ulink->iserror)
+    ulink-&#62;edit_query(insert_sql);
+    if (!ulink-&#62;iserror)
     {
-        ulink->edit_query(update_sql);
-        if (!ulink->iserror)
+        ulink-&#62;edit_query(update_sql);
+        if (!ulink-&#62;iserror)
         {
-            ulink->commit();
+            ulink-&#62;commit();
         }
         else
         {
-            ulink->rollback();
+            ulink-&#62;rollback();
         }
     }
     else
     {
-        ulink->rollback();
+        ulink-&#62;rollback();
     }
 }</code></pre>
 
@@ -1339,7 +1339,7 @@ articles.setContent("Content");
 
 // save() returns [affected_rows, auto_increment_id]
 auto[effectnum, last_id] = articles.save();
-if (effectnum > 0)
+if (effectnum &#62; 0)
 {
     int new_id = articles.getAid();  // Get the new record ID
     client.goto_url("/cms/list", 3, "Added successfully");
@@ -1359,7 +1359,7 @@ articles.setContent("Updated Content");
 articles.where("aid", aid);
 int effectnum = articles.update("title,content");
 
-if (effectnum > 0)
+if (effectnum &#62; 0)
 {
     client.goto_url("/cms/list", 3, "Updated successfully");
 }</code></pre>
@@ -1375,7 +1375,7 @@ if (effectnum > 0)
 // Delete a record by its ID
 int effectnum = articles.remove(aid);
 
-if (effectnum > 0)
+if (effectnum &#62; 0)
 {
     client.goto_url("/cms/list", 3, "Deleted successfully");
 }</code></pre>
@@ -1410,7 +1410,7 @@ articles.limit(10).fetch();</code></pre>
 unsigned int total = articles.where("userid", userid).count();
 
 // Count records matching conditions
-total = articles.where("userid", userid).where("addtime", ">", lastweek_time).count();</code></pre>
+total = articles.where("userid", userid).where("addtime", "&#62;", lastweek_time).count();</code></pre>
 
     <h3 id="query-wherein">IN Condition Queries</h3>
     <pre><code>// Using whereIn to query multiple IDs
@@ -1419,8 +1419,8 @@ articles.whereIn("aid", aid_sql_str).fetch();</code></pre>
 
     <h3 id="query-operators">Operator Queries</h3>
     <pre><code>// Supports operators like greater than, less than
-articles.where("addtime", ">", lastweek_time).fetch();
-articles.where("readnum", "<", 100).fetch();
+articles.where("addtime", "&#62;", lastweek_time).fetch();
+articles.where("readnum", "&#60;", 100).fetch();
 articles.where("isopen", "!=", 0).fetch();</code></pre>
 
     <h2 id="field-update">Field Update Operations</h2>
@@ -1486,7 +1486,7 @@ model.save();</code></pre>
     <pre><code>// Using async ORM in coroutines
 #include "orm.h"
 
-asio::awaitable<void> handle_request()
+asio::awaitable&#60;void&#62; handle_request()
 {
     auto model = orm::cms::Article();
     
@@ -1505,9 +1505,9 @@ asio::awaitable<void> handle_request()
     <h4>Async Query Single Record</h4>
     <pre><code>// Randomly query a World record
 //@urlpath(null,db)
-asio::awaitable<std::string> techempowerdb(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowerdb(std::shared_ptr&#60;httppeer&#62; peer)
 {
-    peer->type("application/json; charset=UTF-8");
+    peer-&#62;type("application/json; charset=UTF-8");
     auto myworld = orm::World();
     unsigned int rd_num = rand_range(1, 10000);
     myworld.where("id", rd_num);
@@ -1521,17 +1521,17 @@ asio::awaitable<std::string> techempowerdb(std::shared_ptr<httppeer> peer)
     <h4>Async Batch Query (Connection Lock Reuse)</h4>
     <pre><code>// Lock connection for multiple queries to avoid reconnection overhead
 //@urlpath(null,queries)
-asio::awaitable<std::string> techempowerqueries(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowerqueries(std::shared_ptr&#60;httppeer&#62; peer)
 {
     unsigned int get_num = peer->get["queries"].to_int();
     if (get_num == 0) get_num = 1;
-    else if (get_num > 500) get_num = 500;
+    else if (get_num &#62; 500) get_num = 500;
     
     auto myworld = orm::World();
     myworld.record.reserve(get_num);
     myworld.lock_conn();  // Lock connection
     
-    for (unsigned int i = 0; i < get_num; i++)
+    for (unsigned int i = 0; i &#60; get_num; i++)
     {
         myworld.wheresql.clear();
         unsigned int rd_num = rand_range(1, 10000);
@@ -1540,14 +1540,14 @@ asio::awaitable<std::string> techempowerqueries(std::shared_ptr<httppeer> peer)
     }
     
     myworld.unlock_conn();  // Unlock connection
-    peer->output = myworld.to_json();
+    peer-&#62;output = myworld.to_json();
     co_return "";
 }</code></pre>
 
     <h4>Async Query All Records</h4>
     <pre><code>// Query all Fortunes and sort
 //@urlpath(null,fortunes)
-asio::awaitable<std::string> techempowerfortunes(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowerfortunes(std::shared_ptr&#60;httppeer&#62; peer)
 {
     auto myfortune = orm::Fortune();
     co_await myfortune.async_fetch();  // Async query all
@@ -1563,39 +1563,39 @@ asio::awaitable<std::string> techempowerfortunes(std::shared_ptr<httppeer> peer)
               });
     
     // Output to view
-    peer->val["list"].set_array();
+    peer-&#62;val["list"].set_array();
     for (auto &record : myfortune.record)
     {
         obj_val item;
         item["id"] = record.id;
         item["message"] = html_encode(record.message);
-        peer->val["list"].push(item);
+        peer-&#62;val["list"].push(item);
     }
-    peer->view("techempower/fortunes");
+    peer-&#62;view("techempower/fortunes");
     co_return "";
 }</code></pre>
 
     <h4>Async Update Operation</h4>
     <pre><code>// Batch update random numbers
 //@urlpath(null,updates)
-asio::awaitable<std::string> techempowerupdates(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowerupdates(std::shared_ptr&#60;httppeer&#62; peer)
 {
-    unsigned int get_num = peer->get["queries"].to_int();
+    unsigned int get_num = peer-&#62;get["queries"].to_int();
     if (get_num == 0) get_num = 1;
-    else if (get_num > 500) get_num = 500;
+    else if (get_num &#62; 500) get_num = 500;
     
     auto myworld = orm::World();
     myworld.record.clear();
     myworld.record.reserve(get_num);
     myworld.lock_conn();  // Lock connection
     
-    for (unsigned int i = 0; i < get_num; i++)
+    for (unsigned int i = 0; i &#60; get_num; i++)
     {
         myworld.wheresql.clear();
         myworld.where("id", rand_range(1, 10000));
         co_await myworld.async_fetch_append();
         
-        if (myworld.effect() > 0)
+        if (myworld.effect() &#62; 0)
         {
             unsigned int j = myworld.record.size() - 1;
             myworld.data.randomnumber = rand_range(1, 10000);
@@ -1605,29 +1605,29 @@ asio::awaitable<std::string> techempowerupdates(std::shared_ptr<httppeer> peer)
     }
     
     myworld.unlock_conn();
-    peer->output = myworld.to_json();
+    peer-&#62;output = myworld.to_json();
     co_return "";
 }</code></pre>
 
     <h4>Cache + Database Combined Query</h4>
     <pre><code>// Check cache first, query database on cache miss
 //@urlpath(null,cached-db)
-asio::awaitable<std::string> techempowercached_db(std::shared_ptr<httppeer> peer)
+asio::awaitable&#60;std::string&#62; techempowercached_db(std::shared_ptr&#60;httppeer&#62; peer)
 {
-    unsigned int get_num = peer->get["count"].to_int();
+    unsigned int get_num = peer-&#62;get["count"].to_int();
     if (get_num == 0) get_num = 1;
-    else if (get_num > 500) get_num = 500;
+    else if (get_num &#62; 500) get_num = 500;
     
     auto myworld = orm::World();
     std::string mycacheid = "my" + std::to_string(get_num);
     
     // Get cache connection
-    pzcache<std::vector<orm::world_info::meta>> &temp_cache = 
-        pzcache<std::vector<orm::world_info::meta>>::conn();
+    pzcache&#60;std::vector&#60;orm::world_info::meta&#62;&#62; &temp_cache = 
+        pzcache&#60;std::vector&#60;orm::world_info::meta&#62;&#62;::conn();
     
     myworld.record.reserve(get_num);
     
-    if (temp_cache.check(mycacheid) > -1)
+    if (temp_cache.check(mycacheid) &#62; -1)
     {
         // Cache hit
         myworld.record = temp_cache.get(mycacheid);
@@ -1635,8 +1635,8 @@ asio::awaitable<std::string> techempowercached_db(std::shared_ptr<httppeer> peer
     else
     {
         // Cache miss, query database
-        std::vector<unsigned int> cacheid;
-        for (unsigned int i = 0; i < get_num; i++)
+        std::vector&#60;unsigned int&#62; cacheid;
+        for (unsigned int i = 0; i &#60; get_num; i++)
         {
             cacheid.push_back(rand_range(1, 10000));
         }
@@ -1649,7 +1649,7 @@ asio::awaitable<std::string> techempowercached_db(std::shared_ptr<httppeer> peer
         temp_cache.save(mycacheid, myworld.record, 360);
     }
     
-    peer->output = myworld.to_json();
+    peer-&#62;output = myworld.to_json();
     co_return "";
 }</code></pre>
 
@@ -1675,16 +1675,16 @@ namespace orm::cust
 }
 
 // 2. Execute SQL query
-std::vector<orm::cust::LocalusersqlStruct> loaduser;
-auto ulink = std::make_unique<orm::db_conn>("cms");
+std::vector&#60;orm::cust::LocalusersqlStruct&#62; loaduser;
+auto ulink = std::make_unique&#60;orm::db_conn&#62;("cms");
 
 std::string sqlstring = "SELECT adminid,name,nickname FROM sysuser where 1 limit 1";
-ulink->query(sqlstring, loaduser);
+ulink-&#62;query(sqlstring, loaduser);
 
 // 3. Read results
 for (auto &row : loaduser)
 {
-    client << "adminid:" << row.adminid << ", name:" << row.name;
+    client &#60;&#60; "adminid:" &#60;&#60; row.adminid &#60;&#60; ", name:" &#60;&#60; row.name;
 }</code></pre>
 
     <div class="tip-box">
@@ -1699,38 +1699,38 @@ for (auto &row : loaduser)
 #include "orm_query.h"
 
 // 1. Create an independent database connection (tag corresponds to orm.conf config)
-auto ulink = std::make_unique<orm::db_conn>("cms");
+auto ulink = std::make_unique&#60;orm::db_conn&#62;("cms");
 
 // 2. Start a transaction
-bool is_begin = ulink->begin_commit();
+bool is_begin = ulink-&#62;begin_commit();
 
 if (is_begin)
 {
     try
     {
         // 3. Execute multiple database operations
-        ulink->edit_query("UPDATE sysuser SET nickname = 'New Name' WHERE adminid = 10000");
-        if (ulink->iserror)
+        ulink-&#62;edit_query("UPDATE sysuser SET nickname = 'New Name' WHERE adminid = 10000");
+        if (ulink-&#62;iserror)
         {
-            ulink->rollback();  // Rollback on error
+            ulink-&#62;rollback();  // Rollback on error
         }
         else
         {
-            ulink->edit_query("INSERT INTO sysuser (adminid, name) VALUES (10001, 'test')");
-            if (ulink->iserror)
+            ulink-&#62;edit_query("INSERT INTO sysuser (adminid, name) VALUES (10001, 'test')");
+            if (ulink-&#62;iserror)
             {
-                ulink->rollback();  // Rollback on error
+                ulink-&#62;rollback();  // Rollback on error
             }
             else
             {
                 // 4. Commit the transaction
-                ulink->commit();
+                ulink-&#62;commit();
             }
         }
     }
     catch (const std::exception& e)
     {
-        ulink->rollback();
+        ulink-&#62;rollback();
     }
 }</code></pre>
 
@@ -1748,56 +1748,56 @@ namespace orm::cust
 }
 
 // Query and modify data within a transaction
-auto ulink = std::make_unique<orm::db_conn>("cms");
+auto ulink = std::make_unique&#60;orm::db_conn&#62;("cms");
 orm::cust::UserStruct commit_data;
 
-if (ulink->begin_commit())
+if (ulink-&#62;begin_commit())
 {
     try
     {
         // Update operation
-        ulink->edit_query("UPDATE sysuser SET nickname = 'Nice Name' WHERE adminid = 10000");
-        if (!ulink->iserror)
+        ulink-&#62;edit_query("UPDATE sysuser SET nickname = 'Nice Name' WHERE adminid = 10000");
+        if (!ulink-&#62;iserror)
         {
             // Insert operation
-            ulink->edit_query("INSERT INTO sysuser (adminid, name) VALUES (NULL, 'userroot')");
-            if (!ulink->iserror)
+            ulink-&#62;edit_query("INSERT INTO sysuser (adminid, name) VALUES (NULL, 'userroot')");
+            if (!ulink-&#62;iserror)
             {
                 // Query operation (using the same connection)
-                ulink->edit_query(
+                ulink-&#62;edit_query(
                     "SELECT adminid, name, nickname FROM sysuser WHERE adminid = 10000 LIMIT 1",
                     commit_data  // Results stored in struct
                 );
-                if (!ulink->iserror)
+                if (!ulink-&#62;iserror)
                 {
-                    ulink->commit();  // Commit
+                    ulink-&#62;commit();  // Commit
                 }
                 else
                 {
-                    ulink->rollback();
+                    ulink-&#62;rollback();
                 }
             }
             else
             {
-                ulink->rollback();
+                ulink-&#62;rollback();
             }
         }
         else
         {
-            ulink->rollback();
+            ulink-&#62;rollback();
         }
     }
     catch (const std::exception& e)
     {
-        ulink->rollback();
+        ulink-&#62;rollback();
     }
 }
 
 // Read results
 if (commit_data.adminid != 0)
 {
-    std::cout << "adminid: " << commit_data.adminid 
-              << ", name: " << commit_data.name << std::endl;
+    std::cout &#60;&#60; "adminid: " &#60;&#60; commit_data.adminid 
+              &#60;&#60; ", name: " &#60;&#60; commit_data.name &#60;&#60; std::endl;
 }</code></pre>
 
     <h3 id="transaction-orm">Using ORM Objects to Generate SQL</h3>
@@ -1816,25 +1816,25 @@ std::string update_sql = user_m.commit_update("nickname");
 std::string delete_sql = user_m.commit_remove();
 
 // Then use db_conn to execute these SQL and commit the transaction
-auto ulink = std::make_unique<orm::db_conn>("cms");
-if (ulink->begin_commit())
+auto ulink = std::make_unique&#60;orm::db_conn&#62;("cms");
+if (ulink-&#62;begin_commit())
 {
-    ulink->edit_query(insert_sql);
-    if (!ulink->iserror)
+    ulink-&#62;edit_query(insert_sql);
+    if (!ulink-&#62;iserror)
     {
-        ulink->edit_query(update_sql);
-        if (!ulink->iserror)
+        ulink-&#62;edit_query(update_sql);
+        if (!ulink-&#62;iserror)
         {
-            ulink->commit();
+            ulink-&#62;commit();
         }
         else
         {
-            ulink->rollback();
+            ulink-&#62;rollback();
         }
     }
     else
     {
-        ulink->rollback();
+        ulink-&#62;rollback();
     }
 }</code></pre>
 
