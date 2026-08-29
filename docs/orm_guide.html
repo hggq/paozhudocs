@@ -876,7 +876,7 @@ asio::awaitable&#60;std::string&#62; techempowercached_db(std::shared_ptr&#60;ht
     std::string mycacheid = "my" + std::to_string(get_num);
     
     // 获取缓存连接
-    pzcache&#60;std::vector&#62;orm::world_info::meta&#62;&#62; &temp_cache = 
+    pzcache&#60;std::vector&#60;orm::world_info::meta&#62;&#62; &temp_cache = 
         pzcache&#60;std::vector&#60;orm::world_info::meta&#62;&#62;::conn();
     
     myworld.record.reserve(get_num);
