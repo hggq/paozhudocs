@@ -364,6 +364,11 @@
         <li>自研协议同时支持 <strong>C++20 协程（异步）</strong>和<strong>同步</strong>两种调用方式，可在同一项目中混用</li>
     </ul>
 
+    <div class="tip-box">
+        💡 提示：<strong>SQLite 模块需要显式开启</strong>。默认构建不包含 SQLite 支持，因为 SQLite 是嵌入式数据库，需要将 SQLite3 源码/库编译进项目（MySQL 和 PostgreSQL 使用自研协议，无需外部库）。编译时需添加 CMake 开关：
+        <pre style="margin:0.5rem 0 0 0;"><code>cmake .. -DENABLE_SQLITE=ON</code></pre>
+    </div>
+
     <h3 id="orm-features">ORM 核心特性</h3>
     <ul>
         <li>多数据源配置与切换</li>
@@ -1141,6 +1146,82 @@ if (ulink-&#62;begin_commit())
         💡 提示：默认导出当前数据源的 SQL 方言，也可通过 <code>-target=pg</code> / <code>-target=mysql</code> 指定目标数据库语法，方便在不同数据库之间迁移。
     </div>
 
+    <h2 id="mariadb-caching-sha2">MariaDB 切换为 caching_sha2_password 认证插件</h2>
+    <p>Paozhu ORM 内置的自研数据库客户端支持 <code>caching_sha2_password</code> 认证方式。MySQL 8.0 默认使用此插件，而 MariaDB（10.x ~ 11.x）默认使用 <code>mysql_native_password</code>，需要手动切换以获得与 MySQL 8.0 一致的认证行为。MariaDB 12.1+ 已原生支持 <code>caching_sha2_password</code>。</p>
+
+    <h3 id="mariadb-caching-sha2-1">步骤一：安装认证插件</h3>
+    <p>以 root 身份登录 MariaDB，安装 <code>auth_mysql_sha2</code> 插件（该插件实现了 <code>caching_sha2_password</code> 认证）：</p>
+    <pre><code># 登录 MariaDB
+mysql -uroot -p
+
+# 安装 caching_sha2_password 插件
+INSTALL SONAME 'auth_mysql_sha2';
+
+# 确认插件已加载
+SELECT plugin_name, plugin_status FROM mysql.plugin WHERE plugin_name LIKE '%sha2%';</code></pre>
+    <div class="tip-box">
+        💡 提示：如果 <code>INSTALL SONAME 'auth_mysql_sha2'</code> 报错找不到插件文件，请确认你的 MariaDB 版本 ≥ 10.11，且 <code>plugin_dir</code> 路径下存在 <code>auth_mysql_sha2.so</code>（Linux）或 <code>auth_mysql_sha2.dylib</code>（macOS）。可以通过 <code>SHOW VARIABLES LIKE 'plugin_dir';</code> 查看插件目录。
+    </div>
+
+    <h3 id="mariadb-caching-sha2-2">步骤二：切换用户认证插件</h3>
+    <p>将目标用户（如 root）的认证插件切换为 <code>caching_sha2_password</code>，并设置新的密码哈希：</p>
+    <pre><code>-- 方式1：直接修改 mysql.user 表（适用于已有用户）
+UPDATE mysql.user
+SET plugin='caching_sha2_password',
+    authentication_string=PASSWORD('12345678')
+WHERE user='root' AND host='localhost';
+
+-- 方式2：使用 ALTER USER 语法（MariaDB 10.11+ 推荐）
+ALTER USER 'root'@'localhost' IDENTIFIED BY '12345678';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '12345678';
+
+-- 刷新权限使配置生效
+FLUSH PRIVILEGES;</code></pre>
+
+    <h3 id="mariadb-caching-sha2-3">步骤三：配置默认认证插件（可选）</h3>
+    <p>如果希望新建用户时默认使用 <code>caching_sha2_password</code>，可以在 MariaDB 配置文件（<code>my.cnf</code> 或 <code>my.ini</code>）的 <code>[mysqld]</code> 节添加：</p>
+    <pre><code>[mysqld]
+# 设置默认认证插件
+default_authentication_plugin = caching_sha2_password
+
+# 确保插件在启动时加载
+plugin_load_add = auth_mysql_sha2</code></pre>
+    <p>修改后重启 MariaDB 服务：</p>
+    <pre><code># macOS (Homebrew)
+brew services restart mariadb
+
+# Linux (systemd)
+sudo systemctl restart mariadb
+
+# Docker
+docker restart &#60;container_name&#62;</code></pre>
+
+    <h3 id="mariadb-caching-sha2-4">验证切换结果</h3>
+    <pre><code>-- 查看当前用户的认证插件
+SELECT user, host, plugin FROM mysql.user WHERE user='root';
+
+-- 测试新连接（使用新密码）
+mysql -uroot -p12345678 -e "SELECT VERSION();"</code></pre>
+    <p>如果 <code>plugin</code> 列显示 <code>caching_sha2_password</code> 且能正常登录，说明切换成功。</p>
+
+    <div class="warn-box">
+        ⚠️ 注意：切换认证插件后，旧的使用 <code>mysql_native_password</code> 方式连接的客户端（如旧版 mysql 命令行工具、部分 ORM 框架）将无法连接。请确保所有客户端都支持 <code>caching_sha2_password</code> 认证协议后再进行切换。Paozhu ORM 从一开始就支持此插件，可以放心使用。
+    </div>
+
+    <h3 id="mariadb-caching-sha2-5">回滚方式</h3>
+    <p>如果切换后遇到问题，可以按以下步骤回滚到 <code>mysql_native_password</code>：</p>
+    <pre><code># 以 root 登录（如果还能登录）
+mysql -uroot -p
+
+# 回滚认证插件
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '12345678';
+FLUSH PRIVILEGES;
+
+# 如果无法登录，可临时跳过权限表启动 MariaDB：
+# mysqld --skip-grant-tables
+# 然后执行 UPDATE mysql.user SET plugin='mysql_native_password' WHERE user='root';
+# FLUSH PRIVILEGES; 再正常重启</code></pre>
+
     <a href="index.html" class="back-to-index">← 返回首页</a>
     `;
 
@@ -1160,6 +1241,11 @@ if (ulink-&#62;begin_commit())
         <li>Supports <strong>MariaDB 12.1+</strong> (version 12.1+ supports <code>caching_sha2_password</code> authentication plugin, compatible with MySQL 8.0 default authentication)</li>
         <li>The self-developed protocol supports both <strong>C++20 coroutines (async)</strong> and <strong>synchronous</strong> invocation modes, which can be mixed in the same project</li>
     </ul>
+
+    <div class="tip-box">
+        💡 Tip: <strong>SQLite support must be enabled explicitly</strong>. It is not included in the default build because SQLite is an embedded database that requires the SQLite3 source/library to be compiled into the project (MySQL and PostgreSQL use self-developed protocols with no external dependencies). Add the following CMake flag when building:
+        <pre style="margin:0.5rem 0 0 0;"><code>cmake .. -DENABLE_SQLITE=ON</code></pre>
+    </div>
 
     <h3 id="orm-features">Core ORM Features</h3>
     <ul>
@@ -1886,6 +1972,82 @@ if (ulink-&#62;begin_commit())
     <div class="tip-box">
         💡 Tip: By default, the SQL dialect of the current data source is used. You can specify the target database syntax with <code>-target=pg</code> / <code>-target=mysql</code> to facilitate migration between different databases.
     </div>
+
+    <h2 id="mariadb-caching-sha2">Switching MariaDB to caching_sha2_password Authentication Plugin</h2>
+    <p>Paozhu ORM's built-in self-developed database client supports <code>caching_sha2_password</code> authentication. MySQL 8.0 uses this plugin by default, while MariaDB (10.x ~ 11.x) defaults to <code>mysql_native_password</code> — you need to manually switch to align with MySQL 8.0 authentication behavior. MariaDB 12.1+ has native support for <code>caching_sha2_password</code>.</p>
+
+    <h3 id="mariadb-caching-sha2-1">Step 1: Install the Authentication Plugin</h3>
+    <p>Log into MariaDB as root and install the <code>auth_mysql_sha2</code> plugin (which implements <code>caching_sha2_password</code>):</p>
+    <pre><code># Log into MariaDB
+mysql -uroot -p
+
+# Install the caching_sha2_password plugin
+INSTALL SONAME 'auth_mysql_sha2';
+
+# Verify the plugin is loaded
+SELECT plugin_name, plugin_status FROM mysql.plugin WHERE plugin_name LIKE '%sha2%';</code></pre>
+    <div class="tip-box">
+        💡 Tip: If <code>INSTALL SONAME 'auth_mysql_sha2'</code> fails with a plugin file-not-found error, make sure your MariaDB version ≥ 10.11 and that <code>auth_mysql_sha2.so</code> (Linux) or <code>auth_mysql_sha2.dylib</code> (macOS) exists under your <code>plugin_dir</code>. Check the plugin directory with <code>SHOW VARIABLES LIKE 'plugin_dir';</code>.
+    </div>
+
+    <h3 id="mariadb-caching-sha2-2">Step 2: Switch the User Authentication Plugin</h3>
+    <p>Switch the target user (e.g., root) to <code>caching_sha2_password</code> and set a new password hash:</p>
+    <pre><code>-- Option 1: Directly update the mysql.user table (for existing users)
+UPDATE mysql.user
+SET plugin='caching_sha2_password',
+    authentication_string=PASSWORD('12345678')
+WHERE user='root' AND host='localhost';
+
+-- Option 2: Use ALTER USER syntax (recommended for MariaDB 10.11+)
+ALTER USER 'root'@'localhost' IDENTIFIED BY '12345678';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '12345678';
+
+-- Flush privileges to apply changes
+FLUSH PRIVILEGES;</code></pre>
+
+    <h3 id="mariadb-caching-sha2-3">Step 3: Configure Default Authentication Plugin (Optional)</h3>
+    <p>If you want new users to default to <code>caching_sha2_password</code>, add the following under the <code>[mysqld]</code> section of your MariaDB config file (<code>my.cnf</code> or <code>my.ini</code>):</p>
+    <pre><code>[mysqld]
+# Set default authentication plugin
+default_authentication_plugin = caching_sha2_password
+
+# Ensure the plugin is loaded at startup
+plugin_load_add = auth_mysql_sha2</code></pre>
+    <p>Restart MariaDB after modifying the configuration:</p>
+    <pre><code># macOS (Homebrew)
+brew services restart mariadb
+
+# Linux (systemd)
+sudo systemctl restart mariadb
+
+# Docker
+docker restart &#60;container_name&#62;</code></pre>
+
+    <h3 id="mariadb-caching-sha2-4">Verify the Switch</h3>
+    <pre><code>-- Check the authentication plugin for the current user
+SELECT user, host, plugin FROM mysql.user WHERE user='root';
+
+-- Test a new connection (using the new password)
+mysql -uroot -p12345678 -e "SELECT VERSION();"</code></pre>
+    <p>If the <code>plugin</code> column shows <code>caching_sha2_password</code> and you can log in normally, the switch was successful.</p>
+
+    <div class="warn-box">
+        ⚠️ Note: After switching the authentication plugin, older clients that use <code>mysql_native_password</code> (e.g., legacy mysql CLI tools, some ORM frameworks) will no longer be able to connect. Make sure all your clients support the <code>caching_sha2_password</code> protocol before switching. Paozhu ORM has supported this plugin from the start, so it's safe to use.
+    </div>
+
+    <h3 id="mariadb-caching-sha2-5">Rollback</h3>
+    <p>If you run into issues after switching, roll back to <code>mysql_native_password</code> as follows:</p>
+    <pre><code># Log in as root (if you still can)
+mysql -uroot -p
+
+# Roll back the authentication plugin
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '12345678';
+FLUSH PRIVILEGES;
+
+# If you can't log in, start MariaDB temporarily skipping grant tables:
+# mysqld --skip-grant-tables
+# Then run: UPDATE mysql.user SET plugin='mysql_native_password' WHERE user='root';
+# FLUSH PRIVILEGES; and restart normally</code></pre>
 
     <a href="index.html" class="back-to-index">← Back to Home</a>
     `;
