@@ -1219,7 +1219,30 @@ sudo systemctl restart mariadb
 # Docker
 docker restart &#60;container_name&#62;</code></pre>
 
-    <h3 id="mariadb-caching-sha2-4">验证切换结果</h3>
+    <h3 id="mariadb-caching-sha2-4">步骤四：生成 RSA 密钥（非 SSL 连接必需）</h3>
+    <p>使用 <code>caching_sha2_password</code> 认证时，如果客户端与服务端之间<strong>未使用 SSL 加密连接</strong>，密码需要通过 RSA 密钥对进行加密传输。MariaDB 服务器在启动时会从数据目录读取 <code>private_key.pem</code>（私钥）和 <code>public_key.pem</code>（公钥）来执行 RSA 加密交换，因此必须预先生成。</p>
+    <div class="tip-box">
+        💡 数据目录说明：在 macOS 上通过 Homebrew 安装时，数据目录通常为 <code>/usr/local/var/mysql</code>（或 Apple Silicon 上的 <code>/opt/homebrew/var/mysql</code>）。这只是目录名恰好叫 <code>mysql</code> 而已，并非另一个 MySQL 实例。所有数据库文件、错误日志以及 <code>mysql.user</code> 表都存放在这里，因此把 RSA 密钥生成在此处是完全正确的。
+    </div>
+    <p>进入数据目录并按顺序执行以下命令：</p>
+    <pre><code># 1. 进入数据目录
+cd /usr/local/var/mysql
+
+# 2. 生成 RSA 私钥和公钥（使用 OpenSSL）
+openssl genrsa -out private_key.pem 2048
+openssl rsa -in private_key.pem -pubout -out public_key.pem
+
+# 3. 调整文件权限（确保 MariaDB 进程可读）
+chmod 644 private_key.pem public_key.pem
+chown $(whoami):admin private_key.pem public_key.pem   # 如果您的用户组不是 admin，可忽略</code></pre>
+    <p>生成完成后，重启 MariaDB 服务，使其在启动时自动加载这两份密钥文件：</p>
+    <pre><code># macOS (Homebrew)
+brew services restart mariadb</code></pre>
+    <div class="tip-box">
+        💡 提示：如果客户端使用 SSL 连接（在 <code>orm.conf</code> 中配置 <code>ssl = ON</code>），则无需 RSA 密钥交换，此步骤可以跳过。RSA 仅用于非 SSL 连接下的密码加密传输。
+    </div>
+
+    <h3 id="mariadb-caching-sha2-5">验证切换结果</h3>
     <pre><code>-- 查看当前用户的认证插件
 SELECT user, host, plugin FROM mysql.user WHERE user='root';
 
@@ -1231,7 +1254,7 @@ mysql -uroot -p12345678 -e "SELECT VERSION();"</code></pre>
         ⚠️ 注意：切换认证插件后，旧的使用 <code>mysql_native_password</code> 方式连接的客户端（如旧版 mysql 命令行工具、部分 ORM 框架）将无法连接。请确保所有客户端都支持 <code>caching_sha2_password</code> 认证协议后再进行切换。Paozhu ORM 从一开始就支持此插件，可以放心使用。
     </div>
 
-    <h3 id="mariadb-caching-sha2-5">回滚方式</h3>
+    <h3 id="mariadb-caching-sha2-6">回滚方式</h3>
     <p>如果切换后遇到问题，可以按以下步骤回滚到 <code>mysql_native_password</code>：</p>
     <pre><code># 以 root 登录（如果还能登录）
 mysql -uroot -p
@@ -2069,7 +2092,30 @@ sudo systemctl restart mariadb
 # Docker
 docker restart &#60;container_name&#62;</code></pre>
 
-    <h3 id="mariadb-caching-sha2-4">Verify the Switch</h3>
+    <h3 id="mariadb-caching-sha2-4">Step 4: Generate RSA Keys (Required for Non-SSL Connections)</h3>
+    <p>When using <code>caching_sha2_password</code> authentication, if the client and server are <strong>not using an SSL-encrypted connection</strong>, the password must be encrypted in transit using an RSA key pair. MariaDB reads <code>private_key.pem</code> and <code>public_key.pem</code> from the data directory at startup to perform the RSA exchange, so you must generate them in advance.</p>
+    <div class="tip-box">
+        💡 Data Directory Note: On macOS with Homebrew, the data directory is usually <code>/usr/local/var/mysql</code> (or <code>/opt/homebrew/var/mysql</code> on Apple Silicon). The directory happens to be named <code>mysql</code> — it is not another MySQL instance. All database files, error logs, and the <code>mysql.user</code> table live here, so generating the RSA keys in this directory is correct.
+    </div>
+    <p>Enter the data directory and run the following commands in order:</p>
+    <pre><code># 1. Enter the data directory
+cd /usr/local/var/mysql
+
+# 2. Generate the RSA private and public keys (using OpenSSL)
+openssl genrsa -out private_key.pem 2048
+openssl rsa -in private_key.pem -pubout -out public_key.pem
+
+# 3. Adjust file permissions (ensure the MariaDB process can read them)
+chmod 644 private_key.pem public_key.pem
+chown $(whoami):admin private_key.pem public_key.pem   # ignore if your group is not admin</code></pre>
+    <p>After generating the keys, restart MariaDB so it loads them at startup:</p>
+    <pre><code># macOS (Homebrew)
+brew services restart mariadb</code></pre>
+    <div class="tip-box">
+        💡 Tip: If your client uses an SSL connection (set <code>ssl = ON</code> in <code>orm.conf</code>), no RSA exchange is needed and this step can be skipped. RSA is only used to encrypt the password over non-SSL connections.
+    </div>
+
+    <h3 id="mariadb-caching-sha2-5">Verify the Switch</h3>
     <pre><code>-- Check the authentication plugin for the current user
 SELECT user, host, plugin FROM mysql.user WHERE user='root';
 
@@ -2081,7 +2127,7 @@ mysql -uroot -p12345678 -e "SELECT VERSION();"</code></pre>
         ⚠️ Note: After switching the authentication plugin, older clients that use <code>mysql_native_password</code> (e.g., legacy mysql CLI tools, some ORM frameworks) will no longer be able to connect. Make sure all your clients support the <code>caching_sha2_password</code> protocol before switching. Paozhu ORM has supported this plugin from the start, so it's safe to use.
     </div>
 
-    <h3 id="mariadb-caching-sha2-5">Rollback</h3>
+    <h3 id="mariadb-caching-sha2-6">Rollback</h3>
     <p>If you run into issues after switching, roll back to <code>mysql_native_password</code> as follows:</p>
     <pre><code># Log in as root (if you still can)
 mysql -uroot -p
