@@ -1268,6 +1268,144 @@ FLUSH PRIVILEGES;
 # 然后执行 UPDATE mysql.user SET plugin='mysql_native_password' WHERE user='root';
 # FLUSH PRIVILEGES; 再正常重启</code></pre>
 
+
+    <h2 id="mysql-auth-ssl">MySQL/MariaDB 认证与 SSL 配置指南</h2>
+    <p>Paozhu ORM 内置客户端完整支持 <code>caching_sha2_password</code> 认证（MySQL 8.0+ 默认、MariaDB 12.1+ 原生）。本章覆盖三档认证模式、RSA 公钥管理、SSL=ON 完整流程与安全加固。</p>
+
+    <h3 id="mysql-auth-ssl-1">三档认证模式速查</h3>
+    <table>
+        <thead><tr><th>档位</th><th>配置</th><th>防窃听</th><th>防中间人换公钥 (CVE-2015-3152)</th><th>防 SSL 降级</th><th>推荐场景</th></tr></thead>
+        <tbody>
+            <tr><td><strong>A 兼容（默认）</strong></td><td>什么都不配</td><td>❌ 明文</td><td>❌</td><td>❌</td><td>本地开发、同机连接 Unix socket</td></tr>
+            <tr><td><strong>B 公钥钉住</strong></td><td><code>server_public_key=/path/to/public_key.pem</code></td><td>❌ 明文</td><td>✅ 认证阶段拦下，密码不发出</td><td>❌</td><td>可信内网但上不了 TLS；需要防同网段 ARP 欺骗</td></tr>
+            <tr><td><strong>C TLS（推荐）</strong></td><td><code>ssl=ON</code> + <code>sslverify=ON</code> + <code>sslhost=域名</code></td><td>✅ TLS 加密</td><td>✅ 不用公钥</td><td>✅ A3 守卫强制加密</td><td>生产、跨网段</td></tr>
+        </tbody>
+    </table>
+    <div class="tip-box">
+        💡 <strong>重要提示</strong>：B 档只保护认证阶段不被骗密码，SQL 与结果集仍是明文。C 档才是完整安全方案。<br>
+        MariaDB 12.3+ 每次认证都走 Auth More Data 公钥请求（不像 MySQL 有 fast auth 缓存命中），TLS OFF + 无钉住 = 每次认证都暴露。
+    </div>
+
+    <h3 id="mysql-auth-ssl-2">找到服务器 RSA 公钥</h3>
+    <p><code>caching_sha2_password</code> 使用 RSA 密钥对加密密码。MySQL 8+ 初始化 datadir 时会<strong>自动生成</strong>密钥对，一般无需手动生成：</p>
+    <pre><code># MySQL (Homebrew)
+/usr/local/mysql/data/public_key.pem
+
+# MariaDB (Homebrew) —— 目录名碰巧叫 mysql，是 MariaDB 的数据目录
+/usr/local/var/mysql/public_key.pem
+
+# Linux
+/var/lib/mysql/public_key.pem
+
+# 验证指纹（与客户端钉住的 PEM 必须一致）
+openssl pkey -pubin -in /usr/local/var/mysql/public_key.pem -outform DER | openssl dgst -sha256</code></pre>
+
+    <h3 id="mysql-auth-ssl-3">密钥不存在？手动生成</h3>
+    <p>以 MariaDB 为例生成 RSA 密钥对（MySQL 8 一般已自动生成）：</p>
+    <pre><code># 1. 进入数据目录
+cd /usr/local/var/mysql          # MariaDB (Homebrew)
+# cd /usr/local/mysql/data      # MySQL (Homebrew)
+
+# 2. 生成 RSA 私钥和公钥（2048 位足够，OAEP 载荷 ≤ 32 字节）
+openssl genrsa -out private_key.pem 2048
+openssl rsa    -in private_key.pem -pubout -out public_key.pem
+
+# 3. 权限：私钥仅数据库进程可读，公钥公开可读
+chmod 600 private_key.pem        # 🔴 永远不要 644！私钥泄露 = 离线解密密码
+chmod 644 public_key.pem
+chown $(whoami):admin private_key.pem public_key.pem   # Homebrew: hzq:admin
+
+# 4. 自检：公钥必须能由私钥推出来
+openssl rsa -in private_key.pem -pubout | diff - public_key.pem && echo "keypair OK"
+
+# 5. 重启数据库 —— 密钥只在启动时读一次，生成后不重启等于没换
+brew services restart mariadb   # or: mysql.server restart</code></pre>
+
+    <div class="tip-box">
+        ⚠️ <strong>安全红线</strong>：<code>private_key.pem</code> 权限必须是 <code>0600</code> + 属主为数据库进程用户。<br>
+        <code>chmod 644 private_key.pem</code>（常见教程笔误）会让同机任意本地用户：① 离线解密抓到的认证包；② 冒充服务器骗过 B 档钉住。B 档直接归零。<br>
+        <strong>私钥永远不要拷到客户端</strong>，B 档拷的只有 <code>public_key.pem</code>。
+    </div>
+
+    <h3 id="mysql-auth-ssl-4">配置方法</h3>
+    <p>打开 <code>conf/orm.conf</code>，找到对应的 dbtag [docs] 配置块，添加：</p>
+    <pre><code>[docs]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = root
+password = 12345678
+pretable = web_
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+; ===== B 档：公钥钉住 =====
+; server_public_key=/www/paozhu/conf/public_key.pem
+
+; ===== C 档：TLS（推荐） =====
+; ssl=ON
+; sslverify=ON
+; sslhost=db.example.com     ; 证书 CN/SAN 中的域名，留空则用 host 兜底</code></pre>
+
+
+    <h3 id="mysql-auth-ssl-5">SSL ON 认证完整流程</h3>
+    <pre><code>① TCP 连接握手
+   host:3306 → sock_type=1 (明文 TCP)
+
+② 发送 SSL 请求 (CLIENT_SSL, 0x800)
+   asio::write(*socket, 8-byte SSL_REQ)
+   读服务器响应 → 'S' = 支持 SSL
+
+③ TLS 握手
+   ssl_context(tls_client)
+   sslverify=ON → set_default_verify_paths() + verify_peer
+   SNI         → sslhost.empty() ? host : sslhost
+   主机名校验   → sslverify=ON 就做校验（sslhost 空 → host 兜底）
+   handshake() 失败 → 错误信息带引导注释（查 CA / SSL_CERT_FILE / CN/SAN）
+   sock_type=2 (TLS 已建立)
+
+④ 重发 CLIENT_HANDSHAKE
+
+⑤ Auth Switch 循环（有界 ≤4 次）
+   sock_type=2 (SSL) 独立分支:
+     - 0x03 fast auth 成功 → 等 OK/ERR
+     - 0x04 公钥请求       → 明文发 password\0（TLS 已保护，不需要 RSA）
+
+   sock_type=1 (非 SSL) 路径:
+     - check_server_public_key() → EVP_PKEY_eq 比对
+     - 不一致 → possible MITM → 密码不发出
+     - 为空   → 直接信任（弱点，建议强制配置）</code></pre>
+
+    <h3 id="mysql-auth-ssl-6">快速上手清单</h3>
+    <pre><code># 0) 确认服务在跑
+./bin/test_mysql_handshake 1
+
+# 1) A 档：默认零配置
+./bin/test_mysql_handshake 50
+
+# 2) B 档加固：取服务器公钥 → 拷到客户端 → 配置
+sudo cp /usr/local/var/mysql/public_key.pem <项目>/conf/public_key.pem
+# orm.conf 里加一行：
+# server_public_key=<项目>/conf/public_key.pem
+
+# 3) C 档真安全：上 TLS
+# ssl=ON + sslverify=ON + sslhost=证书域名
+# 服务器 CA 放进系统信任库或设 SSL_CERT_FILE=ca.pem</code></pre>
+
+    <h3 id="mysql-auth-ssl-7">错误信息速查</h3>
+    <table>
+        <thead><tr><th>error_msg 关键词</th><th>error_code</th><th>含义</th><th>处置</th></tr></thead>
+        <tbody>
+            <tr><td><code>possible MITM: server RSA public key mismatch (server fp=…, trusted fp=…)</code></td><td>4</td><td>钉住的公钥与服务器下发不一致，<strong>密码未发出</strong></td><td>比对两侧指纹：① 多个 MySQL/MariaDB 实例 → 钉错 datadir 公钥 ② 服务器换过密钥对 ③ 真中间人。更新本地 PEM</td></tr>
+            <tr><td><code>configured server_public_key load failed</code></td><td>4</td><td>路径打不开或 PEM 非法</td><td>检查路径、权限、值里是否混进注释空格</td></tr>
+            <tr><td><code>server does not support SSL (requested by client config): plaintext downgrade refused</code></td><td>5</td><td>配了 ssl=ON 但服务器未声明 CLIENT_SSL（A3 降级守卫）</td><td>服务器开启 TLS 后重启；或明确接受明文 ssl=OFF</td></tr>
+            <tr><td><code>certificate verify failed (SSL routines) [...CA...SSL_CERT_FILE...CN/SAN...]</code></td><td>2</td><td>sslverify=ON 时证书链或主机名不通过</td><td>装/指定服务器 CA；sslhost（或 host 兜底）与证书 CN/SAN 匹配</td></tr>
+            <tr><td><code>#28000 Access denied for user …</code></td><td>1045</td><td><strong>公钥校验已通过</strong>，账号/密码/host 不匹配</td><td>检查密码、账号 host 限定（root@localhost vs root@%）</td></tr>
+        </tbody>
+    </table>
+
     <a href="index.html" class="back-to-index">← 返回首页</a>
     `;
 
@@ -2140,6 +2278,143 @@ FLUSH PRIVILEGES;
 # mysqld --skip-grant-tables
 # Then run: UPDATE mysql.user SET plugin='mysql_native_password' WHERE user='root';
 # FLUSH PRIVILEGES; and restart normally</code></pre>
+
+
+    <h2 id="mysql-auth-ssl">MySQL/MariaDB Authentication &amp; SSL Configuration Guide</h2>
+    <p>Paozhu ORM's built-in database client fully supports <code>caching_sha2_password</code> authentication (default in MySQL 8.0+, native in MariaDB 12.1+). This chapter covers three authentication tiers, RSA key management, the complete SSL=ON flow, and hardening.</p>
+
+    <h3 id="mysql-auth-ssl-1">Authentication Tiers at a Glance</h3>
+    <table>
+        <thead><tr><th>Tier</th><th>Config</th><th>Eavesdrop Protection</th><th>MITM Public Key Swap (CVE-2015-3152)</th><th>SSL Downgrade Protection</th><th>Recommended For</th></tr></thead>
+        <tbody>
+            <tr><td><strong>A Compat (default)</strong></td><td>Nothing</td><td>❌ Plaintext</td><td>❌</td><td>❌</td><td>Local dev, same-machine Unix socket</td></tr>
+            <tr><td><strong>B Public Key Pinning</strong></td><td><code>server_public_key=/path/to/public_key.pem</code></td><td>❌ Plaintext</td><td>✅ Blocked before password sent</td><td>❌</td><td>Trusted LAN without TLS; need ARP spoof protection</td></tr>
+            <tr><td><strong>C TLS (recommended)</strong></td><td><code>ssl=ON</code> + <code>sslverify=ON</code> + <code>sslhost=domain</code></td><td>✅ TLS encrypted</td><td>✅ Not using RSA</td><td>✅ A3 guard forces encryption</td><td>Production, cross-network</td></tr>
+        </tbody>
+    </table>
+    <div class="tip-box">
+        💡 <strong>Important</strong>: Tier B only protects the authentication phase — SQL and result sets remain plaintext. Tier C is the complete security solution.<br>
+        MariaDB 12.3+ <em>always</em> sends an Auth More Data public key request (unlike MySQL, which may hit fast auth cache). TLS OFF with no pinning = every authentication is exposed.
+    </div>
+
+    <h3 id="mysql-auth-ssl-2">Find the Server RSA Public Key</h3>
+    <p><code>caching_sha2_password</code> uses an RSA key pair to encrypt passwords. MySQL 8+ <strong>auto-generates</strong> the pair during datadir initialization:</p>
+    <pre><code># MySQL (Homebrew)
+/usr/local/mysql/data/public_key.pem
+
+# MariaDB (Homebrew) — directory happens to be named "mysql"; it's MariaDB's datadir
+/usr/local/var/mysql/public_key.pem
+
+# Linux
+/var/lib/mysql/public_key.pem
+
+# Verify fingerprint (must match the PEM you pin on the client)
+openssl pkey -pubin -in /usr/local/var/mysql/public_key.pem -outform DER | openssl dgst -sha256</code></pre>
+
+    <h3 id="mysql-auth-ssl-3">Keys Missing? Generate Them Manually</h3>
+    <p>Example for MariaDB (MySQL 8 usually has them pre-generated):</p>
+    <pre><code># 1. Enter the data directory
+cd /usr/local/var/mysql          # MariaDB (Homebrew)
+# cd /usr/local/mysql/data      # MySQL (Homebrew)
+
+# 2. Generate RSA key pair (2048-bit is enough, OAEP payload ≤ 32 bytes)
+openssl genrsa -out private_key.pem 2048
+openssl rsa    -in private_key.pem -pubout -out public_key.pem
+
+# 3. Permissions: private key DB-process-only, public key world-readable
+chmod 600 private_key.pem        # 🔴 NEVER 644! Leaked private key = offline password decryption
+chmod 644 public_key.pem
+chown $(whoami):admin private_key.pem public_key.pem   # Homebrew: hzq:admin
+
+# 4. Self-check: public key must be derivable from private key
+openssl rsa -in private_key.pem -pubout | diff - public_key.pem &amp;&amp; echo "keypair OK"
+
+# 5. Restart — keys are read once at startup; no restart = no effect
+brew services restart mariadb   # or: mysql.server restart</code></pre>
+
+    <div class="tip-box">
+        ⚠️ <strong>Security Red Line</strong>: <code>private_key.pem</code> must be <code>0600</code> owned by the DB process user.<br>
+        <code>chmod 644 private_key.pem</code> (common tutorial typo) lets any local user: ① decrypt captured auth packets offline; ② impersonate the server to bypass Tier B pinning. Tier B becomes worthless.<br>
+        <strong>Never copy private_key.pem to the client</strong>. Tier B only copies <code>public_key.pem</code>.
+    </div>
+
+    <h3 id="mysql-auth-ssl-4">Configuration</h3>
+    <p>Open <code>conf/orm.conf</code>, find your dbtag [docs] section, and add:</p>
+    <pre><code>[docs]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = root
+password = 12345678
+pretable = web_
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+; ===== Tier B: Public Key Pinning =====
+; server_public_key=/Users/hzq/cpp/sqliteconn/conf/public_key.pem
+
+; ===== Tier C: TLS (recommended) =====
+; ssl=ON
+; sslverify=ON
+; sslhost=db.example.com     ; domain in cert CN/SAN, falls back to host if empty</code></pre>
+
+    <h3 id="mysql-auth-ssl-5">Complete SSL ON Authentication Flow</h3>
+    <pre><code>① TCP connect
+   host:3306 → sock_type=1 (plaintext TCP)
+
+② Send SSL Request (CLIENT_SSL, 0x800)
+   asio::write(*socket, 8-byte SSL_REQ)
+   Read response → 'S' = server supports SSL
+
+③ TLS Handshake
+   ssl_context(tls_client)
+   sslverify=ON → set_default_verify_paths() + verify_peer
+   SNI         → sslhost.empty() ? host : sslhost
+   Hostname check → always runs when sslverify=ON (sslhost empty → host fallback)
+   handshake() failure → error msg hints at CA / SSL_CERT_FILE / CN/SAN mismatch
+   sock_type=2 (TLS established)
+
+④ Re-send CLIENT_HANDSHAKE
+
+⑤ Auth Switch loop (bounded ≤4 rounds)
+   sock_type=2 (SSL) independent branch:
+     - 0x03 fast auth success → wait for OK/ERR
+     - 0x04 public key request → send plaintext password (TLS protects it, no RSA needed)
+
+   sock_type=1 (non-SSL) path:
+     - check_server_public_key() → EVP_PKEY_eq compare
+     - mismatch → possible MITM → password NOT sent
+     - empty    → trust server (weakness; forcing config recommended)</code></pre>
+
+    <h3 id="mysql-auth-ssl-6">Quick Setup Checklist</h3>
+    <pre><code># 0) Confirm server is running
+./bin/test_mysql_handshake 1
+
+# 1) Tier A: zero config default
+./bin/test_mysql_handshake 50
+
+# 2) Tier B hardening: grab server public key → copy to client → configure
+sudo cp /usr/local/var/mysql/public_key.pem <project>/conf/public_key.pem
+# Add to orm.conf:
+# server_public_key=<project>/conf/public_key.pem
+
+# 3) Tier C real security: enable TLS
+# ssl=ON + sslverify=ON + sslhost=cert domain
+# Install server CA into system trust store or set SSL_CERT_FILE=ca.pem</code></pre>
+
+    <h3 id="mysql-auth-ssl-7">Error Messages Quick Reference</h3>
+    <table>
+        <thead><tr><th>error_msg keyword</th><th>error_code</th><th>Meaning</th><th>Action</th></tr></thead>
+        <tbody>
+            <tr><td><code>possible MITM: server RSA public key mismatch (server fp=…, trusted fp=…)</code></td><td>4</td><td>Pinned key does not match server-issued key, <strong>password NOT sent</strong></td><td>Compare fingerprints: ① Multiple MySQL/MariaDB instances → pinned wrong datadir key ② Server rotated keypair ③ Real MITM. Update local PEM</td></tr>
+            <tr><td><code>configured server_public_key load failed</code></td><td>4</td><td>Path inaccessible or PEM invalid</td><td>Check path, permissions, stray comment spaces in value</td></tr>
+            <tr><td><code>server does not support SSL (requested by client config): plaintext downgrade refused</code></td><td>5</td><td>ssl=ON but server greeting has no CLIENT_SSL (A3 downgrade guard)</td><td>Enable TLS on server then restart; or set ssl=OFF if plaintext is acceptable</td></tr>
+            <tr><td><code>certificate verify failed (SSL routines) [...CA...SSL_CERT_FILE...CN/SAN...]</code></td><td>2</td><td>sslverify=ON failed cert chain or hostname check</td><td>Install/set server CA; sslhost (or host fallback) must match cert CN/SAN</td></tr>
+            <tr><td><code>#28000 Access denied for user …</code></td><td>1045</td><td><strong>Key check passed</strong>; wrong password/account/host</td><td>Check password, account host restriction (root@localhost vs root@%)</td></tr>
+        </tbody>
+    </table>
 
     <a href="index.html" class="back-to-index">← Back to Home</a>
     `;
