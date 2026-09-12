@@ -718,6 +718,65 @@ model.where("aid", id).update_col("stock", -1);    // stock - 1</code></pre>
     <pre><code>// 替换字段内容中的指定字符串
 model.where("aid", id).replace_col("content", "old", "new");</code></pre>
 
+    <h2 id="dirty-field">脏字段预处理更新</h2>
+    <p>Paozhu ORM 为每个字段生成了专用的 <code>setXxx()</code> setter 方法。用 setter 写入字段时，框架会同时把该字段标记为<strong>脏字段（dirty）</strong>——也就是在内部"预处理"登记为待更新列。借助这个机制，<code>update_dirty()</code> 系列方法只会把真正被 set 过的列写进 <code>UPDATE</code> 语句，避免误改其它列。</p>
+
+    <h3 id="dirty-marked">什么会被标记为脏字段</h3>
+    <ul>
+        <li>✅ 通过生成的 <code>setXxx()</code> setter 赋值 —— 会标脏。</li>
+        <li>❌ 直接给 <code>model.data.xxx</code> 赋值 —— <strong>不会</strong>标脏，这一列不会进入 UPDATE。</li>
+        <li>❌ 主键 setter（<code>setAid()</code>、<code>setPK()</code>）—— 永不标脏，仅用于记录主键值。</li>
+    </ul>
+
+    <pre><code>auto articles = orm::cms::Article();
+articles.setTopicid(7);            // topicid 标脏
+articles.setTitle("新标题");        // title 标脏
+articles.data.content = "静默内容"; // 不标脏：该列不会进入 UPDATE
+
+articles.where("aid", id);
+
+// 仅更新被 set 过的列
+// UPDATE ... SET topicid=7, title='新标题'
+articles.update_dirty();</code></pre>
+
+    <h3 id="dirty-methods">脏字段更新方法</h3>
+    <table>
+        <thead>
+            <tr><th>方法</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>update_dirty()</code></td><td>文本路径：只更新被 set 过的列</td></tr>
+            <tr><td><code>exec_update_dirty()</code></td><td>预编译路径：同上，值以参数绑定（MySQL/SQLite 用 <code>?</code>，PostgreSQL 用 <code>$1…$n</code>）</td></tr>
+            <tr><td><code>async_update_dirty()</code></td><td>协程版（文本路径）</td></tr>
+            <tr><td><code>async_exec_update_dirty()</code></td><td>协程版（预编译路径）</td></tr>
+            <tr><td><code>clear_dirty()</code></td><td>手动清零所有脏标记，需要时调用</td></tr>
+        </tbody>
+    </table>
+
+    <pre><code>auto articles = orm::cms::Article();
+articles.setTitle("新标题");
+
+articles.where("aid", id);
+articles.exec_update_dirty();      // 预编译：UPDATE ... SET title=? (参数绑定)
+
+articles.clear_dirty();            // 需要时手动清零
+articles.setContent("新内容");
+articles.where("aid", id);
+articles.exec_update_dirty();      // 现在只更新 content</code></pre>
+
+    <div class="warn-box">
+        ⚠️ 安全守卫（文本路径与预编译路径行为一致）：
+        <ul>
+            <li>没有任何脏列时，文本路径返回 <code>0</code> 且不发送任何语句；<code>exec_update_dirty()</code> 则置 <code>iserror</code> 并返回 <code>(unsigned int)-1</code>。</li>
+            <li>当 <code>wheresql</code> 为空时，语句回退到主键（<code>getPK() &#62; 0</code>）；两者都没有时，文本路径返回 <code>0</code>，预编译路径拒绝发出语句。</li>
+            <li>更新成功后，脏标记会自动清零。</li>
+        </ul>
+    </div>
+
+    <div class="tip-box">
+        💡 提示：<code>update_dirty()</code> 适合"只改用户提交上来的那几个字段"的场景——你不必在 <code>update()</code> 里手工罗列字段名，也不用担心直接 <code>model.data.x</code> 赋值会漏改或错改。凡是取值来自请求的参数，优先使用 <code>exec_update_dirty()</code> 预编译版本以防 SQL 注入。
+    </div>
+
     <h2 id="data-access">数据访问方式</h2>
 
     <h3 id="access-getter">使用 getter 方法</h3>
@@ -745,6 +804,7 @@ model.save();</code></pre>
     <p>在协程中使用异步 ORM 方法，所有异步方法均以 <code>async_</code> 开头：</p>
 
     <h3 id="async-methods">可用的异步 ORM 方法</h3>
+    <p><strong>文本路径（值被转义进语句）</strong></p>
     <table>
         <thead>
             <tr>
@@ -760,7 +820,35 @@ model.save();</code></pre>
             <tr><td><code>count()</code></td><td><code>async_count()</code></td><td>统计匹配记录数</td></tr>
             <tr><td><code>save()</code></td><td><code>async_save()</code></td><td>新增记录</td></tr>
             <tr><td><code>update()</code></td><td><code>async_update()</code></td><td>更新记录</td></tr>
+            <tr><td><code>update_dirty()</code></td><td><code>async_update_dirty()</code></td><td>只更新经生成的逐字段 setter 写过的列（见"脏字段预处理更新"）</td></tr>
             <tr><td><code>remove()</code></td><td><code>async_remove()</code></td><td>删除记录</td></tr>
+        </tbody>
+    </table>
+
+    <p><strong>预编译路径（值以参数绑定，见"脏字段预处理更新"）</strong></p>
+    <table>
+        <thead>
+            <tr>
+                <th>同步方法</th>
+                <th>异步方法</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><code>exec_count()</code></td><td><code>async_exec_count()</code></td></tr>
+            <tr><td><code>exec_page()</code></td><td><code>async_exec_page()</code></td></tr>
+            <tr><td><code>exec_fetch()</code></td><td><code>async_exec_fetch()</code></td></tr>
+            <tr><td><code>exec_fetch_to(rows)</code></td><td><code>async_exec_fetch_to(rows)</code></td></tr>
+            <tr><td><code>exec_fetch_append()</code></td><td><code>async_exec_fetch_append()</code></td></tr>
+            <tr><td><code>exec_one()</code></td><td><code>async_exec_one()</code></td></tr>
+            <tr><td><code>exec_one_to(rec)</code></td><td><code>async_exec_one_to(rec)</code></td></tr>
+            <tr><td><code>exec_one_append(vec)</code></td><td><code>async_exec_one_append(vec)</code></td></tr>
+            <tr><td><code>exec_insert()</code></td><td><code>async_exec_insert()</code></td></tr>
+            <tr><td><code>exec_insert_batch()</code></td><td><code>async_exec_insert_batch()</code></td></tr>
+            <tr><td><code>exec_update()</code></td><td><code>async_exec_update()</code></td></tr>
+            <tr><td><code>exec_update_dirty()</code></td><td><code>async_exec_update_dirty()</code></td></tr>
+            <tr><td><code>exec_update_col()</code></td><td><code>async_exec_update_col()</code></td></tr>
+            <tr><td><code>exec_replace_col()</code></td><td><code>async_exec_replace_col()</code></td></tr>
+            <tr><td><code>exec_remove()</code></td><td><code>async_exec_remove()</code></td></tr>
         </tbody>
     </table>
 
@@ -937,6 +1025,51 @@ asio::awaitable&#60;std::string&#62; techempowercached_db(std::shared_ptr&#60;ht
 
     <div class="tip-box">
         💡 注意：同步控制器（返回 <code>std::string</code>）和协程控制器（返回 <code>asio::awaitable<std::string></code>）可以在同一项目中混用。框架会根据函数签名自动选择正确的执行路径。
+    </div>
+
+    <h2 id="foreign-key">外键关联：oneXXX / manyXXX</h2>
+    <p><code>paozhu_cli orm</code> 会读取数据库中真实存在的<strong>单列外键</strong>，并为关系两端的每个相关表 <code>{Camel}</code> 生成 <code>one{Camel}</code> 与 <code>many{Camel}</code> 访问器。以 <code>fk_child.parent_id → fk_parent.id</code> 为例，子表 <code>orm::FkChild</code> 会得到 <code>oneFkParent()</code>，父表 <code>orm::FkParent</code> 会得到 <code>manyFkChild()</code>。这些函数的实现位于生成的 <code>orm/{tag}/{table}_opsql.cpp</code> 中，该文件必须参与编译，否则访问器无法链接。</p>
+
+    <h3 id="fk-one">一对一（to-one）：oneXXX</h3>
+    <p><code>oneXXX()</code> 依赖当前行的外键值取键，因此要先把自己这行查出来：</p>
+    <pre><code>auto child = orm::FkChild();
+child.where(orm::fk_child_info::cols::id, 1);
+child.fetch_one();                       // oneXXX 依赖 data 取键，先把行查出来
+
+auto parent = child.oneFkParent();       // 以当前行的 parent_id 限定 FkParent
+parent.fetch_one();
+
+auto parent2 = child.oneFkParent(2);     // 用显式键替代当前行
+
+auto decorated = orm::FkParent();        // void 重载：装饰传入对象，可继续链式调用
+child.oneFkParent(decorated);
+decorated.select("id,name");
+decorated.fetch_one();</code></pre>
+    <ul>
+        <li><code>oneFkParent()</code>：按当前行的 <code>parent_id</code>（出向外键）查询父表。</li>
+        <li><code>oneFkParent(2)</code>：用显式主键覆盖当前行的值。</li>
+        <li><code>oneFkParent(decorated)</code>：返回 <code>void</code>，把限定条件加到你传入的模型上，便于继续追加 <code>select()</code> 或额外 <code>where()</code>。</li>
+    </ul>
+
+    <h3 id="fk-many">一对多（to-many）：manyXXX</h3>
+    <p><code>manyXXX()</code> 依赖已加载的 <code>record</code>，把其中每一行的主键收集为 <code>IN (...)</code> 列表：</p>
+    <pre><code>auto parents = orm::FkParent();
+parents.fetch();                         // manyXXX 依赖 record，先 fetch
+auto children = parents.manyFkChild();   // WHERE parent_id IN (&lt;record 中的 id&gt;)
+children.fetch();</code></pre>
+    <div class="tip-box">
+        💡 提示：<code>manyFkChild()</code> 的 <code>IN (...)</code> 来自已加载行的主键集合。子表行应当一次查出后在<strong>内存里分组</strong>，而不是逐行调用访问器——逐行调用会变成每行一次查询（N+1 问题）。
+    </div>
+
+    <h3 id="fk-async">异步用法</h3>
+    <pre><code>auto parents = orm::FkParent();
+co_await parents.async_fetch();
+
+auto children = parents.manyFkChild();
+co_await children.async_fetch();</code></pre>
+
+    <div class="tip-box">
+        💡 提示：一对一/一对多访问器与 <code>leftJoin</code>/<code>innerJoin</code> 互补：访问器适合"先取主表、再按需拉关联"的分步查询，而 JOIN 适合一次取回带关联字段的行。凡是取值来自请求的参数，优先用 <code>exec_</code>/<code>async_exec_</code> 预编译版本。
     </div>
 
     <h2 id="native-sql">原生 SQL 查询</h2>
@@ -1729,6 +1862,65 @@ model.where("aid", id).update_col("stock", -1);    // stock - 1</code></pre>
     <pre><code>// Replace specified string in field content
 model.where("aid", id).replace_col("content", "old", "new");</code></pre>
 
+    <h2 id="dirty-field">Dirty Field (Preprocessed) Update</h2>
+    <p>Paozhu ORM generates a dedicated <code>setXxx()</code> setter for every column. When you write a value through a setter, the framework also marks that column as <strong>dirty</strong> — i.e. it "preprocesses" and registers the column as pending for update. Thanks to this, the <code>update_dirty()</code> family only writes the columns that were actually <code>set</code> into the <code>UPDATE</code> statement, avoiding accidental changes to other columns.</p>
+
+    <h3 id="dirty-marked">What gets marked dirty</h3>
+    <ul>
+        <li>✅ Assigned through a generated <code>setXxx()</code> setter — marked dirty.</li>
+        <li>❌ Direct assignment to <code>model.data.xxx</code> — <strong>not</strong> marked dirty; this column is left out of the UPDATE.</li>
+        <li>❌ Primary-key setters (<code>setAid()</code>, <code>setPK()</code>) — never marked dirty; they only record the primary key value.</li>
+    </ul>
+
+    <pre><code>auto articles = orm::cms::Article();
+articles.setTopicid(7);            // topicid marked dirty
+articles.setTitle("New Title");    // title marked dirty
+articles.data.content = "quiet";   // NOT dirty: this column is not in the UPDATE
+
+articles.where("aid", id);
+
+// Only update the columns that were set
+// UPDATE ... SET topicid=7, title='New Title'
+articles.update_dirty();</code></pre>
+
+    <h3 id="dirty-methods">Dirty field update methods</h3>
+    <table>
+        <thead>
+            <tr><th>Method</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>update_dirty()</code></td><td>Text path: updates only the columns that were set</td></tr>
+            <tr><td><code>exec_update_dirty()</code></td><td>Prepared path: same, but values bound as parameters (<code>?</code> on MySQL/SQLite, <code>$1…$n</code> on PostgreSQL)</td></tr>
+            <tr><td><code>async_update_dirty()</code></td><td>Coroutine version (text path)</td></tr>
+            <tr><td><code>async_exec_update_dirty()</code></td><td>Coroutine version (prepared path)</td></tr>
+            <tr><td><code>clear_dirty()</code></td><td>Manually clears all dirty flags when needed</td></tr>
+        </tbody>
+    </table>
+
+    <pre><code>auto articles = orm::cms::Article();
+articles.setTitle("New Title");
+
+articles.where("aid", id);
+articles.exec_update_dirty();      // prepared: UPDATE ... SET title=? (bound)
+
+articles.clear_dirty();            // clear manually when needed
+articles.setContent("New Content");
+articles.where("aid", id);
+articles.exec_update_dirty();      // now only content is updated</code></pre>
+
+    <div class="warn-box">
+        ⚠️ Guard rails (identical behaviour on both text and prepared paths):
+        <ul>
+            <li>With no dirty column, the text path returns <code>0</code> and sends nothing; <code>exec_update_dirty()</code> sets <code>iserror</code> and returns <code>(unsigned int)-1</code>.</li>
+            <li>When <code>wheresql</code> is empty, the statement falls back to the primary key (<code>getPK() &#62; 0</code>); with neither, the text path returns <code>0</code> and the prepared path refuses to emit the statement.</li>
+            <li>A successful update clears the dirty bits automatically.</li>
+        </ul>
+    </div>
+
+    <div class="tip-box">
+        💡 Tip: <code>update_dirty()</code> fits the "only change the few fields the user submitted" scenario — you do not have to list column names by hand in <code>update()</code>, and you never risk missing or mis-setting a column via direct <code>model.data.x</code> assignment. For anything whose value comes from a request, prefer the prepared <code>exec_update_dirty()</code> to avoid SQL injection.
+    </div>
+
     <h2 id="data-access">Data Access Methods</h2>
 
     <h3 id="access-getter">Using Getter Methods</h3>
@@ -1756,6 +1948,7 @@ model.save();</code></pre>
     <p>Use async ORM methods in coroutines. All async methods are prefixed with <code>async_</code>:</p>
 
     <h3 id="async-methods">Available Async ORM Methods</h3>
+    <p><strong>Text path (values escaped into the statement)</strong></p>
     <table>
         <thead>
             <tr>
@@ -1771,7 +1964,35 @@ model.save();</code></pre>
             <tr><td><code>count()</code></td><td><code>async_count()</code></td><td>Count matching records</td></tr>
             <tr><td><code>save()</code></td><td><code>async_save()</code></td><td>Insert a new record</td></tr>
             <tr><td><code>update()</code></td><td><code>async_update()</code></td><td>Update a record</td></tr>
+            <tr><td><code>update_dirty()</code></td><td><code>async_update_dirty()</code></td><td>Update only the columns written through the generated setters (see "Dirty Field Update")</td></tr>
             <tr><td><code>remove()</code></td><td><code>async_remove()</code></td><td>Delete a record</td></tr>
+        </tbody>
+    </table>
+
+    <p><strong>Prepared path (values bound as parameters, see "Dirty Field Update")</strong></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Sync Method</th>
+                <th>Async Method</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><code>exec_count()</code></td><td><code>async_exec_count()</code></td></tr>
+            <tr><td><code>exec_page()</code></td><td><code>async_exec_page()</code></td></tr>
+            <tr><td><code>exec_fetch()</code></td><td><code>async_exec_fetch()</code></td></tr>
+            <tr><td><code>exec_fetch_to(rows)</code></td><td><code>async_exec_fetch_to(rows)</code></td></tr>
+            <tr><td><code>exec_fetch_append()</code></td><td><code>async_exec_fetch_append()</code></td></tr>
+            <tr><td><code>exec_one()</code></td><td><code>async_exec_one()</code></td></tr>
+            <tr><td><code>exec_one_to(rec)</code></td><td><code>async_exec_one_to(rec)</code></td></tr>
+            <tr><td><code>exec_one_append(vec)</code></td><td><code>async_exec_one_append(vec)</code></td></tr>
+            <tr><td><code>exec_insert()</code></td><td><code>async_exec_insert()</code></td></tr>
+            <tr><td><code>exec_insert_batch()</code></td><td><code>async_exec_insert_batch()</code></td></tr>
+            <tr><td><code>exec_update()</code></td><td><code>async_exec_update()</code></td></tr>
+            <tr><td><code>exec_update_dirty()</code></td><td><code>async_exec_update_dirty()</code></td></tr>
+            <tr><td><code>exec_update_col()</code></td><td><code>async_exec_update_col()</code></td></tr>
+            <tr><td><code>exec_replace_col()</code></td><td><code>async_exec_replace_col()</code></td></tr>
+            <tr><td><code>exec_remove()</code></td><td><code>async_exec_remove()</code></td></tr>
         </tbody>
     </table>
 
@@ -1948,6 +2169,51 @@ asio::awaitable&#60;std::string&#62; techempowercached_db(std::shared_ptr&#60;ht
 
     <div class="tip-box">
         💡 Note: Synchronous controllers (returning <code>std::string</code>) and coroutine controllers (returning <code>asio::awaitable<std::string></code>) can be mixed in the same project. The framework automatically selects the correct execution path based on the function signature.
+    </div>
+
+    <h2 id="foreign-key">Foreign Keys: oneXXX / manyXXX</h2>
+    <p><code>paozhu_cli orm</code> reads the real single-column foreign keys in the database and generates a <code>one{Camel}</code> and a <code>many{Camel}</code> accessor for every related table <code>{Camel}</code> at both ends of the relation. For example, with <code>fk_child.parent_id → fk_parent.id</code>, the child table <code>orm::FkChild</code> gets <code>oneFkParent()</code>, and the parent table <code>orm::FkParent</code> gets <code>manyFkChild()</code>. These functions are implemented in the generated <code>orm/{tag}/{table}_opsql.cpp</code>, which must be compiled, otherwise the accessors will not link.</p>
+
+    <h3 id="fk-one">One-to-One (to-one): oneXXX</h3>
+    <p><code>oneXXX()</code> takes the key from the current row's foreign key column, so you must fetch the row first:</p>
+    <pre><code>auto child = orm::FkChild();
+child.where(orm::fk_child_info::cols::id, 1);
+child.fetch_one();                       // oneXXX reads the key from data, fetch first
+
+auto parent = child.oneFkParent();       // scope FkParent by the current row's parent_id
+parent.fetch_one();
+
+auto parent2 = child.oneFkParent(2);     // override the key with an explicit value
+
+auto decorated = orm::FkParent();        // void overload: decorate the passed object, keep chaining
+child.oneFkParent(decorated);
+decorated.select("id,name");
+decorated.fetch_one();</code></pre>
+    <ul>
+        <li><code>oneFkParent()</code>: queries the parent table by the current row's <code>parent_id</code> (outgoing FK).</li>
+        <li><code>oneFkParent(2)</code>: overrides the current row's value with an explicit primary key.</li>
+        <li><code>oneFkParent(decorated)</code>: returns <code>void</code>, applies the scoping condition to the model you pass in, so you can keep appending <code>select()</code> or extra <code>where()</code>.</li>
+    </ul>
+
+    <h3 id="fk-many">One-to-Many (to-many): manyXXX</h3>
+    <p><code>manyXXX()</code> depends on the loaded <code>record</code>; it collects every row's primary key into an <code>IN (...)</code> list:</p>
+    <pre><code>auto parents = orm::FkParent();
+parents.fetch();                         // manyXXX depends on record, fetch first
+auto children = parents.manyFkChild();   // WHERE parent_id IN (ids from record)
+children.fetch();</code></pre>
+    <div class="tip-box">
+        💡 Tip: The <code>IN (...)</code> of <code>manyFkChild()</code> comes from the loaded rows' primary key set. Fetch the child rows once and group them <strong>in memory</strong>, instead of calling the accessor row by row — that would issue one query per row (the N+1 problem).
+    </div>
+
+    <h3 id="fk-async">Async usage</h3>
+    <pre><code>auto parents = orm::FkParent();
+co_await parents.async_fetch();
+
+auto children = parents.manyFkChild();
+co_await children.async_fetch();</code></pre>
+
+    <div class="tip-box">
+        💡 Tip: The one/many accessors complement <code>leftJoin</code>/<code>innerJoin</code>: accessors fit step-by-step queries ("fetch the main table first, then pull relations on demand"), while JOINs fit fetching rows with related columns in one shot. For values coming from a request, prefer the prepared <code>exec_</code>/<code>async_exec_</code> versions.
     </div>
 
     <h2 id="native-sql">Native SQL Queries</h2>
