@@ -879,7 +879,7 @@ std::string test_svgchart(std::shared_ptr<httppeer> peer)
 #endif
     return "";
 }</code></pre>
-
+    <p><img src="images/line_chart.svg" /></p>     
     <h3 id="charts-example-bar">示例：基础柱状图</h3>
     <pre><code>#ifdef ENABLE_CHART
 #include "svg_chart.h"
@@ -892,6 +892,7 @@ chart.addSeries({120, 200, 150, 80, 70, 110, 130}, "Sales");
 chart.addSeries({80, 120, 100, 60, 50, 80, 90}, "Orders");
 client << chart.render();</code></pre>
 
+    <p><img src="images/bar_chart.svg" /></p>     
     <div class="tip-box">
         💡 <strong>提示</strong>：所有图表类均继承自 <code>SvgChart</code> 基类，使用统一的 <code>render()</code> 方法生成 SVG 字符串。生成的 SVG 可直接通过 <code>client <<</code> 输出到浏览器，也可以保存为文件。
     </div>
@@ -1438,7 +1439,7 @@ std::string test_svgchart(std::shared_ptr<httppeer> peer)
 #endif
     return "";
 }</code></pre>
-
+    <p><img src="images/line_chart.svg" /></p>  
     <h3 id="charts-example-bar">Example: Basic Bar Chart</h3>
     <pre><code>#ifdef ENABLE_CHART
 #include "svg_chart.h"
@@ -1450,7 +1451,7 @@ chart.setXLabels({"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"});
 chart.addSeries({120, 200, 150, 80, 70, 110, 130}, "Sales");
 chart.addSeries({80, 120, 100, 60, 50, 80, 90}, "Orders");
 client << chart.render();</code></pre>
-
+    <p><img src="images/bar_chart.svg" /></p>        
     <div class="tip-box">
         💡 <strong>Tip</strong>: All chart classes inherit from the <code>SvgChart</code> base class, using the unified <code>render()</code> method to generate SVG strings. The generated SVG can be output directly to the browser via <code>client <<</code> or saved to a file.
     </div>
