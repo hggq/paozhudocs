@@ -148,6 +148,7 @@
             <li><a href="#jsonencode">JSON和结构体互换函数 json_encode json_decode</a></li>
             <li><a href="#httpclient">HttpClient 介绍</a></li>
             <li><a href="#Troubleshooting">故障排除</a></li>
+            <li><a href="#CleanInit">项目干净初始化</a></li>
         </ul>
     </div>
     <div class="container">
@@ -1763,6 +1764,95 @@
         cat /etc/fstab    
         echo '/swap.img none swap sw 0 0' | sudo tee -a /etc/fstab    
         </code></pre>
+
+      </div>
+
+      <div class="container">
+
+        <h3 id="CleanInit"><strong>项目干净初始化</strong></h3>
+        <p>从 GitHub clone Paozhu 框架后，通常需要清理仓库自带的示例业务代码，只保留框架核心与 hello 路由作为脚手架起点。下面是推荐的四步清理流程。</p>
+
+        <h4>第一步：清空 <code>common/</code> 注册文件</h4>
+        <p>以下 6 个文件需要精简：<strong>保留</strong> <code>#include "httppeer.h"</code>，<strong>删除</strong> 其他所有 <code>#include</code>，并把 <code>_initauto_control_httpmethodregto()</code> 等注册函数的函数体清空（只保留签名）。</p>
+        <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; margin:10px 0;">
+          <tr><th>文件</th><th>作用</th></tr>
+          <tr><td><code>common/autocontrolmethod.hpp</code></td><td>控制器方法注册（由构建系统从 <code>controller/src</code> 自动抽取）</td></tr>
+          <tr><td><code>common/autorestfulpaths.hpp</code></td><td>RESTful 路径注册</td></tr>
+          <tr><td><code>common/reghttpmethod.hpp</code></td><td>HTTP 方法注册</td></tr>
+          <tr><td><code>common/reghttpmethod_pre.hpp</code></td><td>HTTP 前置方法注册</td></tr>
+          <tr><td><code>common/sockets_method_reg.hpp</code></td><td>Socket 方法注册</td></tr>
+          <tr><td><code>common/websockets_method_reg.hpp</code></td><td>WebSocket 方法注册</td></tr>
+        </table>
+        <p>清理后每个文件大致形如：</p>
+<pre><code>#include "httppeer.h"
+
+void _initauto_control_httpmethodregto(std::map&lt;std::string, regmethold_t&gt; &amp;methodcallback)
+{
+    // 空实现
+}
+// 其他注册函数同样清空
+</code></pre>
+
+        <h4>第二步：删除 ORM 层</h4>
+<pre><code>rm -rf models/* schema/* orm/*
+</code></pre>
+        <p>这三个目录存放数据库模型和 ORM 生成代码，干净脚手架不需要。将来启用数据库时，用 <code>bin/paozhu_cli orm &lt;tag&gt;</code> 重新生成即可。</p>
+
+        <h4>第三步：清理视图文件（保留注册骨架）</h4>
+        <p>这一步不能直接 <code>rm -rf</code> 整个目录 —— <code>viewsrc/include/</code> 下的注册头文件需要保留骨架。分三小步进行：</p>
+
+        <p><strong>3.1 删除视图源码和模板目录</strong></p>
+<pre><code>rm -rf viewsrc/view/ view/
+</code></pre>
+        <p><code>viewsrc/view/</code> 是视图的 C++ 实现源码，<code>view/</code> 是 HTML 模板，两者都是示例代码，直接删除。</p>
+
+        <p><strong>3.2 清空 <code>viewsrc/include/viewsrc.h</code> 中的 <code>namespace view</code> 内容</strong></p>
+        <p>打开 <code>viewsrc/include/viewsrc.h</code>，删除 <code>namespace http { namespace view { ... } }</code> 内部所有子命名空间（admin、cms、home、login、superadmin、techempower）及其函数声明。<strong>保留外层命名空间结构和头文件 include。</strong> 清理后骨架：</p>
+<pre><code>#ifndef __HTTP_VIEWSRC_ALL_METHOD_H
+#define __HTTP_VIEWSRC_ALL_METHOD_H
+// ... include 保持不变 ...
+
+namespace http { 
+namespace view { 
+
+}
+
+}
+#endif
+</code></pre>
+
+        <p><strong>3.3 清空 <code>viewsrc/include/regviewmethod.hpp</code> 的函数体</strong></p>
+        <p>打开 <code>viewsrc/include/regviewmethod.hpp</code>，删除 <code>_initview_method_regto</code> 函数体内所有 <code>emplace</code> 调用。<strong>保留函数签名、命名空间和头文件 include。</strong> 清理后骨架：</p>
+<pre><code>namespace http
+{
+  void _initview_method_regto(VIEW_REG &amp;_viewmetholdreg)
+  {
+    // empty body
+  } 
+}
+</code></pre>
+        <p>这样既移除了全部示例业务代码，又保留了视图注册机制的完整骨架。后续添加新视图时，只需在 <code>namespace view</code> 里声明函数、在 <code>regviewmethod.hpp</code> 里注册即可。</p>
+
+        <h4>第四步：删除控制器（保留 <code>testhello</code>）</h4>
+<pre><code>rm -rf controller/include/*
+find controller/src -type f ! -name 'testhello.cpp' -delete
+</code></pre>
+        <p>保留的 <code>controller/src/testhello.cpp</code> 包含 <code>//@urlpath(null,hello)</code> 注解，是 hello world 路由的唯一入口。编译后即可通过 <code>http://127.0.0.1/hello</code> 访问。</p>
+
+        <h4>清理完成</h4>
+        <p>以上四步完成后，重新编译项目即可得到一个干净的脚手架：</p>
+<pre><code>cd build &amp;&amp; cmake .. &amp;&amp; make -j$(sysctl -n hw.ncpu)
+</code></pre>
+        <p>运行 <code>./bin/paozhu</code> 后访问 <code>http://127.0.0.1/hello</code>，应返回 <code>Hello world! 🧨 Paozhu c++ web framework</code>，说明框架核心正常。</p>
+
+        <h4>压力测试</h4>
+        <p>需要打开 <code>ENABLE_BENCHMARK</code>，因为项目默认开启了流量限制：</p>
+<pre><code>cd build &amp;&amp; cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_BENCHMARK=ON &amp;&amp; make -j$(sysctl -n hw.ncpu)
+</code></pre>
+
+      </div>
+
+      <div class="container">
           <h3 id="docsmemo">后记</h3>
           <p>最后提示，平时写代码应该注意写法，不能用直接使用new和delete，建议使用智能指针，用自带STL也够用了，老一代程序员喜欢榨干CPU性能，其实很多时候编译器给你优化了，所以业务代码应该开开心心使用。</p>
           <p>Web开发本来就是重视业务流程，很多C++喜欢在业务代码写元编译，各种模板代码，这个需要禁止的，不是炫耀技术，怀疑是在写垃圾代码动机，入库可以使用元编译，模板代码。</p>

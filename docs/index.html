@@ -850,11 +850,11 @@
                     </a>
                     <a href="saas.html" class="nav-item external link-zh">
                         <span class="nav-icon">☁️</span>
-                        <span class="zh">SAAS 模式</span>
+                        <span class="zh">SaaS 模式</span>
                     </a>
                     <a href="saas_en.html" class="nav-item external link-en">
                         <span class="nav-icon">☁️</span>
-                        <span class="en">SAAS Mode</span>
+                        <span class="en">SaaS Mode</span>
                     </a>
                 </div>
 
@@ -914,8 +914,8 @@
                 </div>
                 <h1>Paozhu 炮竹</h1>
                 <p class="subtitle hero-subtitle">
-                    <span class="zh">为 C++ Web 快速开发而生的全栈AI框架</span>
-                    <span class="en">A Full-stack AI Framework for Rapid C++ Web Development</span>
+                    <span class="zh">为 C++ Web 快速开发而生的全栈框架</span>
+                    <span class="en">A Full-stack Framework for Rapid C++ Web Development</span>
                 </p>
                 <div class="hero-buttons">
                     <a href="project_overview.html" class="btn-primary">
@@ -938,23 +938,23 @@
                 <div class="framework-intro">
                     <p class="intro-text">
                         <span class="zh">Paozhu 炮竹 (🧨) 来源中国传统鞭炮，迅速、响亮。</span>
-                        <span class="en">Paozhu (🧨) Derived from traditional Chinese firecrackers, it is fast and loud.</span>
+                        <span class="en">Paozhu (🧨) — named after the traditional Chinese firecracker, fast and loud.</span>
                     </p>
                     <p class="intro-text">
                         <span class="zh">Paozhu (🧨) 是一款 C++ Web 开发框架，内置 HTTP/1、HTTP/2、C++ ORM，可以轻松优雅地编写 Web 程序，打破以往 C++ 写 Web 程序不方便的问题。</span>
-                        <span class="en">Paozhu (🧨) is a C++ web development framework with built-in HTTP/1, HTTP/2, C++ ORM, making it easy and elegant to write web programs, breaking the previous inconvenience of writing web programs in C++.</span>
+                        <span class="en">Paozhu is a high-performance C++20 web framework with native support for HTTP/1, HTTP/2, and a built-in C++ ORM. It makes writing web programs in C++ straightforward and elegant — something that used to be painful.</span>
                     </p>
                     <p class="intro-text">
                         <span class="zh">Paozhu 编写了 Web 开发底层设施，比如多域名绑定、SSL 证书管理、Cookie、Session、HTML 表单管理、URL 处理、文件上传下载、HttpClient 客户端、数据库连接 ORM、WebSocket、日志、HTML 模板，涵盖 Web 开发基础。</span>
-                        <span class="en">Paozhu has developed the underlying infrastructure for web development, such as multi-domain binding, SSL certificate management, Cookie, Session, HTML form management, URL routing, file upload/download, HttpClient, database ORM, WebSocket, logging, and HTML templates, covering the basics of web development.</span>
+                        <span class="en">Paozhu implements the full stack of web infrastructure: multi-domain binding, SSL certificate management, cookies &amp; sessions, HTML form handling, URL routing, file uploads &amp; downloads, HttpClient, ORM with coroutines, WebSocket support, logging, and an HTML template engine.</span>
                     </p>
                     <p class="intro-text">
                         <span class="zh">框架基于 C++20 标准，开启了 ASAN 和完整错误提示，方便开发阶段发现问题。压力测试可发现多线程数据竞争问题，运行时可结合 coredumpctl 查看内存栈。配合智能指针基本杜绝内存泄露和越界问题。</span>
-                        <span class="en">The framework is based on C++20, enabling ASAN and comprehensive error hints (-Wall) to identify problems during development. Stress testing can detect multi-threaded data race issues. Combined with smart pointers, the framework has essentially eliminated memory leaks and buffer overflow issues.</span>
+                        <span class="en">The framework is built on C++20, so you get modern language features and full compiler support. It ships with ASAN enabled and all compiler warnings turned on, which makes bugs easier to catch during development; stress tests help surface race conditions. At runtime, you can pair it with <code>coredumpctl</code> to inspect thread stacks. Smart pointers and RAII patterns mean memory leaks and buffer overflows are practically eliminated.</span>
                     </p>
                     <p class="intro-text">
                         <span class="zh">Paozhu 使用 C++，主要考虑接入大模型（CUDA、文件存储、网络、内存操作）。对比 Go、Java、Rust，各有不足，C++ 更适合 AI 深度整合。ASAN 和 coredumpctl 两个工具可保证 C++ 质量。</span>
-                        <span class="en">Paozhu uses C++ mainly for large model integration (CUDA, file storage, network, memory operations). Compared to Go, Java, and Rust, C++ is better suited for deep AI integration. ASAN and coredumpctl tools help ensure C++ code quality.</span>
+                        <span class="en">We chose C++ because it integrates naturally with large-model ecosystems: CUDA, file storage, networking, and raw memory operations are all first-class citizens here. To be fair, every language has tradeoffs — but with modern tooling (ASAN, coredumpctl, strict compiler warnings), C++ is very manageable and powerful for AI-heavy backends.</span>
                     </p>
                 </div>
             </section>
@@ -970,8 +970,8 @@
                     <span class="en">📦 The full source code is open source. Visit <a href="https://github.com/hggq/paozhu" target="_blank" rel="noopener" style="color: #2563eb; text-decoration: underline;">GitHub: https://github.com/hggq/paozhu</a> for all source code and examples</span>
                 </p>
                 <p class="section-desc">
-                    <span class="zh">仅需几行代码即可创建一个 Web 接口 testhello.cpp 文件 放在 <code>controller/src</code> 目录下面</span>
-                    <span class="en">Create a web endpoint with just a few lines of code, testhello.cpp in <code>controller/src</code> directory</span>
+                    <span class="zh">仅需几行代码即可创建一个 Web 接口：将 testhello.cpp 放在 <code>controller/src</code> 目录下</span>
+                    <span class="en">Create a web endpoint with just a few lines of code. Save <code>testhello.cpp</code> under the <code>controller/src</code> directory.</span>
                 </p>
 
                 <div class="code-showcase">
@@ -991,7 +991,7 @@
                 </div>
                 <p class="code-hint" style="margin-top: 1rem; font-size: 0.9rem; color: #64748b;">
                     <span class="zh">无需编写 testhello.h 文件，框架自动生成这个文件，直接编译</span>
-                    <span class="en">No need to write the testhello.h file, the framework will automatically generate it, Directly compile by running</span>
+                    <span class="en">No need to write <code>testhello.h</code> — the framework auto-generates it. Just run:</span>
                 </p>
                            <div class="code-showcase">
                 <pre class="arch-code"><code>mkdir build
@@ -1005,7 +1005,7 @@ make</code></pre>
                 </p>
                 <p class="code-hint" style="margin-top: 0.5rem; font-size: 0.9rem; color: #64748b;">
                     <span class="zh">//@urlpath 注解自动将函数映射到 /hello 路径</span>
-                    <span class="en">//@urlpath annotation auto-maps function to /hello path</span>
+                    <span class="en">The <code>//@urlpath</code> annotation auto-maps the function to the <code>/hello</code> route.</span>
                 </p>
             </section>
 
@@ -1031,14 +1031,14 @@ make</code></pre>
                         <div class="feature-icon">🗄️</div>
                         <div class="feature-text">
                             <strong><span class="zh">内置 ORM</span><span class="en">Built-in ORM</span></strong>
-                            <span><span class="zh">自研 MySQL PostgreSQL SQLite 协议，支持协程模式</span><span class="en">Custom MySQL PostgreSQL SQLite protocol with coroutine support</span></span>
+                            <span><span class="zh">自研 MySQL PostgreSQL SQLite 协议，支持协程模式</span><span class="en">Custom wire protocol for MySQL, PostgreSQL, SQLite — with coroutine support</span></span>
                         </div>
                     </div>
                     <div class="feature">
                         <div class="feature-icon">☁️</div>
                         <div class="feature-text">
-                            <strong><span class="zh">多域名与 SAAS</span><span class="en">Multi-domain & SAAS</span></strong>
-                            <span><span class="zh">多域名管理、SAAS 模式支持</span><span class="en">Multi-domain and SAAS mode support</span></span>
+                            <strong><span class="zh">多域名与 SaaS</span><span class="en">Multi-domain &amp; SaaS</span></strong>
+                            <span><span class="zh">多域名管理、SaaS 模式支持</span><span class="en">Multi-domain management and multi-tenant SaaS mode</span></span>
                         </div>
                     </div>
                     <div class="feature">
@@ -1052,7 +1052,7 @@ make</code></pre>
                         <div class="feature-icon">📊</div>
                         <div class="feature-text">
                             <strong><span class="zh">内置微型对象</span><span class="en">Built-in Micro Objects</span></strong>
-                            <span><span class="zh">JSON 导入导出，类似脚本语言变量</span><span class="en">JSON import/export like scripting languages</span></span>
+                            <span><span class="zh">JSON 导入导出，类似脚本语言变量</span><span class="en">A lightweight dynamic type with JSON import/export — like variables in scripting languages</span></span>
                         </div>
                     </div>
                     <div class="feature">
@@ -1176,11 +1176,11 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                 <div class="arch-desc">
                     <p class="intro-text">
                         <span class="zh">框架使用 ASIO 的线程池做 IO 处理（网络收发），内置业务线程池运行业务代码。HTTP/HTTPS 监听连接到来，协程函数直接运行，普通函数丢到业务线程池。静态文件直接发送，不走业务线程。</span>
-                        <span class="en">ASIO thread pool handles IO (network send/receive), while built-in business thread pool runs application code. HTTP/HTTPS listeners accept connections; coroutine functions run directly, regular functions go to business thread pool. Static files are served directly without business thread involvement.</span>
+                        <span class="en">The ASIO thread pool handles all IO — network send/receive, TLS handshake, and HTTP parsing. A separate business thread pool runs your application code. The server listens on ports 80 and 443; when a request comes in, the framework decides based on the handler signature: coroutines run directly on ASIO workers, regular functions go to the business thread pool. Static files are streamed back without touching business threads.</span>
                     </p>
                     <p class="intro-text">
                         <span class="zh">C++ 协程具有传染性，在协程注册函数中需使用 ORM 协程方法。普通函数中无法发起协程函数，只能使用 ORM 普通函数。建议一个连接一个线程的经典模式。</span>
-                        <span class="en">C++ coroutines are contagious — coroutine handler functions must use async ORM methods, while regular handlers use sync ORM methods. The classic one-connection-per-thread pattern is recommended.</span>
+                        <span class="en">C++ coroutines are contagious: if a handler is a coroutine, every ORM call inside must use the async <code>async_*</code> versions. Regular handlers can only use sync ORM methods — you can't mix them. If your handler is CPU-heavy, keep it a regular function so it runs on the business thread pool.</span>
                     </p>
                 </div>
             </section>
@@ -1193,28 +1193,28 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                 </h2>
                 <p class="section-desc">
                     <span class="zh">框架未分离命令行工具独立安装，全部包含在一个项目内</span>
-                    <span class="en">Framework and CLI are bundled in a single project</span>
+                    <span class="en">Framework and CLI live inside one project — no separate global install needed.</span>
                 </p>
                 <div class="structure-showcase">
                     <pre class="structure-code"><code>
 .
 ├── asio                    <span class="comment"><span class="zh">asio 库文件</span><span class="en">ASIO library files</span></span>
 ├── bin                     <span class="comment"><span class="zh">编译后的执行文件</span><span class="en">Compiled executables</span></span>
-├── cache                   <span class="comment"><span class="zh">缓存压缩文件</span><span class="en">Cache compressed files</span></span>
+├── cache                   <span class="comment"><span class="zh">缓存压缩文件</span><span class="en">Compressed response cache</span></span>
 ├── conf                    <span class="comment"><span class="zh">配置文件 (server.conf, orm.conf)</span><span class="en">Config files (server.conf, orm.conf)</span></span>
-├── controller              <span class="comment"><span class="zh">路由器代码入口</span><span class="en">Router code entry</span></span>
-├── libs                    <span class="comment"><span class="zh">业务代码库</span><span class="en">Business code library</span></span>
+├── controller              <span class="comment"><span class="zh">路由器代码入口</span><span class="en">Controller &amp; route handlers</span></span>
+├── libs                    <span class="comment"><span class="zh">业务代码库</span><span class="en">Reusable business libraries</span></span>
 ├── log                     <span class="comment"><span class="zh">日志目录</span><span class="en">Log directory</span></span>
-├── models                  <span class="comment"><span class="zh">ORM 业务代码</span><span class="en">ORM business code</span></span>
-├── module                  <span class="comment"><span class="zh">可插拔 SO 存放</span><span class="en">Pluggable SO storage</span></span>
+├── models                  <span class="comment"><span class="zh">ORM 业务代码</span><span class="en">ORM-based data models</span></span>
+├── module                  <span class="comment"><span class="zh">可插拔 SO 存放</span><span class="en">Pluggable .so modules</span></span>
 ├── orm                     <span class="comment"><span class="zh">ORM 实体映射类</span><span class="en">ORM entity mapping classes</span></span>
-├── startup                 <span class="comment"><span class="zh">框架 main 入口</span><span class="en">Framework main entry</span></span>
+├── startup                 <span class="comment"><span class="zh">框架 main 入口</span><span class="en">Framework entry point (main)</span></span>
 ├── temp                    <span class="comment"><span class="zh">临时文件</span><span class="en">Temporary files</span></span>
-├── vendor                  <span class="comment"><span class="zh">主程序与第三方包</span><span class="en">Main program and third-party packages</span></span>
+├── vendor                  <span class="comment"><span class="zh">主程序与第三方包</span><span class="en">Main binary &amp; third-party libs</span></span>
 ├── view                    <span class="comment"><span class="zh">HTML 模板</span><span class="en">HTML templates</span></span>
-├── viewsrc                 <span class="comment"><span class="zh">编译好的视图</span><span class="en">Compiled views</span></span>
-├── websockets              <span class="comment"><span class="zh">WebSocket 程序</span><span class="en">WebSocket programs</span></span>
-└── www                     <span class="comment"><span class="zh">静态文件目录</span><span class="en">Static file directory</span></span>
+├── viewsrc                 <span class="comment"><span class="zh">编译好的视图</span><span class="en">Pre-compiled views</span></span>
+├── websockets              <span class="comment"><span class="zh">WebSocket 程序</span><span class="en">WebSocket handlers</span></span>
+└── www                     <span class="comment"><span class="zh">静态文件目录</span><span class="en">Document root (static files)</span></span>
                     </code></pre>
                 </div>
             </section>
@@ -1556,14 +1556,14 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                     <a href="saas.html" target="_blank" class="platform-card link-zh">
                         <span class="platform-icon">☁️</span>
                         <div class="platform-info">
-                            <strong><span class="zh">SAAS 模式</span></strong>
+                            <strong><span class="zh">SaaS 模式</span></strong>
                             <span><span class="zh">多租户 SaaS 部署</span></span>
                         </div>
                     </a>
                     <a href="saas_en.html" target="_blank" class="platform-card link-en">
                         <span class="platform-icon">☁️</span>
                         <div class="platform-info">
-                            <strong><span class="en">SAAS Mode</span></strong>
+                            <strong><span class="en">SaaS Mode</span></strong>
                             <span><span class="en">Multi-tenant SaaS</span></span>
                         </div>
                     </a>

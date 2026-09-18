@@ -133,53 +133,54 @@
         <h3>Contents</h3>
         <ul>
             <li><a href="#Abstract">Abstract</a></li>
-            <li><a href="#Install">Paozhu Install</a></li>
-            <li><a href="#Config">Paozhu Config</a></li>
-            <li><a href="#Staticfile">Static file website</a></li>
-            <li><a href="#saas">SAAS settings</a></li>
-            <li><a href="#Helloworld">Hello World</a></li>
-            <li><a href="#Router">URL Router</a></li>
-            <li><a href="#objval">Introduction to Built in Micro Objects(JSON)</a></li>
+            <li><a href="#Install">Installing Paozhu</a></li>
+            <li><a href="#Config">Paozhu Configuration</a></li>
+            <li><a href="#Staticfile">Serving Static Files</a></li>
+            <li><a href="#saas">SaaS settings</a></li>
+            <li><a href="#Helloworld">Getting Started with Paozhu</a></li>
+            <li><a href="#Router">Annotation Fundamentals</a></li>
+            <li><a href="#objval">Built-in Micro Objects</a></li>
             <li><a href="#sessioncookie">Session and Cookie</a></li>
-            <li><a href="#getpostfiles">get post and files</a></li>
+            <li><a href="#getpostfiles">GET, POST, and Files</a></li>
             <li><a href="#ormcontent">ORM Introduction</a></li>
-            <li><a href="#Htmltemplate">HTML Template View Description</a></li>
-            <li><a href="#jsonencode">JSON and struct conversion function json_encode json_decode</a></li>
+            <li><a href="#Htmltemplate">View Template Guide</a></li>
+            <li><a href="#jsonencode">JSON ⇄ struct with json_encode / json_decode</a></li>
             <li><a href="#httpclient">HttpClient Introduction</a></li>
             <li><a href="#Troubleshooting">Troubleshooting in C++ Production Environment</a></li>
+            <li><a href="#CleanInit">Clean Project Initialization</a></li>
         </ul>
     </div>
     <div class="container">
         <h3 id="Abstract"><strong>Abstract</strong></h3>
-        <p>Paozhu (🧨) is a C++ for web development framework with built-in HTTP/1, HTTP/2, C++ ORM, making it easy and elegant to write web programs, breaking the previous inconvenience of writing web programs in C++.</p>
-        <p>Paozhu has developed the underlying infrastructure for web development, such as multi domain binding, SSL certificate management, cookies, sessions, HTML form management, URL processing, file upload and download, HttpClient, ORM, WebSocket, Logs, HTML Template, covering the basics of web development.</p>
-        <p>The framework is based on C++20, using new standards with complete compiler support, and modernizing the code. The framework has enabled ASAN and all error prompts(-Wall), making it easy to identify problems during the development phase, stress testing can also detect multi-threaded data race issues. It can also be combined with the coredumpctl tool at runtime to view the memory stacks of various programs. Combined with intelligent pointers, the framework has basically eliminated memory leaks and out of bounds issues, and has not encountered any memory leaks or crashes so far.</p>
-        <p>Paozhu uses C++ mainly to consider the integration of large models (CUDA, file storage, network, memory operations), compared to GO JAVA RUST, which are not very perfect. C++ is also not perfect, RUST syntax is not good-looking, GO is simple but lacks AI culture in Big models, etc. At present, the experience is that ASAN and coredumpctl tools can also ensure the quality of C++, and the new compiler can also provide some hints.</p>
-        <h3>Paozhu Feature</h3>
+        <p>Paozhu (🧨) is a high-performance C++20 web framework built on Asio, with native support for HTTP/1, HTTP/2, and a built-in C++ ORM. It makes writing web programs in C++ straightforward and elegant — something that used to be painful.</p>
+        <p>Paozhu implements the full stack of web infrastructure: multi-domain binding, SSL certificate management, cookies &amp; sessions, HTML form handling, URL routing, file uploads &amp; downloads, HttpClient, ORM with coroutines, WebSocket support, logging, and an HTML template engine.</p>
+        <p>The framework is built on C++20, so you get modern language features and full compiler support. It ships with ASAN enabled and all compiler warnings turned on, which makes bugs easier to catch during development; stress tests help surface race conditions. At runtime, you can pair it with <code>coredumpctl</code> to inspect thread stacks. Smart pointers and RAII patterns throughout mean memory leaks and buffer overflows are practically eliminated — we haven't seen any crashes in production.</p>
+        <p>We chose C++ because it integrates naturally with large-model ecosystems: CUDA, file storage, networking, and raw memory operations are all first-class citizens here. To be fair, every language has tradeoffs. Rust has a steep learning curve and verbose syntax. Go is simple but the ecosystem around AI and large models is shallower. C++ isn't perfect either — but with modern tooling (ASAN, coredumpctl, strict compiler warnings), it's very manageable.</p>
+        <h3>Key Features</h3>
         <ol>
-        <li>Supports HTTP2.</li>
-        <li>Built in ORM (self-developed MySQL protocol), supporting coroutine mode.</li>
-        <li>Multi domain management and SAAS mode support.</li>
-        <li>Separate IO threads from business threads.</li>
-        <li>Built in micro objects, JSON import and export, similar to variables in scripting languages.</li>
-        <li>Built in FastCGI supports PHP</li>
+        <li>Native HTTP/2 support.</li>
+        <li>Built-in ORM with a self-implemented MySQL wire protocol; coroutine-ready.</li>
+        <li>Multi-domain management and first-class SaaS support.</li>
+        <li>Dedicated IO threads separated from business logic threads.</li>
+        <li>Built-in micro-object type (like variables in scripting languages) with JSON import/export.</li>
+        <li>Built-in FastCGI for running PHP apps.</li>
         </ol>
 
-        <h3>Paozhu Environment</h3>
-        <p>Paozhu supports <code>MacOS</code> <code>Linux</code> and <code>Windows</code> systems.</p>
-        <p>Uses third-party dependencies</p>
+        <h3>Requirements</h3>
+        <p>Paozhu runs on <code>macOS</code>, <code>Linux</code>, and <code>Windows</code>.</p>
+        <p>Required dependencies:</p>
         <p><code>OpenSSL</code> <code>Zlib</code> <code>Brotli</code> <code>ASIO</code></p>
-        <p>Optional third-party dependencies</p>
+        <p>Optional dependencies:</p>
         <p><code>GD</code> <code>qrencode</code></p>
-        <p>The framework is based on C++20 or above, ensuring that your system supports compilers that support C++20.</p>
+        <p>Paozhu requires a C++20-capable compiler.</p>
         <ul>
         <li><code>MacOS</code> <code>MacOS 11 BigSur</code> above, suggestion <code>MacOS 14 Sonoma</code></li>
         <li><code>Ubuntu</code> 22.04 above</li>
         <li><code>RockyLinux</code> <code>AlmaLinux</code> 9.1 above</li>
         <li><code>Windows</code> Win10 Compiler 19.25 or above。</li>
         </ul>
-        <h3>Paozhu Framework technology architecture principle</h3>
-        <p>The framework uses the M:N concurrency model</p>
+        <h3>Architecture Overview</h3>
+        <p>The framework uses an M:N concurrency model:</p>
         <pre><code>
                            +-----------------------+   +----------------------------+
                            | asio coroutine thread |   | thread pool(business code) |
@@ -192,12 +193,12 @@
                            +-----------------------+   +----------------------------+
         </code></pre>
 
-        <p>The Paozhu framework uses ASIO's thread pool, which is specifically designed for IO usage, such as network sending and receiving. The framework also has a built-in business thread pool, which is dedicated to running business code.</p>
-        <p>At present, the Framework mainly use HTTP and HTTPS, with two threads constantly listening for connections to arrive. When a user accesses using a browser or client, a connection is generated, and after handshake, the server waits for the client to send HTTP header information. Then, the server processes the HTTP protocol. If the URL matches, it registers a function and checks whether the function is a coroutine or a regular function. The coroutine runs directly. If it is a regular function, it is thrown directly into the business thread pool. If the URL is a static file, it is sent directly without going through the business thread.</p>
-        <p>Because C++coroutines are contagious, when running business code in coroutine registration functions, you need to use ORM coroutine methods. If you cannot initiate coroutine functions in regular functions, you can only use ORM regular functions.</p>
-        <p>It is generally recommended to use one connection to one thread, and business threads also have queues, so business code should not use the sleep function to sleep casually.</p>
-        <h3 id="Structure"><strong>Overview of Paozhu Project Structure</strong></h3>
-        <p>Paozhu is a command-line tool that is not separated and installed independently, all of which are included in one project. Multiple projects need to include framework code independently.</p>
+        <p>Paozhu uses ASIO's thread pool, which is tuned for IO-heavy work like network I/O. Separately, there is a dedicated business thread pool that handles CPU-bound logic.</p>
+        <p>At any given moment, two threads are listening on ports 80 and 443 for new connections. When a client connects, the server performs the TLS handshake (for HTTPS), parses the incoming HTTP request, and matches the URL to a registered handler. If the handler is a coroutine, it runs directly on an ASIO worker thread. If it's a regular function, it gets dispatched to the business thread pool. Static file responses are served straight away without going through business threads.</p>
+        <p>C++20 coroutines are contagious: if your handler is a coroutine, every ORM call inside it must use the async <code>async_*</code> versions. Conversely, regular handler functions must use the synchronous ORM methods — you cannot mix them.</p>
+        <p>Avoid calling <code>sleep_for</code> or similar blocking calls inside either thread pool, as it stalls other connections on the same thread.</p>
+        <h3 id="Structure"><strong>Project Directory Layout</strong></h3>
+        <p>Paozhu is not a separate CLI tool that you install globally — the framework lives inside your project source tree. Every new project should include the full framework codebase.</p>
         <pre><code>
 .
 ├── asio                          ASIO library file, the framework comes with an ASIO.zip
@@ -231,7 +232,7 @@
 └── xmake.lua                     XMake configuration
         </code></pre>
 
-        <h3 id="Install">Paozhu Install</h3>
+        <h3 id="Install">Installing Paozhu</h3>
         <p>Download from GitHub</p> 
         <p><a href="https://github.com/hggq/paozhu" target="_blank">https://github.com/hggq/paozhu</a></p>
         <ul>
@@ -240,7 +241,7 @@
         <li><a href="https://hggq.github.io/paozhudocs/linux_en.html" target="_blank">RockyLinux AlmaLinux install</a></li>
         <li><a href="https://hggq.github.io/paozhudocs/windows_en.html" target="_blank">Windows install</a></li>
         </ul>
-        <h3 id="Config">Paozhu Config</h3>
+        <h3 id="Config">Paozhu Configuration</h3>
         <p>Paozhu Config file at <code>conf/server.conf</code></p>
         <p>You can first understand a few variables to get the project running.</p>
         <pre><code>
@@ -337,7 +338,7 @@
         <p><code>wwwpath=/Users/hzq/paozhu/www/default</code> <code>/Users/hzq/paozhu</code> Suggest changing to your current directory name, Under the project, 'www/default' is a static file directory. If it is a multi domain, it is recommended to create a 'www/host.com' setting for SAAS services.</p>
         <p><code>upload_max_size=16777216</code> Upload file size, default is 16M</p>
 
-        <h3 id="Staticfile">Static file website</h3> 
+        <h3 id="Staticfile">Serving Static Files</h3> 
         <p><code>conf/server.conf</code> In this configuration file, <code>wwwpath</code> It is a path for storing static web files, which can provide WWW services without writing programs. Generally, it stores HTML, JS, CSS, and JPG files, which can be directly opened and accessed using a browser.</p>
         <p>All domain websites are stored in the www directory, with a structure similar to the following.</p>
         <pre><code>
@@ -351,7 +352,7 @@
         <p><code>http://www.host.com/index.html</code> The browser opens index.html in the <code>host.com</code> directory.</p>
 
 
-        <h3 id="saas">SAAS settings</h3>
+        <h3 id="saas">SaaS settings</h3>
         <p>The following are SAAS settings that can be ignored for now .</p>
         <p><a href="saas_en.html">View using SAAS mode</a></p>
         <pre><code>
@@ -366,7 +367,7 @@
         <p><code>client.get_theme();</code> get theme </p>
         <p><code>client.theme_view(contt std::string &);</code> set theme view file</p>
         <p>Beginners only need to understand <code>httpport</code> <code>httpsport</code> <code>wwwpath</code> <code>logpath</code> Ensure that the settings are correct, Replace all '/Users/hzq/paozhu' with your directory.</p>
-        <h3 id="Helloworld">Paozhu Introduction</h3>
+        <h3 id="Helloworld">Getting Started with Paozhu</h3>
         <h4>Hello World Example</h4>
         <p>Paozhu uses annotation to associate URLs with functions, turning a function into an annotated function with just one line.</p>
         <p><code>//@urlpath(null,plaintext)</code></p>
@@ -385,14 +386,13 @@
         
         </code></pre>
         <h3 id="Router">Annotation Fundamentals</h3>
-        <p>All annotation function cpp files must be placed in the<code>controller/src</code>directory.</p>
-        <p>This <code>techempower.cpp</code> file must contain its own file name <code>#include "techempower.h"</code>, The <code>techempower.h</code> file will be automatically generated.</p>
-        <p>When compiling, use the CMake Hook to first compile an annotation handler that can be used, and then execute this program to handle <code>controller/src</code> Extract functions in the format of <code>//@urlpath(null, plaintext)</code> from all files in the directory, create corresponding header files, and then generate Annotate the function and save the mapping function to the <code>common/autocontrolmethod.hpp</code> file.</p>
-        <p>Doesn't it have a strong Java Spring Boot flavor so that we can elegantly write URL and function mapping relationships without manually registering functions and writing header files.</p>
-        <h3>Annotation Example</h3>
-        <p><code>//@urlpath(null,plaintext)</code> annotate functions，Mapping with URL，Example http://localhost/plaintext Will access the annotation function of 'plaintext'.</p>
-        <p>null represents the annotation function that must be executed before accessing plaintext, for example: a backend with permissions that requires verification of login status</p>
-        <p><code>//@urlpath(islogin,plaintext)</code> This requires first executing the 'islogin' annotation and returning 'OK' to indicate success.</p>
+        <p>All controller files must live under <code>controller/src/</code>. Each <code>.cpp</code> file must <code>#include</code> a header matching its own filename (e.g. <code>techempower.cpp</code> includes <code>"techempower.h"</code>) — that header is auto-generated during the build.</p>
+        <p>Here's how the magic works: CMake runs a preprocessor binary ahead of the real compilation. That tool scans every file in <code>controller/src/</code>, looks for functions tagged with <code>//@urlpath(null, plaintext)</code>, generates the corresponding header files, and writes the URL → function mapping into <code>common/autocontrolmethod.hpp</code>.</p>
+        <p>If this feels familiar — it's basically Spring Boot's annotation-based routing, ported to C++. No manual registration, no hand-written headers.</p>
+
+        <h3>How to Read <code>//@urlpath(pre, path)</code></h3>
+        <p>The first argument is a <em>pre-filter</em> — a function that runs before the main handler. <code>null</code> means "no pre-filter". So <code>//@urlpath(null, plaintext)</code> means "register the function below at <code>/plaintext</code>, no prerequisites."</p>
+        <p>Now take a protected admin page: <code>//@urlpath(islogin, admin/main)</code> means "run <code>islogin</code> first; if it returns <code>ok</code>, proceed to <code>admin/main</code>. Otherwise the request is rejected."</p>
         <pre><code class="language-C++">
         //@urlpath(null, islogin)
         asio::awaitable&lt;std::string&gt; checklogin(std::shared_ptr&lt;httppeer&gt; peer)
@@ -409,13 +409,16 @@
             co_return &quot;&quot;;
         }
         </code></pre>
-        <p><code>asio::awaitable&lt;std::string&gt;</code> The coroutine annotation function indicates that the code inside does not go through business threads, If heavy calculations are required, it is best to use regular functions so that business threads can handle them without blocking IO threads.</p>
-        <p><code>peer-&gt;session[&quot;userid&quot;]</code> get <code>session</code> content, The content saved after successful login before。</p>
-        <p><code>client &lt;&lt; &quot;You must login&quot;;</code> It is overloaded with the&lt;&lt;operator, and the actual content is saved in peer-&gt;output.</p>
-        <p><code>co_return &quot;&quot;;</code> It is a coroutine that returns the result. Please note that it is different from a regular function, and it is best to return an empty string if you are unsure.</p>
-        <p>The following is a regular registration function, pay attention to the return value, indicating that it goes through the business thread pool, which assigns one thread to each connection. This is a classic application.</p>
-        <p>It is recommended to use this ordinary function for load computing, otherwise a large amount of computation may affect concurrency, which is possible if it is only for CRUD business
-        It shouldn't be a problem to use that method. When using coroutines, don't use <code>std::this_thread::sleep_for(std::chrono::microseconds(1000));</code> This type of code.</p>
+        <p>A few notes on the code above:</p>
+        <ul>
+        <li><code>asio::awaitable&lt;std::string&gt;</code> marks this handler as a coroutine — it runs directly on an ASIO worker thread, <em>never</em> on the business thread pool. Keep heavy computation out of coroutines; that's what regular functions are for.</li>
+        <li><code>peer-&gt;session["userid"]</code> reads a value from the user's session (set at login).</li>
+        <li><code>client &lt;&lt; "You must login";</code> uses the overloaded <code>&lt;&lt;</code> operator; the string ends up in <code>peer-&gt;output</code>.</li>
+        <li><code>co_return ""</code> exits the coroutine. Always return an empty string from coroutine handlers unless you know what you're doing.</li>
+        </ul>
+
+        <p>Here's the regular-function version. The return type is plain <code>std::string</code>, which tells the framework to dispatch it to the business thread pool (one thread per connection). This is the safe default for CPU-heavy work or blocking ORM calls.</p>
+        <p>For CPU-intensive tasks, prefer the regular-function route — otherwise you'll starve the IO threads and hurt overall concurrency. And never call <code>std::this_thread::sleep_for(...)</code> inside a coroutine; it blocks the ASIO worker for everyone.</p>
         <pre><code class="language-C++">
         //@urlpath(null,hello)
         std::string testhello(std::shared_ptr&lt;httppeer&gt; peer)
@@ -445,7 +448,7 @@
         </code></pre>
     </div>
     <div class="container"> 
-        <h3 id="objval">Introduction to Built in Micro Objects</h3>
+        <h3 id="objval">Introduction to Built-in Micro Objects</h3>
         <pre><code class="language-C++">
         http::obj_val hval;
         hval[&quot;aaa&quot;]=3344;
@@ -635,7 +638,7 @@
         <p><code>save_session()</code> save session values to disk or memory.</p> 
         
         <p><br /></p> 
-        <h3 id="getpostfiles">get post and files</h3>
+        <h3 id="getpostfiles">GET, POST, and Files</h3>
         <p>The framework has three built-in methods for handling HTML data transmission and processing, all of which are built-in micro objects of type <code>http::obj_val</code>, The three objects are <code>client.get[]</code> <code>client.post[]</code> <code>client.files[]</code></p> 
         <p>URL parameter value transmission, use <code>client.get[]</code> get values, example <code>http://www.xxx.com/aa?username=root&userid=1111</code> use <code>client.get["username"].to_string()</code> and <code>client.get["userid"].to_int()</code>  get the values.</p> 
         
@@ -750,7 +753,7 @@
         charset=utf8mb4
         #ssl=ON
         </code></pre>
-        <h3>ORM Config</h3>
+        <h3>ORM Configuration</h3>
         <p><code>type</code> The type is Master-Slave Replication and cache synchronization can be developed in the future. Currently, master-slave is preferred. Host '127.0.0.1' fills in the local address, MySQL must be greater than or equal to version 8 because MySQL 9 does not support old authentication, So Paozhu C++ ORM only supports new authentication methods.</p>
         <p><code>pretable</code> It is a table prefix, sometimes only one database permission can store multiple businesses in one database.</p>
         <p><code>dbtype</code> Currently supports MySQL.</p>
@@ -822,7 +825,7 @@
         auto users = orm::cms::Sysuser();</p>
         <p>orm is namespae, Mainly used for ORM business
         CMS is the orm.conf file database configuration tag and also the generated CMS namespace, which facilitates database isolation and transformation. If it is [default], default can be omitted</p>
-        <h3>ORM design philosophy</h3>
+        <h3>ORM Design Principles</h3>
         <p>Why is it designed in this way? Actually, it is also a unique design of the Paozhu framework compared to other Framework.</p>
         <ol>
         <li>A database can have multiple connections, so we don't have to know which connection to use.</li>
@@ -840,7 +843,7 @@
         Querying can allocate database servers in a fixed or dynamic manner, and the framework can be suitable for large business systems.
         Currently, the focus is on integrating a server with a database and business programs.</p>
         <p>ORM does not have multi table join queries and requires manual writing of multi table queries. This may result in one or more additional queries at the beginning of the design, mainly due to fast in and fast out, which makes it easy to hit the cache and is in line with the current storage computing separation design. It also performs smoothly under high pressure, and novice programmers will not encounter any problems when writing business code.</p>
-        <h3>ORM usage example</h3>
+        <h3>ORM Usage Examples</h3>
         <p>The table model has two important member variables</p>
         <ul>
         <li>data     is a mapping of a single table data structure</li>
@@ -1736,12 +1739,99 @@
         echo '/swap.img none swap sw 0 0' | sudo tee -a /etc/fstab    
         </code></pre>
         
+        </div>
 
+        <div class="container">
+
+        <h3 id="CleanInit"><strong>Clean Project Initialization</strong></h3>
+        <p>After cloning the Paozhu framework from GitHub, you usually want to strip out the example business code and keep only the framework core plus the hello route as a minimal starting scaffold. Follow this recommended four‑step cleanup flow.</p>
+
+        <h4>Step 1 — Trim <code>common/</code> registration files</h4>
+        <p>Six files need to be slimmed down: <strong>keep</strong> <code>#include "httppeer.h"</code>, <strong>remove</strong> every other <code>#include</code>, and empty the bodies of registration functions such as <code>_initauto_control_httpmethodregto()</code> (keep the function signatures).</p>
+        <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; margin:10px 0;">
+          <tr><th>File</th><th>Purpose</th></tr>
+          <tr><td><code>common/autocontrolmethod.hpp</code></td><td>Controller method registration (auto-extracted by the build system from <code>controller/src</code>)</td></tr>
+          <tr><td><code>common/autorestfulpaths.hpp</code></td><td>RESTful path registration</td></tr>
+          <tr><td><code>common/reghttpmethod.hpp</code></td><td>HTTP method registration</td></tr>
+          <tr><td><code>common/reghttpmethod_pre.hpp</code></td><td>HTTP pre-filter registration</td></tr>
+          <tr><td><code>common/sockets_method_reg.hpp</code></td><td>Socket method registration</td></tr>
+          <tr><td><code>common/websockets_method_reg.hpp</code></td><td>WebSocket method registration</td></tr>
+        </table>
+        <p>Each file should end up looking like:</p>
+<pre><code>#include "httppeer.h"
+
+void _initauto_control_httpmethodregto(std::map&lt;std::string, regmethold_t&gt; &amp;methodcallback)
+{
+    // empty implementation
+}
+// other registration functions similarly cleared
+</code></pre>
+
+        <h4>Step 2 — Remove the ORM layer</h4>
+<pre><code>rm -rf models/* schema/* orm/*
+</code></pre>
+        <p>These three directories hold database models and generated ORM code — they are not needed for a clean scaffold. Regenerate later with <code>bin/paozhu_cli orm &lt;tag&gt;</code> when you enable a database.</p>
+
+        <h4>Step 3 — Clean up view files (keep the registration skeleton)</h4>
+        <p>Do <strong>not</strong> <code>rm -rf</code> the whole <code>viewsrc/</code> directory — the registration headers under <code>viewsrc/include/</code> must be kept as skeletons. Three sub-steps:</p>
+
+        <p><strong>3.1 Remove the view source and template directories</strong></p>
+<pre><code>rm -rf viewsrc/view/ view/
+</code></pre>
+        <p><code>viewsrc/view/</code> holds the C++ view implementations; <code>view/</code> holds the HTML templates. Both are example code and can be deleted directly.</p>
+
+        <p><strong>3.2 Empty the <code>namespace view</code> block in <code>viewsrc/include/viewsrc.h</code></strong></p>
+        <p>Open <code>viewsrc/include/viewsrc.h</code>, delete every inner namespace (admin, cms, home, login, superadmin, techempower) and their function declarations inside <code>namespace http { namespace view { ... } }</code>. <strong>Keep the outer namespace wrappers and all <code>#include</code> lines.</strong> The file should end up like:</p>
+<pre><code>#ifndef __HTTP_VIEWSRC_ALL_METHOD_H
+#define __HTTP_VIEWSRC_ALL_METHOD_H
+// ... includes unchanged ...
+
+namespace http { 
+namespace view { 
+
+}
+
+}
+#endif
+</code></pre>
+
+        <p><strong>3.3 Empty the function body in <code>viewsrc/include/regviewmethod.hpp</code></strong></p>
+        <p>Open <code>viewsrc/include/regviewmethod.hpp</code>, delete every <code>_viewmetholdreg.emplace(...)</code> line inside <code>_initview_method_regto</code>. <strong>Keep the function signature, namespace, and all <code>#include</code> lines.</strong> The file should end up like:</p>
+<pre><code>namespace http
+{
+  void _initview_method_regto(VIEW_REG &amp;_viewmetholdreg)
+  {
+    // empty body
+  } 
+}
+</code></pre>
+        <p>This removes all example business code while preserving the full view-registration skeleton. When you add new views later, just declare functions inside <code>namespace view</code> and register them in <code>regviewmethod.hpp</code>.</p>
+
+        <h4>Step 4 — Remove controllers (keep <code>testhello</code>)</h4>
+<pre><code>rm -rf controller/include/*
+find controller/src -type f ! -name 'testhello.cpp' -delete
+</code></pre>
+        <p>The remaining <code>controller/src/testhello.cpp</code> carries the <code>//@urlpath(null,hello)</code> annotation and is the single entry point of the hello world route. Once you rebuild, <code>http://127.0.0.1/hello</code> is live again.</p>
+
+        <h4>Done</h4>
+        <p>Rebuild the project after the four steps to get a clean scaffold:</p>
+<pre><code>cd build &amp;&amp; cmake .. &amp;&amp; make -j$(sysctl -n hw.ncpu)
+</code></pre>
+        <p>Run <code>./bin/paozhu</code> and open <code>http://127.0.0.1/hello</code> — you should see <code>Hello world! 🧨 Paozhu c++ web framework</code>, which confirms the framework core is intact.</p>
+
+        <h4>Stress Test</h4>
+        <p>Enable <code>ENABLE_BENCHMARK</code> because the project has rate limiting turned on by default:</p>
+<pre><code>cd build &amp;&amp; cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_BENCHMARK=ON &amp;&amp; make -j$(sysctl -n hw.ncpu)
+</code></pre>
+
+        </div>
+
+        <div class="container">
         <h3 id="docsmemo">Postscripts</h3>
-        <p>Finally, it should be noted that when writing code, one should pay attention to the writing style and not use new and delete directly, using the built-in STL is also sufficient. It is recommended to use smart pointers. Older programmers like to squeeze CPU performance, but in fact, compilers often optimize it for you, so business code should be used happily.</p>
-        <p>Web development originally values business processes, and many C++developers like to write meta compilations and various template codes in their business code. This should be prohibited, not to show off their skills, but to suspect that they are motivated to write junk code. They can use meta compilations and template codes when entering library files.</p>
-        <p>Many times in web development, there is not enough time, so a lot of code becomes garbage. However, C++is garbage and runs very fast. It is also possible that business processes may change and become obsolete without optimization.</p>
-        <p>Many people think that it is impossible to write the web in C++, but Paozhu has achieved it. If you are a pure CRUD business, you can also use other languages. If it is C++, there is a vast world. Not only can you write CRUD applications, but you can also use FFmpeg to write multimedia, WebRTC， Industrial grade OpenCV applications, facial authentication, IoT, etc.</p>
+        <p>Small tips from the author: when writing business code in C++, don't reach for raw <code>new</code>/<code>delete</code> — STL containers and smart pointers are enough. Old-school programmers love to wring every cycle out of the CPU, but modern compilers optimize aggressively anyway, so just write code that feels natural.</p>
+        <p>Web development is about shipping business logic, not showing off. Some C++ developers can't resist sprinkling template metaprogramming into business code — that's not a flex, it's a red flag. Save metaprogramming and template tricks for library and framework code, not where it'll be read three months from now by someone who just wants to fix a bug.</p>
+        <p>Web projects are fast-moving, and a lot of "clean" code turns into legacy. But here's the thing: even messy C++ code is fast. Business requirements change faster than code rots, so the "garbage" may never need optimizing — it'll get replaced first.</p>
+        <p>Many people think you can't build serious web backends in C++. Paozhu proves you can. If you're doing plain CRUD, other languages are fine too. But C++ opens doors no other web language can: FFmpeg for multimedia, WebRTC, industrial-grade OpenCV, face recognition, IoT — all first-class citizens.</p>
         <p>Paozhu does not rely too much on third parties, reducing the risk of middleware attacks.</p>
 </div>
 <a href="javascript:window.scrollTo({ top: 0,  behavior: 'smooth' });" class="scroll-top align-items-center justify-content-center">Top</a>
