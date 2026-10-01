@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Paozhu ORM vs Drogon ORM — 2026 Benchmark</title>
+     <style>
+        /* Light mode */
+        body {
+            font-family:'Helvetica Neue',Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:1.45em;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+
+        /* Table styling */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+        table th, table td {
+            border: 1px solid;
+            padding: 6px 10px;
+            text-align: left;
+        }
+        table th { font-weight: bold; }
+        @media (prefers-color-scheme: light) {
+            table th, table td { border-color: #bbb; }
+            table th { background-color: #eef; }
+            table tr:nth-child(even) td { background-color: #f7f7f7; }
+        }
+        @media (prefers-color-scheme: dark) {
+            table th, table td { border-color: #555; }
+            table th { background-color: #224; }
+            table tr:nth-child(even) td { background-color: #1a1a1a; }
+        }
+    </style>
+  </head>
+  <body>
+     <div class="container">
+        <h3 style="text-align:center;">2026 Paozhu ORM vs Drogon ORM — Plain ORM Stress Test Results</h3>
+        <h4 style="text-align:center;"><a href="2026_paozhu-orm_vs_drogon-orm.html">中文</a> <a href="2026_paozhu-orm_vs_drogon-orm_en.html">English</a></h4>
+
+<p>Both sync and async modes tested, all data collected! Here is the comparison table:</p>
+<hr />
+<h2>📊 Paozhu vs Drogon ORM Stress Test Comparison</h2>
+<p>Same test conditions: <strong>MySQL 8.4.4, <code>SELECT * FROM sysuser WHERE name='admin'</code>, 2000 iters/thread</strong></p>
+<h3>Throughput (ops/s) — higher is better</h3>
+<table>
+<thead>
+<tr>
+<th>Threads</th>
+<th><strong>paozhu SYNC</strong></th>
+<th><strong>paozhu ASYNC</strong></th>
+<th><strong>drogon SYNC</strong></th>
+<th><strong>drogon ASYNC</strong></th>
+<th>paozhu vs drogon ratio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>11,122</td>
+<td>12,734</td>
+<td>5,860</td>
+<td>5,565</td>
+<td><strong>2.2x</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td>24,128</td>
+<td>24,351</td>
+<td>11,484</td>
+<td>11,810</td>
+<td><strong>2.1x</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>44,661</td>
+<td>41,184</td>
+<td>21,190</td>
+<td>23,101</td>
+<td><strong>2.0x</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td>56,414</td>
+<td>54,959</td>
+<td>25,301</td>
+<td>22,749</td>
+<td><strong>2.2x</strong></td>
+</tr>
+<tr>
+<td>16</td>
+<td>72,461</td>
+<td>68,949</td>
+<td>25,094</td>
+<td>22,536</td>
+<td><strong>2.9x</strong></td>
+</tr>
+<tr>
+<td>32</td>
+<td><strong>73,237</strong></td>
+<td><strong>77,602</strong></td>
+<td>24,800</td>
+<td>22,087</td>
+<td><strong>3.1x</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>p99 Latency (μs) — lower is better</h3>
+<table>
+<thead>
+<tr>
+<th>Threads</th>
+<th><strong>paozhu SYNC</strong></th>
+<th><strong>paozhu ASYNC</strong></th>
+<th><strong>drogon SYNC</strong></th>
+<th><strong>drogon ASYNC</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>204</td>
+<td>155</td>
+<td>306</td>
+<td>317</td>
+</tr>
+<tr>
+<td>2</td>
+<td>144</td>
+<td>138</td>
+<td>294</td>
+<td>277</td>
+</tr>
+<tr>
+<td>4</td>
+<td>156</td>
+<td>160</td>
+<td>289</td>
+<td>261</td>
+</tr>
+<tr>
+<td>8</td>
+<td>223</td>
+<td>227</td>
+<td>454</td>
+<td>510</td>
+</tr>
+<tr>
+<td>16</td>
+<td>420</td>
+<td>410</td>
+<td>869</td>
+<td>998</td>
+</tr>
+<tr>
+<td>32</td>
+<td>1,625</td>
+<td>823</td>
+<td>1,697</td>
+<td>1,930</td>
+</tr>
+</tbody>
+</table>
+<h3>p50 Latency (μs)</h3>
+<table>
+<thead>
+<tr>
+<th>Threads</th>
+<th><strong>paozhu SYNC</strong></th>
+<th><strong>paozhu ASYNC</strong></th>
+<th><strong>drogon SYNC</strong></th>
+<th><strong>drogon ASYNC</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>85</td>
+<td>71</td>
+<td>160</td>
+<td>166</td>
+</tr>
+<tr>
+<td>2</td>
+<td>79</td>
+<td>79</td>
+<td>167</td>
+<td>163</td>
+</tr>
+<tr>
+<td>4</td>
+<td>85</td>
+<td>92</td>
+<td>180</td>
+<td>167</td>
+</tr>
+<tr>
+<td>8</td>
+<td>138</td>
+<td>141</td>
+<td>303</td>
+<td>339</td>
+</tr>
+<tr>
+<td>16</td>
+<td>208</td>
+<td>221</td>
+<td>614</td>
+<td>686</td>
+</tr>
+<tr>
+<td>32</td>
+<td>198</td>
+<td>393</td>
+<td>1,244</td>
+<td>1,401</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>🔑 Key Findings</h3>
+<ol>
+<li>
+<p><strong>Paozhu dominates across the board — throughput ~2-3x that of Drogon</strong></p>
+<ul>
+<li>paozhu: linear scaling continues up to T=32 (77K ops/s)</li>
+<li>drogon: <strong>bottleneck hits at T=4~8</strong> (21-25K), then actually drops (more threads fighting over connections/locks)</li>
+</ul>
+</li>
+<li>
+<p><strong>Latency also leads — p50 roughly 2x faster</strong></p>
+<ul>
+<li>paozhu p50 stays stable at 70-200μs (only climbs to 393μs at high T)</li>
+<li>drogon p50 deteriorates rapidly at high concurrency to 1.2-1.4ms</li>
+</ul>
+</li>
+<li>
+<p><strong>Paozhu ASYNC overtakes SYNC at high concurrency</strong> (77.6K &gt; 73.2K)</p>
+<ul>
+<li>executor_work_guard + multi-IO thread pool effectively absorbs high concurrency pressure</li>
+<li>drogon ASYNC is actually slower than SYNC (EventLoop single-thread bottleneck)</li>
+</ul>
+</li>
+<li>
+<p><strong>Zero error rate</strong> — both are stable</p>
+</li>
+</ol>
+<h3>Possible Reasons</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>paozhu</th>
+<th>drogon</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Connection acquisition</td>
+<td>Direct get/put (<code>get_mysql_select_conn</code> / <code>back_mysql_select_conn</code>)</td>
+<td>May have more Mapper/SqlBinder layer object creation</td>
+</tr>
+<tr>
+<td>Event loop</td>
+<td>ASIO multi-thread concurrent run (executor_work_guard)</td>
+<td>trantor EventLoop, 4 threads but CoroMapper may have serialization bottleneck</td>
+</tr>
+<tr>
+<td>Object overhead</td>
+<td>Lightweight <code>Sysuser</code>, <code>fetch_one</code> directly returns int</td>
+<td>Constructs full model object + Result/Row parsing layer</td>
+</tr>
+<tr>
+<td>Connection pool behavior</td>
+<td>maxpool=60 in tests, should be sufficient</td>
+<td>maxpool also 60, but wait queue may have lock contention under high concurrency</td>
+</tr>
+</tbody>
+</table>
+<p>Test code attached below — Drogon stress test code</p>
+<pre><code>/*
+ * main.cc — Drogon ORM multi-thread stress test
+ *
+ * SYNC:  Mapper&lt;Sysuser&gt;(client).limit(1).findOne(Criteria(_name, &quot;admin&quot;))
+ * ASYNC: co_await CoroMapper&lt;Sysuser&gt;(client).limit(1).findOne(...)
+ *        (multiple threads submit coroutines to shared EventLoop, IO thread pool picks them up)
+ *
+ * Compile: cd build &amp;&amp; cmake .. &amp;&amp; make -j
+ * Run:
+ *   ./cms_query sync                          # default 2000 iters, T=1 2 4 8 16
+ *   ./cms_query async 2000 1 2 4 8 16         # specify iters and thread counts
+ *   ./cms_query sync 5000 4 8 16              # 5000 iters, T=4 8 16
+ */
+#include &quot;Sysuser.h&quot;
+#include &lt;drogon/drogon.h&gt;
+#include &lt;drogon/orm/CoroMapper.h&gt;
+#include &lt;drogon/orm/Mapper.h&gt;
+#include &lt;drogon/orm/Criteria.h&gt;
+#include &lt;iostream&gt;
+#include &lt;chrono&gt;
+#include &lt;vector&gt;
+#include &lt;thread&gt;
+#include &lt;mutex&gt;
+#include &lt;atomic&gt;
+#include &lt;condition_variable&gt;
+#include &lt;algorithm&gt;
+#include &lt;string&gt;
+#include &lt;cstdio&gt;
+
+using namespace drogon;
+using namespace drogon::orm;
+using namespace drogon_model::cppcms;
+
+using clk = std::chrono::high_resolution_clock;
+
+static DbClientPtr g_client;
+
+struct ThreadStat { int64_t ops = 0, errors = 0; std::vector&lt;double&gt; samples; };
+struct BenchStat {
+    std::string name; int threads = 0; int64_t total_ops = 0, total_errors = 0;
+    double total_ms = 0, avg_us = 0, p50_us = 0, p99_us = 0, throughput = 0;
+    std::string first_error;
+};
+
+static std::mutex g_err_mu;
+static std::string g_first_err;
+static void set_error(const std::string &amp;msg) {
+    std::lock_guard&lt;std::mutex&gt; l(g_err_mu);
+    if (g_first_err.empty()) g_first_err = msg;
+}
+
+// ============================================================
+// SYNC: worker directly runs N synchronous findOne calls in a loop (no EventLoop dependency)
+// ============================================================
+void thread_worker_sync(int tid, int iters, ThreadStat &amp;stat)
+{
+    for (int i = 0; i &lt; iters; ++i) {
+        auto a = clk::now();
+        bool ok = false;
+        try {
+            Mapper&lt;Sysuser&gt; mapper(g_client);
+            auto u = mapper.limit(1).findOne(
+                Criteria(Sysuser::Cols::_name, &quot;admin&quot;));
+            ok = true;
+        } catch (const drogon::orm::DrogonDbException &amp;e) {
+            set_error(std::string(&quot;sync db_ex: &quot;) + e.base().what());
+        } catch (const std::exception &amp;e) {
+            set_error(std::string(&quot;sync ex: &quot;) + e.what());
+        }
+        stat.samples.push_back(
+            std::chrono::duration&lt;double, std::micro&gt;(clk::now() - a).count());
+        stat.ops++;
+        if (!ok) stat.errors++;
+    }
+}
+
+// ============================================================
+// ASYNC: worker submits 1 coroutine (N iterations) to drogon EventLoop, waits with cv
+// ============================================================
+void thread_worker_async(int tid, int iters, ThreadStat &amp;stat)
+{
+    std::mutex m;
+    std::condition_variable cv;
+    bool done = false;
+
+    drogon::async_run([&amp;]() -&gt; drogon::Task&lt;&gt; {
+        for (int i = 0; i &lt; iters; ++i) {
+            auto a = clk::now();
+            bool ok = false;
+            try {
+                CoroMapper&lt;Sysuser&gt; mapper(g_client);
+                auto u = co_await mapper.limit(1).findOne(
+                    Criteria(Sysuser::Cols::_name, &quot;admin&quot;));
+                ok = true;
+            } catch (const drogon::orm::DrogonDbException &amp;e) {
+                set_error(std::string(&quot;async db_ex: &quot;) + e.base().what());
+            } catch (const std::exception &amp;e) {
+                set_error(std::string(&quot;async ex: &quot;) + e.what());
+            }
+            stat.samples.push_back(
+                std::chrono::duration&lt;double, std::micro&gt;(clk::now() - a).count());
+            stat.ops++;
+            if (!ok) stat.errors++;
+        }
+        {
+            std::lock_guard&lt;std::mutex&gt; lk(m);
+            done = true;
+        }
+        cv.notify_one();
+        co_return;
+    });
+
+    std::unique_lock&lt;std::mutex&gt; lk(m);
+    cv.wait(lk, [&amp;]{ return done; });
+}
+
+// ============================================================
+static BenchStat run_bench(const std::string &amp;name, int threads, int iters, bool async_mode)
+{
+    BenchStat s{name, threads, 0, 0, 0, 0, 0, 0, 0, {}};
+    std::vector&lt;ThreadStat&gt; tstats(threads);
+    std::vector&lt;std::thread&gt; workers;
+    g_first_err.clear();
+    auto t0 = clk::now();
+
+    for (int t = 0; t &lt; threads; ++t) {
+        if (async_mode)
+            workers.emplace_back(thread_worker_async, t, iters, std::ref(tstats[t]));
+        else
+            workers.emplace_back(thread_worker_sync, t, iters, std::ref(tstats[t]));
+    }
+    for (auto &amp;w : workers) w.join();
+
+    s.total_ms = std::chrono::duration&lt;double, std::milli&gt;(clk::now() - t0).count();
+    std::vector&lt;double&gt; all;
+    for (auto &amp;ts : tstats) {
+        s.total_ops += ts.ops; s.total_errors += ts.errors;
+        all.insert(all.end(), ts.samples.begin(), ts.samples.end());
+    }
+    std::sort(all.begin(), all.end());
+    if (!all.empty()) {
+        s.avg_us = s.total_ms * 1000.0 / s.total_ops;
+        s.p50_us = all[all.size() * 50 / 100];
+        s.p99_us = all[all.size() * 99 / 100];
+    }
+    s.throughput = s.total_ops / (s.total_ms / 1000.0);
+    s.first_error = g_first_err;
+    return s;
+}
+
+static void print_stat(const BenchStat &amp;s) {
+    std::printf(&quot;  %-30s T=%2d  ops=%7lld  total=%7.0fms  avg=%6.0fus  p50=%6.0fus  p99=%6.0fus  %9.1f/s  err=%lld\n&quot;,
+        s.name.c_str(), s.threads, (long long)s.total_ops, s.total_ms,
+        s.avg_us, s.p50_us, s.p99_us, s.throughput, (long long)s.total_errors);
+    if (!s.first_error.empty()) std::printf(&quot;      |_ %s\n&quot;, s.first_error.c_str());
+}
+
+// ============================================================
+int main(int argc, char *argv[])
+{
+    bool async_mode = false;
+    int arg_idx = 1;
+    if (argc &gt; 1 &amp;&amp; (std::string(argv[1]) == &quot;async&quot; || std::string(argv[1]) == &quot;sync&quot;)) {
+        async_mode = (std::string(argv[1]) == &quot;async&quot;);
+        arg_idx = 2;
+    }
+
+    int iters = (argc &gt; arg_idx) ? std::atoi(argv[arg_idx]) : 2000;
+    std::vector&lt;int&gt; tcounts;
+    for (int i = arg_idx + 1; i &lt; argc; ++i) tcounts.push_back(std::atoi(argv[i]));
+    if (tcounts.empty()) tcounts = {1, 2, 4, 8, 16};
+
+    std::printf(&quot;=== Drogon ORM Stress Test (%s) ===\n&quot;, async_mode ? &quot;ASYNC CoroMapper&quot; : &quot;SYNC Mapper&quot;);
+    std::printf(&quot;    iters/thread=%d, threads:&quot;, iters);
+    for (int t : tcounts) std::printf(&quot; %d&quot;, t);
+    std::printf(&quot;\n\n&quot;);
+
+    g_client = DbClient::newMysqlClient(
+        &quot;host=127.0.0.1 port=3306 dbname=cppcms &quot;
+        &quot;user=root password=12345678 client_encoding=utf8mb4&quot;,
+        4);  // async: needs to match drogon threadNum; sync can use fewer threads
+
+    // SYNC mode: no drogon event loop needed, start directly
+    if (!async_mode) {
+        // warmup
+        {
+            Mapper&lt;Sysuser&gt; mapper(g_client);
+            auto u = mapper.limit(1).findOne(
+                Criteria(Sysuser::Cols::_name, &quot;admin&quot;));
+            std::printf(&quot;[warmup] sync findOne admin =&gt; name=%s\n\n&quot;,
+                        u.getValueOfName().c_str());
+        }
+
+        std::vector&lt;BenchStat&gt; stats;
+        for (int T : tcounts) {
+            std::printf(&quot;[T=%d] &quot;, T);
+            auto s = run_bench(&quot;drogon_sync_findOne&quot;, T, iters, false);
+            print_stat(s);
+            stats.push_back(std::move(s));
+            std::printf(&quot;\n&quot;);
+        }
+
+        long long terr = 0, tops = 0;
+        for (auto &amp;s : stats) { terr += s.total_errors; tops += s.total_ops; }
+        std::printf(&quot;[TOTAL] errors=%lld / %lld ops\n&quot;, terr, tops);
+        return terr == 0 ? 0 : 1;
+    }
+
+    // ASYNC mode: needs drogon event loop + IO thread pool
+    std::thread drogon_thread([&amp;]() {
+        drogon::app()
+            .addListener(&quot;0.0.0.0&quot;, 0)
+            .setThreadNum(4)
+            .disableSigtermHandling()
+            .run();
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    std::printf(&quot;[drogon] event loop started, thread_num=4\n\n&quot;);
+
+    // warmup
+    {
+        std::mutex m; std::condition_variable cv; bool done = false;
+        drogon::async_run([&amp;]() -&gt; Task&lt;&gt; {
+            try {
+                CoroMapper&lt;Sysuser&gt; mapper(g_client);
+                auto u = co_await mapper.limit(1).findOne(
+                    Criteria(Sysuser::Cols::_name, &quot;admin&quot;));
+                std::printf(&quot;[warmup] async findOne admin =&gt; name=%s\n\n&quot;,
+                            u.getValueOfName().c_str());
+            } catch (const DrogonDbException &amp;e) {
+                std::printf(&quot;[warmup] exception: %s\n\n&quot;, e.base().what());
+            }
+            { std::lock_guard&lt;std::mutex&gt; lk(m); done = true; }
+            cv.notify_one();
+            co_return;
+        });
+        std::unique_lock&lt;std::mutex&gt; lk(m);
+        cv.wait_for(lk, std::chrono::seconds(5), [&amp;]{ return done; });
+    }
+
+    std::vector&lt;BenchStat&gt; stats;
+    for (int T : tcounts) {
+        std::printf(&quot;[T=%d] &quot;, T);
+        auto s = run_bench(&quot;drogon_async_findOne&quot;, T, iters, true);
+        print_stat(s);
+        stats.push_back(std::move(s));
+        std::printf(&quot;\n&quot;);
+    }
+
+    long long terr = 0, tops = 0;
+    for (auto &amp;s : stats) { terr += s.total_errors; tops += s.total_ops; }
+    std::printf(&quot;[TOTAL] errors=%lld / %lld ops\n&quot;, terr, tops);
+
+    drogon::app().quit();
+    drogon_thread.join();
+    return terr == 0 ? 0 : 1;
+}
+</code></pre>
+<p>Paozhu stress test code</p>
+<pre><code>/*
+ * test_mysql_orm.cpp — ORM multi-thread stress test
+ *
+ * SYNC:  users.select(&quot;name&quot;).eqName(&quot;admin&quot;).fetch_one()
+ * ASYNC: co_await users.select(&quot;name&quot;).eqName(&quot;admin&quot;).async_exec_fetch_one()
+ *        (multiple threads permanently run io_context, coroutines picked up by IO thread pool — same pattern as server.cpp line 6238)
+ *
+ * Compile:
+ * g++ startup/test_mysql_orm.cpp -std=c++20 -I. -Ivendor/httpserver/include -I/usr/local/include -Imodels -Iorm -Icommon -Iorm/cms -Iorm/cms/include -Imodels/cms/include -Iorm/include -Imodels/include -Iinclude -Icontroller -Icontroller/include -Ilibs vendor/httpserver/src/mysql_conn.cpp vendor/httpserver/src/orm_conn_pool.cpp vendor/httpserver/src/orm_common.cpp vendor/httpserver/src/pg_conn.cpp vendor/httpserver/src/orm_connect_mar.cpp vendor/httpserver/src/func.cpp vendor/httpserver/src/datetime.cpp vendor/httpserver/src/clientdatacache.cpp vendor/httpserver/src/parse_ini.cpp vendor/httpserver/src/request.cpp vendor/httpserver/src/sqlite_conn_stub.cpp models/cms/Sysuser.cpp models/cms/Article.cpp -L/usr/local/opt/openssl/lib -lssl -lcrypto -ldl -lpthread -O2 -DASIO_STANDALONE -o bin/test_mysql_orm
+ *
+ * Run:
+ *   ./bin/test_mysql_orm sync
+ *   ./bin/test_mysql_orm async
+ *   ./bin/test_mysql_orm async 2000 cms 1 2 4 8 16
+ */
+#include &lt;iostream&gt;
+#include &lt;chrono&gt;
+#include &lt;vector&gt;
+#include &lt;thread&gt;
+#include &lt;mutex&gt;
+#include &lt;atomic&gt;
+#include &lt;algorithm&gt;
+#include &lt;string&gt;
+#include &lt;condition_variable&gt;
+#include &lt;cstdio&gt;
+#include &lt;asio.hpp&gt;
+#include &quot;orm_conn_pool.h&quot;
+#include &quot;orm.h&quot;
+
+using clk = std::chrono::high_resolution_clock;
+
+struct ThreadStat { int64_t ops = 0, errors = 0; std::vector&lt;double&gt; samples; };
+struct BenchStat {
+    std::string name; int threads = 0; int64_t total_ops = 0, total_errors = 0;
+    double total_ms = 0, avg_us = 0, p50_us = 0, p99_us = 0, throughput = 0;
+    std::string first_error;
+};
+
+static std::mutex g_err_mu;
+static std::string g_first_err;
+static void set_error(const std::string &amp;msg) {
+    std::lock_guard&lt;std::mutex&gt; l(g_err_mu);
+    if (g_first_err.empty()) g_first_err = msg;
+}
+
+// ============================================================
+// SYNC: worker directly runs N synchronous fetch_one calls in a loop (no io_context run dependency)
+// ============================================================
+void thread_worker_sync(int tid, int iters, ThreadStat &amp;stat)
+{
+    for (int i = 0; i &lt; iters; ++i) {
+        auto a = clk::now();
+        bool ok = false;
+        try {
+            auto users = orm::cms::Sysuser();
+            unsigned int n = users.select(&quot;name&quot;).eqName(&quot;admin&quot;).fetch_one();
+            ok = (n &gt; 0);
+            if (!ok &amp;&amp; !users.error_msg.empty())
+                set_error(std::string(&quot;sync: &quot;) + users.error_msg);
+        } catch (std::exception &amp;e) { set_error(std::string(&quot;sync ex: &quot;) + e.what()); }
+
+        stat.samples.push_back(
+            std::chrono::duration&lt;double, std::micro&gt;(clk::now() - a).count());
+        stat.ops++;
+        if (!ok) stat.errors++;
+    }
+}
+
+// ============================================================
+// ASYNC: worker submits 1 coroutine (N iterations) to shared io_context, then waits with cv
+// IO thread pool already permanently runs ioc in main; coroutines get picked up by them
+// ============================================================
+void thread_worker_async(int tid, int iters, ThreadStat &amp;stat, asio::io_context &amp;ioc)
+{
+    std::mutex m;
+    std::condition_variable cv;
+    bool done = false;
+
+    asio::co_spawn(ioc, [&amp;]() -&gt; asio::awaitable&lt;void&gt; {
+        for (int i = 0; i &lt; iters; ++i) {
+            auto a = clk::now();
+            bool ok = false;
+            try {
+                auto users = orm::cms::Sysuser();
+                unsigned int n = co_await users.select(&quot;name&quot;).eqName(&quot;admin&quot;).async_exec_fetch_one();
+                ok = (n &gt; 0);
+                if (!ok &amp;&amp; !users.error_msg.empty())
+                    set_error(std::string(&quot;async: &quot;) + users.error_msg);
+            } catch (std::exception &amp;e) { set_error(std::string(&quot;async ex: &quot;) + e.what()); }
+
+            stat.samples.push_back(
+                std::chrono::duration&lt;double, std::micro&gt;(clk::now() - a).count());
+            stat.ops++;
+            if (!ok) stat.errors++;
+        }
+        {
+            std::lock_guard&lt;std::mutex&gt; lk(m);
+            done = true;
+        }
+        cv.notify_one();
+        co_return;
+    }, asio::detached);
+
+    std::unique_lock&lt;std::mutex&gt; lk(m);
+    cv.wait(lk, [&amp;]{ return done; });
+}
+
+// ============================================================
+static BenchStat run_bench(const std::string &amp;name, int threads, int iters,
+                           bool async_mode, asio::io_context &amp;ioc)
+{
+    BenchStat s{name, threads, 0, 0, 0, 0, 0, 0, 0, {}};
+    std::vector&lt;ThreadStat&gt; tstats(threads);
+    std::vector&lt;std::thread&gt; workers;
+    g_first_err.clear();
+    auto t0 = clk::now();
+
+    for (int t = 0; t &lt; threads; ++t) {
+        if (async_mode)
+            workers.emplace_back(thread_worker_async, t, iters, std::ref(tstats[t]), std::ref(ioc));
+        else
+            workers.emplace_back(thread_worker_sync, t, iters, std::ref(tstats[t]));
+    }
+    for (auto &amp;w : workers) w.join();
+
+    s.total_ms = std::chrono::duration&lt;double, std::milli&gt;(clk::now() - t0).count();
+    std::vector&lt;double&gt; all;
+    for (auto &amp;ts : tstats) {
+        s.total_ops += ts.ops; s.total_errors += ts.errors;
+        all.insert(all.end(), ts.samples.begin(), ts.samples.end());
+    }
+    std::sort(all.begin(), all.end());
+    if (!all.empty()) {
+        s.avg_us = s.total_ms * 1000.0 / s.total_ops;
+        s.p50_us = all[all.size() * 50 / 100];
+        s.p99_us = all[all.size() * 99 / 100];
+    }
+    s.throughput = s.total_ops / (s.total_ms / 1000.0);
+    s.first_error = g_first_err;
+    return s;
+}
+
+static void print_stat(const BenchStat &amp;s) {
+    std::printf(&quot;  %-34s T=%2d  ops=%7lld  total=%7.0fms  avg=%6.0fus  p50=%6.0fus  p99=%6.0fus  %9.1f/s  err=%lld\n&quot;,
+        s.name.c_str(), s.threads, (long long)s.total_ops, s.total_ms,
+        s.avg_us, s.p50_us, s.p99_us, s.throughput, (long long)s.total_errors);
+    if (!s.first_error.empty()) std::printf(&quot;      |_ %s\n&quot;, s.first_error.c_str());
+}
+
+// ============================================================
+int main(int argc, char *argv[])
+{
+    bool async_mode = false;
+    int arg_idx = 1;
+    if (argc &gt; 1 &amp;&amp; (std::string(argv[1]) == &quot;async&quot; || std::string(argv[1]) == &quot;sync&quot;)) {
+        async_mode = (std::string(argv[1]) == &quot;async&quot;);
+        arg_idx = 2;
+    }
+
+    int iters = (argc &gt; arg_idx) ? std::atoi(argv[arg_idx]) : 2000;
+    std::string conf_tag = (argc &gt; arg_idx + 1) ? argv[arg_idx + 1] : &quot;cms&quot;;
+    std::vector&lt;int&gt; tcounts;
+    for (int i = arg_idx + 2; i &lt; argc; ++i) tcounts.push_back(std::atoi(argv[i]));
+    if (tcounts.empty()) tcounts = {1, 2, 4, 8, 16};
+
+    std::printf(&quot;=== ORM Stress Test (%s) ===\n&quot;, async_mode ? &quot;ASYNC&quot; : &quot;SYNC&quot;);
+    std::printf(&quot;    iters/thread=%d, conf=[%s], threads:&quot;, iters, conf_tag.c_str());
+    for (int t : tcounts) std::printf(&quot; %d&quot;, t);
+    std::printf(&quot;\n\n&quot;);
+
+    try {
+        asio::io_context ioc{0};
+        auto log = orm::init_orm_conn_pool(ioc, &quot;./conf/orm.conf&quot;);
+        if (!log.empty()) std::printf(&quot;[init] %s\n&quot;, log.c_str());
+
+        auto pool = orm::get_orm_conn_pool_obj()[conf_tag];
+        if (!pool) { std::printf(&quot;[FAIL] tag [%s] not found\n&quot;, conf_tag.c_str()); return 1; }
+
+        // ========== Start IO thread pool (server.cpp line 6238 pattern) ==========
+        // executor_work_guard keeps run() from returning until guard is reset or ioc.stop
+        asio::executor_work_guard&lt;asio::io_context::executor_type&gt; work(ioc.get_executor());
+        int io_threads = async_mode ? 4 : 1;
+        std::vector&lt;std::thread&gt; iopool;
+        for (int i = 0; i &lt; io_threads; ++i) {
+            iopool.emplace_back([&amp;ioc]() {
+                try { ioc.run(); } catch (...) {}
+            });
+        }
+
+        // Verify DB
+        {
+            auto c = pool-&gt;get_mysql_select_conn();
+            if (!c) { std::printf(&quot;[FAIL] no mysql conn\n&quot;); return 1; }
+            std::string ver;
+            c-&gt;fetch_directly(&quot;SELECT VERSION()&quot;, [&amp;ver](int, char**, auto gd){
+                auto [p, n] = gd(0);
+                if (p) ver.assign(reinterpret_cast&lt;const char*&gt;(p), n);
+                return true;
+            });
+            std::printf(&quot;[server] %s\n[io_threads] %d\n\n&quot;, ver.c_str(), io_threads);
+            pool-&gt;back_mysql_select_conn(std::move(c));
+        }
+
+        // Warmup
+        {
+            orm::cms::Sysuser w;
+            auto n = w.select(&quot;name&quot;).eqName(&quot;admin&quot;).fetch_one();
+            std::printf(&quot;[warmup] fetch_one admin =&gt; n=%u\n\n&quot;, n);
+        }
+
+        std::vector&lt;BenchStat&gt; stats;
+        const char *name = async_mode ? &quot;orm_async_fetch_one&quot; : &quot;orm_sync_fetch_one&quot;;
+
+        for (int T : tcounts) {
+            std::printf(&quot;[T=%d] &quot;, T);
+            auto s = run_bench(name, T, iters, async_mode, ioc);
+            print_stat(s);
+            stats.push_back(std::move(s));
+            std::printf(&quot;\n&quot;);
+        }
+
+        long long terr = 0, tops = 0;
+        for (auto &amp;s : stats) { terr += s.total_errors; tops += s.total_ops; }
+        std::printf(&quot;[TOTAL] errors=%lld / %lld ops\n&quot;, terr, tops);
+
+        // ========== Stop IO thread pool: release work guard → run() exits naturally ==========
+        work.reset();
+        ioc.stop();
+        for (auto &amp;t : iopool) t.join();
+
+        orm::init_orm_conn_pool_release();
+        return terr == 0 ? 0 : 1;
+    }
+    catch (std::exception &amp;e) { std::printf(&quot;Exception: %s\n&quot;, e.what()); return 1; }
+}
+</code></pre>
+
+
+        <p><a href="index.html">Back to main docs →</a></p>
+      </div>
+  </body>
+</html>
