@@ -1288,10 +1288,10 @@ if (ulink-&#62;begin_commit())
     <p>数据库之间迁移（ MySQL &lt;=&gt; PostgreSQL &lt;=&gt; SQLite）</p>
     <p>使用 CLI 工具在数据库类型之间迁移数据（如 MySQL/CMS 迁移到 PostgreSQL），目标库的表会被自动创建：</p>
     <pre><code># 从 cms 迁移到 pg
-./bin/paozhu_cli dbmigrate cms pg
+./bin/paozhu_cli dbconvert cms pg
 
 # 强制迁移（覆盖已有表）
-./bin/paozhu_cli dbmigrate cms pg force</code></pre>
+./bin/paozhu_cli dbconvert cms pg force</code></pre>
     <div class="tip-box">
         💡 提示：迁移前请确认目标数据库已存在且连接配置正确（<code>orm.conf</code>）。不带 <code>force</code> 时，如果目标表已存在会跳过，避免误覆盖数据。
     </div>
@@ -2448,10 +2448,10 @@ if (ulink-&#62;begin_commit())
     <p>Migration between databases (MySQL &lt;=&gt; PostgreSQL &lt;=&gt; SQLite)</p>
     <p>Use the CLI tool to migrate data between database types (e.g., from MySQL/CMS to PostgreSQL). Target tables are created automatically:</p>
     <pre><code># Migrate from cms to pg
-./bin/paozhu_cli dbmigrate cms pg
+./bin/paozhu_cli dbconvert cms pg
 
 # Force migration (overwrite existing tables)
-./bin/paozhu_cli dbmigrate cms pg force</code></pre>
+./bin/paozhu_cli dbconvert cms pg force</code></pre>
     <div class="tip-box">
         💡 Tip: Before migrating, make sure the target database exists and the connection settings in <code>orm.conf</code> are correct. Without <code>force</code>, existing target tables are skipped to avoid accidentally overwriting data.
     </div>
