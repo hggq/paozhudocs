@@ -447,7 +447,7 @@ charset = utf8mb4</code></pre>
     <ul>
         <li><code>ssl</code> — 是否启用 SSL 连接，可选值：<code>ON</code>、<code>OFF</code>（默认）</li>
         <li><code>sslverify</code> — 是否校验证书链，可选值：<code>ON</code>、<code>OFF</code>；启用后会校验服务器证书是否由可信 CA 签发（配合系统 CA 证书或 <code>SSL_CERT_FILE</code> 环境变量）</li>
-        <li><code>sslhost</code> — 证书域名（SNI + 域名校验）；为空时只验证证书链不校验域名；填值时会同时验证证书链和域名匹配</li>
+        <li><code>sslhost</code> — 证书域名（SNI + 域名校验）；为空时两者都退回用连接配置里的 <code>host</code>（SNI 与域名校验都用 host 兜底；<code>host</code> 是 IP 时，域名校验去比对证书的 <code>iPAddress</code> SAN）。<strong>SNI 无论 <code>sslverify</code> 开关都会发；域名校验只在 <code>sslverify=ON</code> 时执行</strong>（<code>sslverify=OFF</code> 时链和域名都不校验）</li>
     </ul>
 
     <div class="tip-box">
@@ -550,19 +550,12 @@ articles.where("userid", 1).whereAnd("isopen", 1).fetch();</code></pre>
 users.where("name", username).whereAnd("password", md5string).fetch_one();</code></pre>
 
     <h3 id="query-pagination">分页查询</h3>
-    <pre><code>// 分页查询
-auto [bar_min, bar_max, current_page, total_page] = articles.page(page, 10, 5);</code></pre>
-    <ul>
-        <li><code>page</code> — 当前页码</li>
-        <li><code>10</code> — 每页显示记录数</li>
-        <li><code>5</code> — 分页条显示的页码数量</li>
-    </ul>
+    <pre><code>// 分页查询：page(当前页码, 每页记录数)
+auto [minpage, maxpage, curpage, total] = articles.page(page, 10);
+articles.fetch();</code></pre>
 
     <h3 id="query-order">排序查询</h3>
-    <pre><code>// 使用 order() 排序
-articles.order("aid desc").fetch();
-
-// 使用 asc() 升序
+    <pre><code>// 使用 asc() 升序
 articles.where("userid", 0).asc("addtime").fetch();
 
 // 使用 desc() 降序
@@ -581,8 +574,8 @@ articles.limit(10).fetch();</code></pre>
     <pre><code>// 统计记录总数
 unsigned int total = articles.where("userid", userid).count();
 
-// 统计符合条件的记录数
-total = articles.where("userid", userid).where("addtime", ">", lastweek_time).count();</code></pre>
+// 统计符合条件的记录数（比较条件用 whereBT 助手）
+total = articles.where("userid", userid).whereBT("addtime", lastweek_time).count();</code></pre>
 
     <h3 id="query-wherein">IN 条件查询</h3>
     <pre><code>// 使用 whereIn 查询多个 ID
@@ -590,32 +583,48 @@ std::string aid_sql_str = "1,2,3";
 articles.whereIn("aid", aid_sql_str).fetch();</code></pre>
 
     <h3 id="query-operators">运算符查询</h3>
-    <pre><code>// 支持大于、小于等运算符
-articles.where("addtime", "&#62;", lastweek_time).fetch();
-articles.where("readnum", "&#60;", 100).fetch();
-articles.where("isopen", "!=", 0).fetch();</code></pre>
+    <pre><code>// 比较助手方法（推荐写法）
+articles.whereBT("addtime", lastweek_time).fetch();   // >  大于
+articles.whereBE("readnum", 100).fetch();             // >= 大于等于
+articles.whereLT("readnum", 100).fetch();             // <  小于
+articles.whereLE("price", 100).fetch();               // <= 小于等于
+articles.whereNQ("isopen", 0).fetch();                // != 不等于
+
+// 还有空值判断
+articles.whereNull("deleted_at").fetch();
+articles.whereNotNull("deleted_at").fetch();</code></pre>
 
     <h2 id="insert-data">插入数据</h2>
-    <p>使用模型的 setter 方法设置字段值，然后调用 <code>save()</code> 方法插入新记录：</p>
-    <pre><code>auto articles = orm::cms::Article();
+    <p>Paozhu ORM 提供 <code>insert()</code> 和 <code>save()</code> 两种方式插入新记录。推荐使用 <code>insert()</code>，它的行为是明确的"永远插入"；<code>save()</code> 是一个<strong>开关</strong>——当模型已经带着主键时会变成 <code>UPDATE</code>（见下方说明）。</p>
+    <pre><code>// 方式1：insert() —— 永远 INSERT，返回 [影响行数, 自增ID]
+auto articles = orm::cms::Article();
 articles.setIsopen(1);
-articles.setCreatetime(get_date("%Y-%m-%d %X"));  // 格式化时间
-articles.setAddtime(timeid());                    // Unix 时间戳
-articles.setAddip(client.client_ip);               // 客户端IP
 articles.setTitle("新标题");
 articles.setContent("内容");
 
-// save() 返回 [影响行数, 自增ID]
-auto[effectnum, last_id] = articles.save();
-if (effectnum &#62; 0)
-{
-    int new_id = articles.getAid();  // 获取新记录ID
-    client.goto_url("/cms/list", 3, "添加成功");
-}</code></pre>
+auto [effectnum, last_id] = articles.insert();
+// insert() 成功后自动 setPK(last_id)
+
+// 方式2：save(true) —— 强制 INSERT（即使已有主键）
+auto [effectnum2, last_id2] = articles.save(true);
+
+// 方式3：save() —— 有主键则 UPDATE、无主键则 INSERT
+articles.setAid(last_id2);
+articles.data.title = "补丁";
+auto [effectnum3, _] = articles.save();   // 发出 UPDATE，因为 getPK() > 0</code></pre>
 
     <div class="tip-box">
-        💡 提示：<code>save()</code> 方法用于新增记录。插入成功后，可以通过 <code>getAid()</code> 等 getter 方法获取自增 ID。
+        💡 提示：<code>save()</code> 是开关不是单纯的"插入"。业务新代码建议用 <code>insert()</code>；只有需要在同一个调用点根据主键是否存在来决定 INSERT 还是 UPDATE 时才用 <code>save()</code>。
     </div>
+
+    <h3 id="insert-batch">批量插入</h3>
+    <pre><code>// 构造 meta 结构体向量，一条多行 INSERT 语句插入所有行
+auto rows = std::vector<orm::cms::article_info::meta>();
+rows.push_back({/* 填好每个字段 */});
+rows.push_back({/* 填好每个字段 */});
+
+auto [batch_effect, batch_id] = articles.insert(rows);
+// 返回 [影响行数, 首个自增ID]</code></pre>
 
     <h2 id="update-data">更新数据</h2>
     <p>先通过 setter 方法设置新值，再通过 <code>where()</code> 指定更新条件，最后调用 <code>update()</code> 方法并指定要更新的字段：</p>
@@ -662,14 +671,12 @@ articles.whereIn("aid", aid_sql_str).remove();</code></pre>
 model.whereLike("title", "keyword").fetch();</code></pre>
 
     <h3 id="chain-operator">运算符查询</h3>
-    <pre><code>// 大于 &#62;
-model.whereBT("price", 100).fetch();
-
-// 大于等于 &#62;=
-model.whereBE("price", 100).fetch();
-
-// 直接使用运算符
-model.where("addtime", ">", lastweek_time).fetch();</code></pre>
+    <pre><code>// 比较助手
+model.whereBT("price", 100).fetch();   // >
+model.whereBE("price", 100).fetch();   // >=
+model.whereLT("price", 100).fetch();   // <
+model.whereLE("price", 100).fetch();   // <=
+model.whereNQ("price", 0).fetch();     // !=</code></pre>
 
     <h3 id="chain-group">分组查询</h3>
     <pre><code>// 分组
@@ -818,7 +825,7 @@ model.save();</code></pre>
             <tr><td><code>fetch_one()</code></td><td><code>async_fetch_one()</code></td><td>查询单条记录</td></tr>
             <tr><td><code>fetch_append()</code></td><td><code>async_fetch_append()</code></td><td>查询并追加到现有结果集</td></tr>
             <tr><td><code>count()</code></td><td><code>async_count()</code></td><td>统计匹配记录数</td></tr>
-            <tr><td><code>save()</code></td><td><code>async_save()</code></td><td>新增记录</td></tr>
+            <tr><td><code>save()</code> / <code>insert()</code></td><td><code>async_save()</code> / <code>async_insert()</code></td><td>新增（insert() 永远 INSERT；save() 是开关，有主键则 UPDATE）</td></tr>
             <tr><td><code>update()</code></td><td><code>async_update()</code></td><td>更新记录</td></tr>
             <tr><td><code>update_dirty()</code></td><td><code>async_update_dirty()</code></td><td>只更新经生成的逐字段 setter 写过的列（见"脏字段预处理更新"）</td></tr>
             <tr><td><code>remove()</code></td><td><code>async_remove()</code></td><td>删除记录</td></tr>
@@ -1281,10 +1288,10 @@ if (ulink-&#62;begin_commit())
     <p>数据库之间迁移（ MySQL &lt;=&gt; PostgreSQL &lt;=&gt; SQLite）</p>
     <p>使用 CLI 工具在数据库类型之间迁移数据（如 MySQL/CMS 迁移到 PostgreSQL），目标库的表会被自动创建：</p>
     <pre><code># 从 cms 迁移到 pg
-./bin/paozhu_cli dbconver cms pg
+./bin/paozhu_cli dbmigrate cms pg
 
 # 强制迁移（覆盖已有表）
-./bin/paozhu_cli dbconver cms pg force</code></pre>
+./bin/paozhu_cli dbmigrate cms pg force</code></pre>
     <div class="tip-box">
         💡 提示：迁移前请确认目标数据库已存在且连接配置正确（<code>orm.conf</code>）。不带 <code>force</code> 时，如果目标表已存在会跳过，避免误覆盖数据。
     </div>
@@ -1292,12 +1299,12 @@ if (ulink-&#62;begin_commit())
     <h2 id="sql-export">SQL 导出</h2>
     <p>将数据库结构或数据导出为 SQL 文件，可用于备份、迁移或分发：</p>
     <pre><code># 导出表结构
-./bin/paozhu_cli dbtable cms ./schema.sql
-./bin/paozhu_cli dbtable cms ./pg.sql -target=pg      # 导出为 PG 语法
+./bin/paozhu_cli dbdump-schema cms ./schema.sql
+./bin/paozhu_cli dbdump-schema cms ./pg.sql -target=pg      # 导出为 PG 语法
 
 # 导出结构+数据
-./bin/paozhu_cli dbexport cms ./dump.sql
-./bin/paozhu_cli dbexport cms ./mysql.sql -target=mysql</code></pre>
+./bin/paozhu_cli dbdump-all cms ./dump.sql
+./bin/paozhu_cli dbdump-all cms ./mysql.sql -target=mysql</code></pre>
     <div class="tip-box">
         💡 提示：默认导出当前数据源的 SQL 方言，也可通过 <code>-target=pg</code> / <code>-target=mysql</code> 指定目标数据库语法，方便在不同数据库之间迁移。
     </div>
@@ -1642,7 +1649,7 @@ charset = utf8mb4</code></pre>
     <ul>
         <li><code>ssl</code> — Enable SSL connection, options: <code>ON</code>, <code>OFF</code> (default)</li>
         <li><code>sslverify</code> — Verify certificate chain, options: <code>ON</code>, <code>OFF</code>; when enabled, verifies that the server certificate is signed by a trusted CA (uses system CA certificates or <code>SSL_CERT_FILE</code> environment variable)</li>
-        <li><code>sslhost</code> — Certificate domain (SNI + domain verification); when empty, only verifies the certificate chain without checking the domain name; when specified, verifies both the chain and domain match</li>
+        <li><code>sslhost</code> — Certificate domain (SNI + domain verification); when empty, both fall back to the <code>host</code> from the connection config (the hostname check compares against the certificate's <code>iPAddress</code> SAN when <code>host</code> is an IP literal). <strong>SNI is sent regardless of the <code>sslverify</code> switch; domain verification only runs when <code>sslverify=ON</code></strong> (with <code>sslverify=OFF</code> neither the chain nor the domain is verified)</li>
     </ul>
 
     <div class="tip-box">
@@ -1745,35 +1752,48 @@ articles.where("userid", 1).whereAnd("isopen", 1).fetch();</code></pre>
 users.where("name", username).whereAnd("password", md5string).fetch_one();</code></pre>
 
     <h3 id="query-pagination">Paginated Query</h3>
-    <pre><code>// Paginated query
-auto [bar_min, bar_max, current_page, total_page] = articles.page(page, 10, 5);</code></pre>
-    <ul>
-        <li><code>page</code> — Current page number</li>
-        <li><code>10</code> — Number of records per page</li>
-        <li><code>5</code> — Number of page numbers displayed in the pagination bar</li>
-    </ul>
+    <pre><code>// Paginated query: page(current_page, records_per_page)
+auto [minpage, maxpage, curpage, total] = articles.page(page, 10);
+articles.fetch();</code></pre>
+
+    <h3 id="query-order">Sorting Queries</h3>
+    <pre><code>// Using asc() for ascending
+articles.where("userid", 0).asc("addtime").fetch();
+
+// Using desc() for descending
+articles.desc("addtime").fetch();</code></pre>
 
     <h2 id="insert-data">Inserting Data</h2>
-    <p>Use the model's setter methods to set field values, then call the <code>save()</code> method to insert a new record:</p>
-    <pre><code>auto articles = orm::cms::Article();
+    <p>Paozhu ORM provides both <code>insert()</code> and <code>save()</code> for inserting records. Prefer <code>insert()</code> — its behavior is always "INSERT". <code>save()</code> is a <strong>switch</strong> — if the model already carries a primary key it becomes <code>UPDATE</code> (see below).</p>
+    <pre><code>// Method 1: insert() — always INSERT, returns [affected_rows, auto_increment_id]
+auto articles = orm::cms::Article();
 articles.setIsopen(1);
-articles.setCreatetime(get_date("%Y-%m-%d %X"));  // Formatted time
-articles.setAddtime(timeid());                    // Unix timestamp
-articles.setAddip(client.client_ip);               // Client IP
 articles.setTitle("New Title");
 articles.setContent("Content");
 
-// save() returns [affected_rows, auto_increment_id]
-auto[effectnum, last_id] = articles.save();
-if (effectnum &#62; 0)
-{
-    int new_id = articles.getAid();  // Get the new record ID
-    client.goto_url("/cms/list", 3, "Added successfully");
-}</code></pre>
+auto [effectnum, last_id] = articles.insert();
+// insert() automatically calls setPK(last_id)
+
+// Method 2: save(true) — force INSERT even if a primary key is present
+auto [effectnum2, last_id2] = articles.save(true);
+
+// Method 3: save() — UPDATE if primary key exists, INSERT otherwise
+articles.setAid(last_id2);
+articles.data.title = "Patch";
+auto [effectnum3, _] = articles.save();   // emits UPDATE because getPK() > 0</code></pre>
 
     <div class="tip-box">
-        💡 Tip: The <code>save()</code> method is used to insert new records. After successful insertion, you can use getter methods like <code>getAid()</code> to obtain the auto-increment ID.
+        💡 Tip: <code>save()</code> is a switch, not a plain "insert". Use <code>insert()</code> for new code; keep <code>save()</code> only where one call point must decide INSERT vs UPDATE based on primary key presence.
     </div>
+
+    <h3 id="insert-batch">Batch Insert</h3>
+    <pre><code>// Build a meta struct vector; one multi-row INSERT statement writes all rows
+auto rows = std::vector<orm::cms::article_info::meta>();
+rows.push_back({/* fill every field */});
+rows.push_back({/* fill every field */});
+
+auto [batch_effect, batch_id] = articles.insert(rows);
+// Returns [affected_rows, first auto_increment_id]</code></pre>
 
     <h2 id="update-data">Updating Data</h2>
     <p>First set new values through setter methods, then specify update conditions via <code>where()</code>, and finally call the <code>update()</code> method with the fields to update:</p>
@@ -1813,10 +1833,7 @@ if (effectnum &#62; 0)
     <h2 id="advanced-query">Advanced Query Methods</h2>
 
     <h3 id="query-order">Sorting Queries</h3>
-    <pre><code>// Using order() for sorting
-articles.order("aid desc").fetch();
-
-// Using asc() for ascending
+    <pre><code>// Using asc() for ascending
 articles.where("userid", 0).asc("addtime").fetch();
 
 // Using desc() for descending
@@ -1835,8 +1852,8 @@ articles.limit(10).fetch();</code></pre>
     <pre><code>// Count total records
 unsigned int total = articles.where("userid", userid).count();
 
-// Count records matching conditions
-total = articles.where("userid", userid).where("addtime", "&#62;", lastweek_time).count();</code></pre>
+// Count records matching conditions (use the whereBT helper for comparisons)
+total = articles.where("userid", userid).whereBT("addtime", lastweek_time).count();</code></pre>
 
     <h3 id="query-wherein">IN Condition Queries</h3>
     <pre><code>// Using whereIn to query multiple IDs
@@ -1844,10 +1861,16 @@ std::string aid_sql_str = "1,2,3";
 articles.whereIn("aid", aid_sql_str).fetch();</code></pre>
 
     <h3 id="query-operators">Operator Queries</h3>
-    <pre><code>// Supports operators like greater than, less than
-articles.where("addtime", "&#62;", lastweek_time).fetch();
-articles.where("readnum", "&#60;", 100).fetch();
-articles.where("isopen", "!=", 0).fetch();</code></pre>
+    <pre><code>// Comparison helper methods (recommended)
+articles.whereBT("addtime", lastweek_time).fetch();   // >  greater than
+articles.whereBE("readnum", 100).fetch();             // >= greater than or equal
+articles.whereLT("readnum", 100).fetch();             // <  less than
+articles.whereLE("price", 100).fetch();               // <= less than or equal
+articles.whereNQ("isopen", 0).fetch();                // != not equal
+
+// Null checks
+articles.whereNull("deleted_at").fetch();
+articles.whereNotNull("deleted_at").fetch();</code></pre>
 
     <h2 id="field-update">Field Update Operations</h2>
 
@@ -1962,7 +1985,7 @@ model.save();</code></pre>
             <tr><td><code>fetch_one()</code></td><td><code>async_fetch_one()</code></td><td>Query a single record</td></tr>
             <tr><td><code>fetch_append()</code></td><td><code>async_fetch_append()</code></td><td>Query and append to existing result set</td></tr>
             <tr><td><code>count()</code></td><td><code>async_count()</code></td><td>Count matching records</td></tr>
-            <tr><td><code>save()</code></td><td><code>async_save()</code></td><td>Insert a new record</td></tr>
+            <tr><td><code>save()</code> / <code>insert()</code></td><td><code>async_save()</code> / <code>async_insert()</code></td><td>Insert (insert() always INSERT; save() is a switch — emits UPDATE when primary key is present)</td></tr>
             <tr><td><code>update()</code></td><td><code>async_update()</code></td><td>Update a record</td></tr>
             <tr><td><code>update_dirty()</code></td><td><code>async_update_dirty()</code></td><td>Update only the columns written through the generated setters (see "Dirty Field Update")</td></tr>
             <tr><td><code>remove()</code></td><td><code>async_remove()</code></td><td>Delete a record</td></tr>
@@ -2425,10 +2448,10 @@ if (ulink-&#62;begin_commit())
     <p>Migration between databases (MySQL &lt;=&gt; PostgreSQL &lt;=&gt; SQLite)</p>
     <p>Use the CLI tool to migrate data between database types (e.g., from MySQL/CMS to PostgreSQL). Target tables are created automatically:</p>
     <pre><code># Migrate from cms to pg
-./bin/paozhu_cli dbconver cms pg
+./bin/paozhu_cli dbmigrate cms pg
 
 # Force migration (overwrite existing tables)
-./bin/paozhu_cli dbconver cms pg force</code></pre>
+./bin/paozhu_cli dbmigrate cms pg force</code></pre>
     <div class="tip-box">
         💡 Tip: Before migrating, make sure the target database exists and the connection settings in <code>orm.conf</code> are correct. Without <code>force</code>, existing target tables are skipped to avoid accidentally overwriting data.
     </div>
@@ -2436,12 +2459,12 @@ if (ulink-&#62;begin_commit())
     <h2 id="sql-export">SQL Export</h2>
     <p>Export database schema or data to SQL files for backup, migration, or distribution:</p>
     <pre><code># Export table schema
-./bin/paozhu_cli dbtable cms ./schema.sql
-./bin/paozhu_cli dbtable cms ./pg.sql -target=pg      # Export as PG syntax
+./bin/paozhu_cli dbdump-schema cms ./schema.sql
+./bin/paozhu_cli dbdump-schema cms ./pg.sql -target=pg      # Export as PG syntax
 
 # Export schema + data
-./bin/paozhu_cli dbexport cms ./dump.sql
-./bin/paozhu_cli dbexport cms ./mysql.sql -target=mysql</code></pre>
+./bin/paozhu_cli dbdump-all cms ./dump.sql
+./bin/paozhu_cli dbdump-all cms ./mysql.sql -target=mysql</code></pre>
     <div class="tip-box">
         💡 Tip: By default, the SQL dialect of the current data source is used. You can specify the target database syntax with <code>-target=pg</code> / <code>-target=mysql</code> to facilitate migration between different databases.
     </div>
