@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Paozhu OAuth &amp; JWT 教程 · OAuth Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+            --tip-bg: #eff6ff;
+            --tip-border: #bfdbfe;
+            --tip-ink: #1e40af;
+            --warn-bg: #fff7ed;
+            --warn-border: #fed7aa;
+            --warn-ink: #9a3412;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+                --tip-bg: #1e3a5f;
+                --tip-border: #2563eb;
+                --tip-ink: #93c5fd;
+                --warn-bg: #431407;
+                --warn-border: #c2410c;
+                --warn-ink: #fdba74;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree { list-style: none; margin: 0; padding: 0; }
+        .nav-tree li { margin: 0.2rem 0; list-style: none; }
+        .nav-tree .tree-item { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .nav-tree a {
+            text-decoration: none; color: var(--text-color); font-size: 0.88rem;
+            display: block; padding: 0.3rem 0.5rem; border-radius: 8px;
+            transition: all 0.15s; opacity: 0.85; flex: 1;
+        }
+        .nav-tree a:hover { background-color: var(--nav-hover-bg); opacity: 1; color: var(--link-color); }
+        .nav-tree a.active-link { background-color: var(--link-color); color: white; opacity: 1; }
+        .nav-tree .level-1 > a { font-weight: 600; font-size: 0.95rem; margin-top: 0.2rem; }
+        .nav-tree .level-2 { padding-left: 1.3rem; }
+        .nav-tree .level-3 { padding-left: 2.2rem; }
+
+        .content-panel { display: none; animation: fade 0.2s ease; }
+        .content-panel.active-lang { display: block; }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem; border-radius: 12px; overflow-x: auto;
+            margin: 1.2rem 0; border: 1px solid var(--border-light);
+            font-size: 0.88em;
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', 'Menlo', Consolas, monospace;
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem; border-radius: 6px; font-size: 0.85em;
+        }
+        pre code { background: transparent; padding: 0; }
+        h1, h2, h3, h4 { margin-top: 1.5em; margin-bottom: 0.6em; font-weight: 600; line-height: 1.3; }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; margin-top: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+
+        p { margin: 0.7rem 0; }
+        ul, ol { margin: 0.7rem 0; padding-left: 1.5rem; }
+        li { margin: 0.3rem 0; }
+
+        table {
+            width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.92em;
+        }
+        th, td {
+            border: 1px solid var(--border-light); padding: 0.55rem 0.8rem; text-align: left;
+            vertical-align: top;
+        }
+        th { background-color: var(--sidebar-bg); font-weight: 600; }
+
+        .tip-box {
+            background-color: var(--tip-bg); border-left: 4px solid var(--tip-border);
+            padding: 0.8rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.2rem 0;
+            color: var(--tip-ink); font-size: 0.95rem;
+        }
+        .warn-box {
+            background-color: var(--warn-bg); border-left: 4px solid var(--warn-border);
+            padding: 0.8rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.2rem 0;
+            color: var(--warn-ink); font-size: 0.95rem;
+        }
+
+        .flow-diagram {
+            background: var(--code-bg); border: 1px solid var(--border-light);
+            border-radius: 12px; padding: 1.2rem 1.5rem; margin: 1.2rem 0;
+            font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+            font-size: 0.82em; white-space: pre; overflow-x: auto; line-height: 1.7;
+        }
+
+        .scroll-top {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--link-color); color: white; text-align: center; line-height: 44px;
+            font-size: 1.2rem; text-decoration: none; z-index: 150;
+            opacity: 0; transition: opacity 0.3s;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            pointer-events: none;
+        }
+        .scroll-top.visible { opacity: 1; pointer-events: auto; }
+
+        img, svg { max-width: 100%; }
+        strong { font-weight: 600; }
+
+        .src-ref {
+            display: inline-block; font-size: 0.78em; opacity: 0.7;
+            background: var(--sidebar-bg); border: 1px solid var(--border-light);
+            padding: 0.1rem 0.5rem; border-radius: 4px; margin-left: 0.3rem;
+        }
+
+        .back-to-index {
+            display: block;
+            margin-top: 3rem;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .back-to-index:hover {
+            background-color: var(--nav-hover-bg);
+            color: var(--link-hover);
+            border-color: var(--link-color);
+        }
+    </style>
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">🔐 OAuth &amp; JWT 导航</div>
+            <div id="dynamic-nav">加载中...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel active-lang"></div>
+        <div id="content-en" class="content-panel"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+    const cnFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🔐 Paozhu OAuth &amp; JWT</h1>
+        <p style="opacity: 0.8;">一套完整的 OAuth 2.1 授权服务器 + 通用客户端库 + GitHub 专用集成，全部用 C++20 实现</p>
+    </div>
+
+    <h2 id="intro">概述</h2>
+    <p>Paozhu 提供了一整套从零实现的 <strong>OAuth 2.1</strong> 与 <strong>JWT (RS256)</strong> 基础设施，覆盖三个层次：</p>
+    <ul>
+        <li><strong>OAuth 授权服务器</strong>（<code>controller/src/oauth/</code> + <code>libs/oauth/</code>）——你可以把 paozhu 自己搭成一个 OAuth provider，发 JWT access token 给第三方</li>
+        <li><strong>通用 OAuth 客户端库</strong>（<code>libs/oauth_client/</code>）——一套纯函数 + httpclient 封装的客户端，端点填 URL 就能同时对 GitHub / Google / 自搭的 paozhu OAuth 通吃</li>
+        <li><strong>GitHub OAuth 专用集成</strong>（<code>libs/github/</code>）——在通用版之上加了 state 三段编码、DELETE+Basic revoke、read:user 强制追加等 GitHub 专属逻辑</li>
+    </ul>
+    <div class="flow-diagram">┌─────────────────────────────────────────────────────────────────────────┐
+│                        OAuth 2.1 生态                                    │
+│                                                                         │
+│  ┌──────────────────┐    authorize     ┌─────────────────────────┐     │
+│  │  浏览器 User      │ ───────────────▶ │  Paozhu OAuth Server     │     │
+│  │  (第三方应用)      │                  │  /oauth/authorize       │     │
+│  └──────────────────┘                  │  /oauth/token            │     │
+│         │                               │  /oauth/jwks             │     │
+│         ▼                               │  /oauth/metadata         │     │
+│  ┌──────────────────┐                  │  /oauth/introspect      │     │
+│  │  oauth_client    │ ──── 出站请求 ───▶│  /oauth/revoke          │     │
+│  │  通用客户端库     │    httpclient    └──────────┬──────────────┘     │
+│  └──────────────────┘                              │                   │
+│                                                     │ RS256 签发/验签     │
+│  ┌──────────────────┐                              ▼                   │
+│  │  github_oauth    │ ──── GitHub API ───▶  JWT  (RS256)               │
+│  │  GitHub 专用集成   │                                                     │
+│  └──────────────────┘                                                 │
+└─────────────────────────────────────────────────────────────────────────┘</div>
+    <p>三个模块共用同一份 <strong>PKCE (RFC 7636)</strong> 形状——<code>make_code_verifier()</code> 64 字符 unreserved 字符集，<code>pkce_challenge()</code> = base64url(SHA-256(verifier))——所以任意一端生成的 verifier 交给另一端都能无缝对接。</p>
+
+    <h2 id="oauth-server">第一部分：OAuth 授权服务器</h2>
+    <p>这是把 paozhu 自己变成 OAuth provider 的部分。核心在 <code>libs/oauth/</code>（配置、存储层、RS256 签名）和 <code>controller/src/oauth/</code>（七个 HTTP 端点）。</p>
+
+    <h3 id="oauth-server-config">配置：<code>conf/oauth.conf</code></h3>
+    <p>每次请求<strong>现读</strong>这个文件和下面两个 PEM（缓存过期坑踩过），改完密钥或 issuer <strong>不用重启</strong> <code>bin/paozhu</code>。文件只有 5 个键：</p>
+    <pre><code>[oauth]
+issuer = https://www.hggq.com
+kid = oauth-rs256-1
+private_key_file = oauth_rsa_private.pem
+public_key_file = oauth_rsa_public.pem
+refresh_ttl = 2592000</code></pre>
+    <table>
+        <tr><th>字段</th><th>说明</th></tr>
+        <tr><td><code>issuer</code></td><td>令牌里的 <code>iss</code>，元数据端点里的 <code>issuer</code>。必须与对外访问地址逐字符一致（含 scheme、不带结尾 <code>/</code>）</td></tr>
+        <tr><td><code>kid</code></td><td>JWT 头里的密钥 id，也是 <code>/oauth/jwks</code> 里那枚密钥的 id。换密钥时连这里一起改</td></tr>
+        <tr><td><code>private_key_file</code></td><td>RS256 私钥，PKCS#8 PEM（<code>-----BEGIN PRIVATE KEY-----</code>）。相对路径按本文件所在目录拼</td></tr>
+        <tr><td><code>public_key_file</code></td><td>RS256 公钥，必须是 <code>-----BEGIN PUBLIC KEY-----</code>（PKCS#1 的 <code>RSA PUBLIC KEY</code> 读不出来）</td></tr>
+        <tr><td><code>refresh_ttl</code></td><td>refresh token 有效期（秒），默认 2592000（30 天）</td></tr>
+    </table>
+    <p>密钥生成（部署机上跑，私钥不要提交进 git）：</p>
+    <pre><code>openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out conf/oauth_rsa_private.pem
+openssl pkey -in conf/oauth_rsa_private.pem -pubout -out conf/oauth_rsa_public.pem</code></pre>
+    <div class="warn-box">⚠️ 两个 PEM 缺任何一个、或超过 64 KB，签发与验签一律返回 500 —— 不会降级到 HS256 等对称算法。</div>
+
+    <h3 id="oauth-server-schema">数据库表</h3>
+    <p>三张表支撑整个 OAuth 生命周期（见 <code>conf/cppcms.sql</code>）：</p>
+    <table>
+        <tr><th>表名</th><th>用途</th><th>关键字段</th></tr>
+        <tr>
+            <td><code>oauth_client</code></td>
+            <td>注册过的客户端</td>
+            <td><code>client_id</code> PK，<code>client_secret</code> = hex(SHA-256(口令))，<code>redirect_uris</code> TEXT 逗号分隔，<code>is_confidential</code> 0/1，<code>grant_types</code> 逗号分隔三种 grant</td>
+        </tr>
+        <tr>
+            <td><code>oauth_code</code></td>
+            <td>一次性授权码</td>
+            <td><code>code_hash</code> = hex(SHA-256(明文)) PK（明文不落库），<code>used</code> 0/1 CAS 消费，<code>family_id</code> 换码后回填的 refresh 族根</td>
+        </tr>
+        <tr>
+            <td><code>oauth_refresh</code></td>
+            <td>refresh token</td>
+            <td><code>token_hash</code> = hex(SHA-256(明文))，<code>family_id</code> 0=族根，<code>revoked</code> 0/1</td>
+        </tr>
+    </table>
+    <p>口令存储的设计：保密客户端的 <code>client_secret</code> 列存 <strong>lowerhex(SHA-256(明文))</strong>，公钥客户端这列是 <strong>真 NULL</strong>（不是空串——区分"没设口令"和"口令是空串"）。</p>
+
+    <h3 id="oauth-server-endpoints">七个端点</h3>
+    <table>
+        <tr><th>端点</th><th>方法</th><th>文件</th><th>功能</th></tr>
+        <tr><td><code>/oauth/metadata</code></td><td>GET</td><td><code>oauth_metadata.cpp</code></td><td>RFC 8414 元数据 JSON（issuer + 六个端点 URL + RS256）</td></tr>
+        <tr><td><code>/oauth/jwks</code></td><td>GET</td><td><code>oauth_jwks.cpp</code></td><td>公钥的 RFC 7518 JWK 格式，<code>{"keys":[{...}]}</code></td></tr>
+        <tr><td><code>/oauth/authorize</code></td><td>GET</td><td><code>oauth_authorize.cpp</code></td><td>同意页 → 用户点"同意"→ 签发授权码 → 302 回 redirect_uri</td></tr>
+        <tr><td><code>/oauth/token</code></td><td>POST</td><td><code>oauth_token.cpp</code></td><td>三种 grant：<code>authorization_code</code> / <code>refresh_token</code> / <code>client_credentials</code></td></tr>
+        <tr><td><code>/oauth/bearerauth</code></td><td>—</td><td><code>oauth_bearerauth.cpp</code></td><td>框架中间件：请求里的 Bearer JWT 自动验签并注入 claims</td></tr>
+        <tr><td><code>/oauth/introspect</code></td><td>POST</td><td><code>oauth_introspect.cpp</code></td><td>RFC 7662 令牌存活查询（JWT 验签分支 + refresh 查表分支）</td></tr>
+        <tr><td><code>/oauth/revoke</code></td><td>POST</td><td><code>oauth_revoke.cpp</code></td><td>RFC 7009 撤销令牌（只处理 refresh，access 是无状态 JWT 撤不了）</td></tr>
+    </table>
+
+    <h3 id="oauth-server-jwt">JWT (RS256) 签发与验签</h3>
+    <p>access token 是 RS256 签名的 JWT，payload 包含 7 个声明：</p>
+    <pre><code>{
+  "iss":   "https://www.hggq.com",    // 必须等于 conf 里的 issuer
+  "sub":   "test_client",             // 授权人 client_id（client_credentials 时是自己）
+  "aud":   "test_client",             // 令牌的主人，introspect 防线
+  "scope": "read write",              // 空格分隔，服务端允许的子集
+  "exp":   1729678900,                // 900 秒后过期（CONST_OAUTH_ACCESS_TTL）
+  "iat":   1729678000,
+  "jti":   "8f3a...1c2d"              // 唯一 id，便于日志追踪
+}</code></pre>
+    <p>签名流程（<code>libs/oauth/oauth_store.h</code>）：</p>
+    <ol>
+        <li><code>load_signing_keys()</code> 从 PEM 读 RSA 私钥/公钥正文（每次现读）</li>
+        <li><code>sign_access_token()</code> 拼 header <code>{"alg":"RS256","typ":"JWT","kid":"..."}</code> + payload JSON → RS256 签名 → base64url 三段</li>
+        <li><code>verify_access_token()</code> 验签 + <code>exp</code>/<code>nbf</code> 检查（<code>jwt::verify</code>），返回 payload JSON 明文</li>
+    </ol>
+    <div class="tip-box">💡 <strong>令牌形状分流</strong>：<code>looks_like_jwt()</code> 判"恰好两个 '.' 且三段都是 base64url 字母表"。introspect 靠这一格分流到 JWT 验签分支或 refresh 查表分支——不走调用方的 <code>token_type_hint</code>（那是调用方可控字符串）。</div>
+
+    <h3 id="oauth-server-grants">三种 Grant 流程</h3>
+
+    <h4 id="grant-client-credentials">Client Credentials（<code>client_credentials</code>）</h4>
+    <div class="flow-diagram">Client  ──POST /oauth/token──▶  Server
+       │                                   │
+       │  grant_type=client_credentials    │  authenticate_client()
+       │  scope=read                       │  verify_client_secret()
+       │  (Basic auth 或 body)             │  grant_within() 检查 grant_types 列
+       │                                   │
+       │ ◀── access_token (JWT) ──────────│  RS256 签发</div>
+    <p>最简单的 grant，没有用户参与。只对保密客户端（<code>is_confidential=1</code>）开放。</p>
+
+    <h4 id="grant-auth-code">Authorization Code（含 PKCE）</h4>
+    <div class="flow-diagram">① Client 生成 PKCE
+   verifier = make_code_verifier()           // 64 chars
+   challenge = pkce_challenge(verifier)      // b64url(SHA-256(verifier))
+
+② 浏览器跳 authorize
+   GET /oauth/authorize?response_type=code
+   &client_id=X&redirect_uri=Y&scope=read
+   &state=S&code_challenge=C&code_challenge_method=S256
+
+③ 用户登录 + 同意
+   → Server 发授权码（43 chars base64url，明文只给一次）
+   → 302 到 redirect_uri?code=CODE&state=S
+
+④ Client 换令牌
+   POST /oauth/token
+   grant_type=authorization_code
+   code=CODE&redirect_uri=Y
+   code_verifier=verifier                   // Server 做 S256 验算
+   → access_token (JWT) + refresh_token (opaque)</div>
+    <p>安全设计要点：</p>
+    <ul>
+        <li>授权码 <strong>一次性</strong>——换码时 <code>used=1</code> CAS 更新，重放永远失败</li>
+        <li>换码成功后，<code>family_id</code> 回填到授权码——重放这行码能定位 refresh 族，整族撤销</li>
+        <li>redirect_uri 逐字节匹配白名单里的那一条（不是"匹配提交值"）</li>
+        <li>PKCE S256 强制验算，<code>pkce_s256_ok(verifier, challenge)</code> 逐字节比较</li>
+    </ul>
+
+    <h4 id="grant-refresh">Refresh Token 轮换 & 族撤销</h4>
+    <p>refresh token 轮换有一个特别精巧的设计：</p>
+    <ul>
+        <li>第一次签发 refresh → 行的 <code>family_id=0</code>，插入后把<strong>自己的 id</strong> 回填成 <code>family_id</code></li>
+        <li>轮换时：<code>UPDATE oauth_refresh SET revoked=1 WHERE id=? AND revoked=0</code>（CAS），同时签发新行</li>
+        <li>如果 CAS 失败（这行早被 revoked）→ <strong>重放信号</strong> → <code>revoke_refresh_family(family_id)</code> 整族撤销</li>
+    </ul>
+    <div class="warn-box">⚠️ 这意味着 refresh token 不能并行使用——两次同时带着同一个 refresh token 进来，有一个会被 CAS 拒，触发族撤销。对大部分场景（单设备顺序操作）没问题。</div>
+
+    <h3 id="oauth-server-auth">客户端认证：Basic 与 Body</h3>
+    <p>保密客户端可以用两种方式提交 <code>client_id</code>/<code>client_secret</code>：</p>
+    <ol>
+        <li><strong>Authorization: Basic base64(id:secret)</strong>（RFC 6749 §2.3.1 推荐）</li>
+        <li><strong>POST body 里的 client_id / client_secret</strong></li>
+    </ol>
+    <p><code>verify_client_secret()</code> 的判定：有 Authorization 头就按 Basic 解析（两段 percent-encoded 要 <code>url_decode</code>），解析不出来直接拒绝、<strong>不回落到 body</strong>；没有头才看 body 字段。两边都给时取 Basic 那个且必须与 body 里的相等，不相等就拒绝。</p>
+
+    <h3 id="oauth-server-bearer">Bearer 中间件</h3>
+    <p>框架可以让任意 controller 自动验 Bearer JWT——请求头 <code>Authorization: Bearer &lt;token&gt;</code>，框架的 bearer 中间件会：</p>
+    <ol>
+        <li>验签 + exp/nbf 检查</li>
+        <li>把 payload 的 claims 注入 <code>httppeer.val</code></li>
+        <li>验签失败返回 401</li>
+    </ol>
+    <p>这样 controller 里可以直接用 <code>client.val["sub"].to_string()</code> 拿到当前用户 id。</p>
+
+    <h2 id="oauth-client">第二部分：通用 OAuth 客户端库</h2>
+    <p><code>libs/oauth_client/</code> 是一套纯函数 + httpclient 封装的通用客户端——端点填 URL 就能同时对 GitHub / Google / 自搭的 paozhu OAuth 通吃。跟 server 端一样只依赖 <code>httpclient</code> + SHA-256 + base64url + JSON 解析，<strong>不碰 ORM</strong>。</p>
+
+    <h3 id="oauth-client-endpoints"><code>oauth_endpoints</code> 配置结构</h3>
+    <pre><code>struct oauth_endpoints
+{
+    std::string authorize_url;   // https://.../oauth/authorize
+    std::string token_url;       // https://.../oauth/token
+    std::string introspect_url;  // https://.../oauth/introspect
+    std::string revoke_url;      // https://.../oauth/revoke
+    int         timeout_seconds = 10;
+    bool        prefer_basic_auth = true;  // 关键开关
+};</code></pre>
+    <p><strong><code>prefer_basic_auth</code> 的意义</strong>：</p>
+    <table>
+        <tr><th>值</th><th>client_id/client_secret 怎么传</th><th>谁用</th></tr>
+        <tr><td><code>true</code>（默认）</td><td><code>Authorization: Basic base64(id:secret)</code> 头</td><td>paozhu OAuth server、大部分 RFC 6749 合规实现</td></tr>
+        <tr><td><code>false</code></td><td>POST body 的 <code>client_id</code> / <code>client_secret</code> 字段</td><td>GitHub（它不认 Basic）</td></tr>
+    </table>
+    <p>两种是<strong>互斥</strong>的——不是"两种都塞进去让服务端挑"，那样某些服务端会安全拒绝。</p>
+
+    <h3 id="oauth-client-api">公共 API</h3>
+    <table>
+        <tr><th>函数</th><th>说明</th></tr>
+        <tr><td><code>make_code_verifier()</code></td><td>64 字符 RFC 7636 unreserved 字符集，RAND_bytes 失败返回空串</td></tr>
+        <tr><td><code>pkce_challenge(verifier)</code></td><td>base64url(SHA-256(verifier))，GitHub/Google/paozhu 都只支持 S256</td></tr>
+        <tr><td><code>build_authorize_url(ep, client_id, redirect_uri, scope, state, challenge, url_out)</code></td><td>拼 302 的 authorize URL，所有字段 URL encode 兜底</td></tr>
+        <tr><td><code>exchange_code(ep, ..., code, redirect_uri, verifier, out)</code></td><td>authorization_code grant</td></tr>
+        <tr><td><code>refresh_access(ep, ..., refresh_token, out)</code></td><td>refresh_token grant</td></tr>
+        <tr><td><code>client_credentials(ep, ..., scope, out)</code></td><td>client_credentials grant</td></tr>
+        <tr><td><code>do_introspect(ep, ..., token, hint, out)</code></td><td>RFC 7662 令牌查询</td></tr>
+        <tr><td><code>do_revoke(ep, ..., token, hint, status_out)</code></td><td>RFC 7009 撤销</td></tr>
+    </table>
+
+    <h3 id="oauth-client-example">使用示例</h3>
+    <pre><code>#include "oauth_client/oauth_client.h"
+
+// 1) 构造端点
+http::oauth_client::oauth_endpoints ep;
+ep.authorize_url  = "https://www.hggq.com/oauth/authorize";
+ep.token_url      = "https://www.hggq.com/oauth/token";
+ep.introspect_url = "https://www.hggq.com/oauth/introspect";
+ep.revoke_url     = "https://www.hggq.com/oauth/revoke";
+// 默认 prefer_basic_auth=true，paozhu OAuth server 用这个
+
+// 2) PKCE
+std::string verifier = http::oauth_client::make_code_verifier();
+std::string challenge = http::oauth_client::pkce_challenge(verifier);
+
+// 3) 拼 authorize URL（浏览器跳）
+std::string url;
+http::oauth_client::build_authorize_url(
+    ep, "test_client", "https://example.com/callback",
+    "read write", "state-xyz", challenge, url);
+
+// 4) 拿 code 换令牌
+http::oauth_client::token_answer out;
+http::oauth_client::exchange_code(
+    ep, "test_client", "test-secret-abc123-xyz789",
+    "CODE_FROM_CALLBACK", "https://example.com/callback",
+    verifier, out);
+
+if (out.ok) {
+    // out.access_token  —— JWT 或 opaque
+    // out.refresh_token —— 空串表示这一轮没给
+    // out.http_status   —— 200
+} else {
+    // out.error         —— 失败原因，永远不含密钥
+    // out.http_status   —— 非 200 的 HTTP 状态码（传输成功但业务拒绝）或 0（网络错）
+}</code></pre>
+
+    <h3 id="oauth-client-shape">跟 github_oauth 的关系</h3>
+    <div class="tip-box">💡 <code>libs/github/github_oauth.{h,cpp}</code> 是 <strong>GitHub 专用版</strong>——它跟通用版的差异：
+
+<ul style="margin: 0.3rem 0 0 1.2rem; padding: 0;">
+    <li><code>github_settings</code> 带 auth_base / api_base / http_timeout，而不是四端点结构</li>
+    <li>state 是三段式 <code>adminid.client_id.rand32</code>（各自 base64url），用于 GitHub 回调时定位谁发起的授权</li>
+    <li>revoke 走 DELETE + HTTP Basic（<code>curl -X DELETE /applications/:client_id/tokens/:access_token</code>），而不是 RFC 7009 的 POST</li>
+    <li><code>normalize_scopes()</code> 强制追加 <code>read:user</code>——没有它 GET /user 回 403，绑定行的身份列填不上</li>
+</ul>
+
+PKCE 形状两份完全一致，因为 RFC 7636 就一份标准。</div>
+
+    <h2 id="demo">第三部分：Demo 与测试端点</h2>
+    <p><code>controller/src/oauth_client/oauth_client_demo.cpp</code> 提供了 7 个 REST 端点，把 bash/Python 测试脚本里的流程直接搬进 paozhu 的 controller：</p>
+    <table>
+        <tr><th>端点</th><th>方法</th><th>功能</th></tr>
+        <tr><td><code>GET /oauth_client/page</code></td><td>GET</td><td>Bootstrap 表单，默认填 paozhu OAuth server 端点 + test_client 凭据</td></tr>
+        <tr><td><code>POST /oauth_client/client_credentials</code></td><td>POST</td><td>调 <code>oauth_client::client_credentials()</code></td></tr>
+        <tr><td><code>POST /oauth_client/build_authorize</code></td><td>POST</td><td>生成 PKCE + 拼 authorize URL</td></tr>
+        <tr><td><code>POST /oauth_client/exchange_code</code></td><td>POST</td><td>authorization_code grant</td></tr>
+        <tr><td><code>POST /oauth_client/refresh</code></td><td>POST</td><td>refresh_token grant</td></tr>
+        <tr><td><code>POST /oauth_client/introspect</code></td><td>POST</td><td>令牌存活查询</td></tr>
+        <tr><td><code>POST /oauth_client/revoke</code></td><td>POST</td><td>撤销令牌</td></tr>
+    </table>
+    <p>默认端点指向 <code>www.hggq.com</code> 自己的 OAuth server。要测 GitHub OAuth App，在页面表单里改：</p>
+    <ul>
+        <li><code>authorize_url</code> → <code>https://github.com/login/oauth/authorize</code></li>
+        <li><code>token_url</code> → <code>https://github.com/login/oauth/access_token</code></li>
+        <li>（<code>introspect_url</code> / <code>revoke_url</code> 留空，GitHub 没这端点）</li>
+        <li>客户端凭据换成 GitHub OAuth App 那对</li>
+        <li>关键：把 client auth 方式从 Basic 切到 body（因为 GitHub 不认 Basic）</li>
+    </ul>
+
+    <h2 id="mini-project">mini_project.sh 里的 OAuth</h2>
+    <p><code>mini_project.sh</code> 清空模板项目里 OAuth server 相关目录（<code>libs/oauth/</code> + <code>controller/src/oauth/</code>），因为它们依赖 ORM。但 <strong><code>libs/oauth_client/</code> 和 <code>libs/github/</code> 会保留</strong>——前者是纯 HTTP 客户端库，后者也不碰 ORM。新建小项目时这两套会自动跟 scaffold 走。</p>
+
+    <h2 id="constants">编译期常量</h2>
+    <p>令牌生命周期相关常量集中在 <code>common/cost_define.h</code>：</p>
+    <table>
+        <tr><th>常量</th><th>值</th><th>说明</th></tr>
+        <tr><td><code>CONST_OAUTH_ACCESS_TTL</code></td><td>900</td><td>access token 有效秒数（15 分钟）</td></tr>
+        <tr><td><code>CONST_OAUTH_CODE_TTL</code></td><td>300</td><td>授权码有效秒数（5 分钟）</td></tr>
+        <tr><td><code>CONST_OAUTH_REFRESH_TTL</code></td><td>2592000</td><td>refresh token 默认有效期（30 天）——<code>conf/oauth.conf</code> 可覆盖</td></tr>
+        <tr><td><code>CONST_OAUTH_PURGE_KEEP</code></td><td>7776000</td><td>过期行保留 90 天（<code>oauth_purge.cpp</code> 定期清理）</td></tr>
+    </table>
+
+    <h2 id="deploy-checklist">部署检查清单</h2>
+    <ol>
+        <li><code>conf/oauth.conf</code> — issuer 正确、kid 正确、两个 PEM 路径可读</li>
+        <li><code>conf/oauth_rsa_private.pem</code> / <code>oauth_rsa_public.pem</code> — PKCS#8 私钥 + PKCS#8 公钥（不是 PKCS#1），权限 <code>0600</code></li>
+        <li>数据库表 <code>oauth_client</code> / <code>oauth_code</code> / <code>oauth_refresh</code> 已创建（<code>conf/cppcms.sql</code> 里有）</li>
+        <li>至少注册一个测试客户端（<code>INSERT INTO oauth_client ...</code>，<code>client_secret</code> 是 <code>lowerhex(SHA-256(口令))</code>）</li>
+        <li>用 <code>curl -s https://www.hggq.com/oauth/metadata</code> 验证元数据端点能通</li>
+        <li>用 <code>curl -s https://www.hggq.com/oauth/jwks</code> 验证 JWKS 能返回正确的 <code>kid</code></li>
+    </ol>
+
+    <a href="index.html" class="back-to-index">← 返回首页</a>
+    `;
+
+    const enFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🔐 Paozhu OAuth &amp; JWT</h1>
+        <p style="opacity: 0.8;">A complete OAuth 2.1 authorization server + generic client library + GitHub-specific integration — all in C++20</p>
+    </div>
+
+    <h2 id="intro">Introduction</h2>
+    <p>Paozhu provides a full-from-scratch implementation of <strong>OAuth 2.1</strong> and <strong>JWT (RS256)</strong> infrastructure, organized into three layers:</p>
+    <ul>
+        <li><strong>OAuth Authorization Server</strong> (<code>controller/src/oauth/</code> + <code>libs/oauth/</code>) — turn paozhu itself into an OAuth provider that issues RS256-signed JWT access tokens to third-party clients</li>
+        <li><strong>Generic OAuth Client Library</strong> (<code>libs/oauth_client/</code>) — a pure-function + httpclient-based client; fill in four endpoint URLs and it works for GitHub, Google, or a self-hosted paozhu OAuth server</li>
+        <li><strong>GitHub OAuth Integration</strong> (<code>libs/github/</code>) — adds GitHub-specific logic on top of the generic client: three-part state encoding, DELETE+Basic revocation, forced <code>read:user</code> scope, etc.</li>
+    </ul>
+    <div class="flow-diagram">┌─────────────────────────────────────────────────────────────────────────┐
+│                        OAuth 2.1 Ecosystem                              │
+│                                                                         │
+│  ┌──────────────────┐   authorize     ┌─────────────────────────┐      │
+│  │  Browser/User    │ ──────────────▶ │  Paozhu OAuth Server     │      │
+│  │  (third-party    │                 │  /oauth/authorize       │      │
+│  │   app)           │                 │  /oauth/token            │      │
+│  └──────────────────┘                 │  /oauth/jwks             │      │
+│         │                              │  /oauth/metadata         │      │
+│         ▼                              │  /oauth/introspect      │      │
+│  ┌──────────────────┐                 │  /oauth/revoke          │      │
+│  │  oauth_client    │ ──── outbound ──▶└──────────┬──────────────┘      │
+│  │  generic client  │    httpclient               │                      │
+│  └──────────────────┘                              │ RS256 sign/verify    │
+│                                                    ▼                      │
+│  ┌──────────────────┐                       JWT (RS256)                  │
+│  │  github_oauth    │ ──── GitHub API ──────────────────────            │
+│  │  GitHub-specific │                                                     │
+│  └──────────────────┘                                                    │
+└─────────────────────────────────────────────────────────────────────────┘</div>
+    <p>All three modules share the same <strong>PKCE (RFC 7636)</strong> shape — <code>make_code_verifier()</code> produces 64 unreserved chars, <code>pkce_challenge()</code> = base64url(SHA-256(verifier)) — so a verifier generated on one side can be verified on any other.</p>
+
+    <h2 id="oauth-server">Part 1: OAuth Authorization Server</h2>
+    <p>This is what turns paozhu into an OAuth provider. Core logic lives in <code>libs/oauth/</code> (config, storage, RS256 signing) and seven HTTP endpoints in <code>controller/src/oauth/</code>.</p>
+
+    <h3 id="oauth-server-config">Configuration: <code>conf/oauth.conf</code></h3>
+    <p>Both the config file and both PEM files are <strong>re-read on every request</strong> (we got burned caching key contents in <code>vendor/webpay/src/alipay.cpp</code>). After editing issuer or keys, <strong>no restart needed</strong> for <code>bin/paozhu</code>.</p>
+    <pre><code>[oauth]
+issuer = https://www.hggq.com
+kid = oauth-rs256-1
+private_key_file = oauth_rsa_private.pem
+public_key_file = oauth_rsa_public.pem
+refresh_ttl = 2592000</code></pre>
+    <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>issuer</code></td><td>Token <code>iss</code> claim and metadata <code>issuer</code>. Must match the externally-reachable URL <strong>byte-for-byte</strong> (including scheme, no trailing <code>/</code>)</td></tr>
+        <tr><td><code>kid</code></td><td>Key ID in the JWT header and in <code>/oauth/jwks</code>. Change this when you rotate keys</td></tr>
+        <tr><td><code>private_key_file</code></td><td>RS256 private key in PKCS#8 PEM format (<code>-----BEGIN PRIVATE KEY-----</code>). Relative paths resolve against this config file's directory</td></tr>
+        <tr><td><code>public_key_file</code></td><td>RS256 public key — <code>-----BEGIN PUBLIC KEY-----</code> only (PKCS#1's <code>RSA PUBLIC KEY</code> won't load)</td></tr>
+        <tr><td><code>refresh_ttl</code></td><td>Refresh token lifetime in seconds. Default 2592000 (30 days)</td></tr>
+    </table>
+    <p>Key generation (run on your deploy machine — <strong>never commit private keys to git</strong>):</p>
+    <pre><code>openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out conf/oauth_rsa_private.pem
+openssl pkey -in conf/oauth_rsa_private.pem -pubout -out conf/oauth_rsa_public.pem</code></pre>
+    <div class="warn-box">⚠️ If either PEM file is missing or exceeds 64 KB, signing and verification will both return 500 — <strong>no graceful fallback</strong> to symmetric algorithms like HS256.</div>
+
+    <h3 id="oauth-server-schema">Database Tables</h3>
+    <p>Three tables support the full OAuth lifecycle (see <code>conf/cppcms.sql</code>):</p>
+    <table>
+        <tr><th>Table</th><th>Purpose</th><th>Key Columns</th></tr>
+        <tr>
+            <td><code>oauth_client</code></td>
+            <td>Registered clients</td>
+            <td><code>client_id</code> PK, <code>client_secret</code> = hex(SHA-256(plaintext)), <code>redirect_uris</code> TEXT comma-separated, <code>is_confidential</code> 0/1, <code>grant_types</code> comma-separated (three grants)</td>
+        </tr>
+        <tr>
+            <td><code>oauth_code</code></td>
+            <td>One-time authorization codes</td>
+            <td><code>code_hash</code> = hex(SHA-256(plaintext)) PK (plaintext never stored), <code>used</code> 0/1 for CAS consumption, <code>family_id</code> filled after code exchange — links to refresh family</td>
+        </tr>
+        <tr>
+            <td><code>oauth_refresh</code></td>
+            <td>Refresh tokens</td>
+            <td><code>token_hash</code> = hex(SHA-256(plaintext)), <code>family_id</code> 0 = this row IS the family root, <code>revoked</code> 0/1</td>
+        </tr>
+    </table>
+    <p>Password storage design: confidential clients store <strong>lowercase hex(SHA-256(plaintext))</strong> in <code>client_secret</code>. Public (non-confidential) clients have this column as <strong>true NULL</strong> — distinct from an empty string, which distinguishes "no password set" from "empty password".</p>
+
+    <h3 id="oauth-server-endpoints">Seven Endpoints</h3>
+    <table>
+        <tr><th>Endpoint</th><th>Method</th><th>File</th><th>Function</th></tr>
+        <tr><td><code>/oauth/metadata</code></td><td>GET</td><td><code>oauth_metadata.cpp</code></td><td>RFC 8414 metadata JSON (issuer + six endpoint URLs + RS256)</td></tr>
+        <tr><td><code>/oauth/jwks</code></td><td>GET</td><td><code>oauth_jwks.cpp</code></td><td>Public key in RFC 7518 JWK format, <code>{"keys":[{...}]}</code></td></tr>
+        <tr><td><code>/oauth/authorize</code></td><td>GET</td><td><code>oauth_authorize.cpp</code></td><td>Consent page → user clicks "Allow" → issue auth code → 302 to redirect_uri</td></tr>
+        <tr><td><code>/oauth/token</code></td><td>POST</td><td><code>oauth_token.cpp</code></td><td>Three grants: <code>authorization_code</code> / <code>refresh_token</code> / <code>client_credentials</code></td></tr>
+        <tr><td><code>/oauth/bearerauth</code></td><td>—</td><td><code>oauth_bearerauth.cpp</code></td><td>Framework middleware: auto-verifies Bearer JWT and injects claims into request context</td></tr>
+        <tr><td><code>/oauth/introspect</code></td><td>POST</td><td><code>oauth_introspect.cpp</code></td><td>RFC 7662 token liveness query (JWT verify branch + refresh lookup branch)</td></tr>
+        <tr><td><code>/oauth/revoke</code></td><td>POST</td><td><code>oauth_revoke.cpp</code></td><td>RFC 7009 token revocation (refresh tokens only — JWT access tokens are stateless)</td></tr>
+    </table>
+
+    <h3 id="oauth-server-jwt">JWT (RS256) Signing &amp; Verification</h3>
+    <p>Access tokens are RS256-signed JWTs with 7 claims:</p>
+    <pre><code>{
+  "iss":   "https://www.hggq.com",    // must exactly match conf issuer
+  "sub":   "test_client",             // authorizing client_id (self for client_credentials)
+  "aud":   "test_client",             // token owner — introspect defense
+  "scope": "read write",              // space-separated, server-allowed subset
+  "exp":   1729678900,                // expires in 900s (CONST_OAUTH_ACCESS_TTL)
+  "iat":   1729678000,
+  "jti":   "8f3a...1c2d"              // unique id for log tracing
+}</code></pre>
+    <p>Signing flow (see <code>libs/oauth/oauth_store.h</code>):</p>
+    <ol>
+        <li><code>load_signing_keys()</code> reads RSA private/public key bodies from PEM (re-read each request)</li>
+        <li><code>sign_access_token()</code> builds header <code>{"alg":"RS256","typ":"JWT","kid":"..."}</code> + payload JSON → RS256 sign → base64url three segments</li>
+        <li><code>verify_access_token()</code> verifies signature + checks <code>exp</code>/<code>nbf</code> via <code>jwt::verify</code>, returns payload JSON</li>
+    </ol>
+    <div class="tip-box">💡 <strong>Token shape dispatch</strong>: <code>looks_like_jwt()</code> checks "exactly two '.' and all three segments match base64url alphabet". introspect uses this to route to JWT verify or refresh table lookup — <strong>not</strong> the caller's <code>token_type_hint</code> (which is a user-controlled string).</div>
+
+    <h3 id="oauth-server-grants">Three Grant Flows</h3>
+
+    <h4 id="grant-client-credentials">Client Credentials</h4>
+    <div class="flow-diagram">Client  ──POST /oauth/token──▶  Server
+       │                                   │
+       │  grant_type=client_credentials    │  authenticate_client()
+       │  scope=read                       │  verify_client_secret()
+       │  (Basic auth or body)             │  grant_within() checks grant_types column
+       │                                   │
+       │ ◀── access_token (JWT) ──────────│  RS256 sign</div>
+    <p>Simplest grant, no human user involved. Only exposed to confidential clients (<code>is_confidential=1</code>).</p>
+
+    <h4 id="grant-auth-code">Authorization Code (with PKCE)</h4>
+    <div class="flow-diagram">① Client generates PKCE
+   verifier  = make_code_verifier()          // 64 chars
+   challenge = pkce_challenge(verifier)       // b64url(SHA-256(verifier))
+
+② Browser to authorize
+   GET /oauth/authorize?response_type=code
+   &client_id=X&redirect_uri=Y&scope=read
+   &state=S&code_challenge=C&code_challenge_method=S256
+
+③ User logs in + consents
+   → Server issues auth code (43 chars base64url, plaintext given ONCE)
+   → 302 to redirect_uri?code=CODE&state=S
+
+④ Client exchanges for tokens
+   POST /oauth/token
+   grant_type=authorization_code
+   code=CODE&redirect_uri=Y
+   code_verifier=verifier                    // Server does S256 verification
+   → access_token (JWT) + refresh_token (opaque)</div>
+    <p>Security highlights:</p>
+    <ul>
+        <li>Auth codes are <strong>one-time use</strong> — exchanged atomically via CAS <code>used=1</code> UPDATE, replays always fail</li>
+        <li>After successful exchange, <code>family_id</code> is backfilled into the auth code — replaying that code locates the refresh family for full-family revocation</li>
+        <li>Redirect URI is byte-for-byte matched against the whitelist entry (not "matching the submitted value")</li>
+        <li>PKCE S256 is mandatory — <code>pkce_s256_ok(verifier, challenge)</code> does byte-for-byte comparison</li>
+    </ul>
+
+    <h4 id="grant-refresh">Refresh Token Rotation &amp; Family Revocation</h4>
+    <p>Refresh rotation has a particularly elegant design:</p>
+    <ul>
+        <li>First refresh issued → row has <code>family_id=0</code>, after INSERT the row's own id is written back as <code>family_id</code></li>
+        <li>On rotation: <code>UPDATE oauth_refresh SET revoked=1 WHERE id=? AND revoked=0</code> (CAS), new row issued simultaneously</li>
+        <li>If CAS fails (this row was already revoked earlier) → <strong>replay signal</strong> → <code>revoke_refresh_family(family_id)</code> revokes the entire family at once</li>
+    </ul>
+    <div class="warn-box">⚠️ This means refresh tokens must not be used concurrently — two parallel requests with the same refresh token: one succeeds (CAS matches), one fails (CAS fails) and triggers full-family revocation. Fine for sequential single-device usage.</div>
+
+    <h3 id="oauth-server-auth">Client Authentication: Basic vs Body</h3>
+    <p>Confidential clients can submit <code>client_id</code>/<code>client_secret</code> two ways:</p>
+    <ol>
+        <li><strong>Authorization: Basic base64(id:secret)</strong> (RFC 6749 §2.3.1 recommended)</li>
+        <li><strong>client_id / client_secret in POST body</strong></li>
+    </ol>
+    <p><code>verify_client_secret()</code> logic: if Authorization header is present → parse as Basic (segments are percent-encoded per RFC 6749, must <code>url_decode</code>); parse failure → reject outright, <strong>never fall back</strong> to body. If both header and body are provided, both must match; mismatch → reject.</p>
+
+    <h3 id="oauth-server-bearer">Bearer Middleware</h3>
+    <p>The framework can auto-verify Bearer JWTs for any controller. When a request has <code>Authorization: Bearer &lt;token&gt;</code>, the bearer middleware will:</p>
+    <ol>
+        <li>Verify signature and check <code>exp</code>/<code>nbf</code></li>
+        <li>Inject claims into <code>httppeer.val</code></li>
+        <li>Return 401 if verification fails</li>
+    </ol>
+    <p>Controllers can then directly access <code>client.val["sub"].to_string()</code> for the current user id.</p>
+
+    <h2 id="oauth-client">Part 2: Generic OAuth Client Library</h2>
+    <p><code>libs/oauth_client/</code> is a pure-function + httpclient-based generic client — fill in four endpoint URLs and it works for GitHub, Google, or a self-hosted paozhu OAuth server. Same dependencies as the server: <code>httpclient</code> + SHA-256 + base64url + JSON parsing, <strong>no ORM required</strong>.</p>
+
+    <h3 id="oauth-client-endpoints"><code>oauth_endpoints</code> Config Struct</h3>
+    <pre><code>struct oauth_endpoints
+{
+    std::string authorize_url;   // https://.../oauth/authorize
+    std::string token_url;       // https://.../oauth/token
+    std::string introspect_url;  // https://.../oauth/introspect
+    std::string revoke_url;      // https://.../oauth/revoke
+    int         timeout_seconds = 10;
+    bool        prefer_basic_auth = true;  // the key switch
+};</code></pre>
+    <p><strong>What <code>prefer_basic_auth</code> does</strong>:</p>
+    <table>
+        <tr><th>Value</th><th>How client_id/client_secret are sent</th><th>Who uses it</th></tr>
+        <tr><td><code>true</code> (default)</td><td><code>Authorization: Basic base64(id:secret)</code> header</td><td>paozhu OAuth server, most RFC 6749-compliant implementations</td></tr>
+        <tr><td><code>false</code></td><td><code>client_id</code> / <code>client_secret</code> fields in POST body</td><td>GitHub (it does not accept Basic)</td></tr>
+    </table>
+    <p>The two are <strong>mutually exclusive</strong> — not "send both and let the server pick". Some servers actively reject requests that send credentials both ways as a security measure.</p>
+
+    <h3 id="oauth-client-api">Public API</h3>
+    <table>
+        <tr><th>Function</th><th>Description</th></tr>
+        <tr><td><code>make_code_verifier()</code></td><td>64 RFC 7636 unreserved characters; returns empty string if RAND_bytes fails</td></tr>
+        <tr><td><code>pkce_challenge(verifier)</code></td><td>base64url(SHA-256(verifier)) — only S256 is supported by GitHub/Google/paozhu</td></tr>
+        <tr><td><code>build_authorize_url(ep, client_id, redirect_uri, scope, state, challenge, url_out)</code></td><td>Build the 302 authorize URL; all fields URL-encoded as safety net</td></tr>
+        <tr><td><code>exchange_code(ep, ..., code, redirect_uri, verifier, out)</code></td><td>authorization_code grant</td></tr>
+        <tr><td><code>refresh_access(ep, ..., refresh_token, out)</code></td><td>refresh_token grant</td></tr>
+        <tr><td><code>client_credentials(ep, ..., scope, out)</code></td><td>client_credentials grant</td></tr>
+        <tr><td><code>do_introspect(ep, ..., token, hint, out)</code></td><td>RFC 7662 token liveness query</td></tr>
+        <tr><td><code>do_revoke(ep, ..., token, hint, status_out)</code></td><td>RFC 7009 token revocation</td></tr>
+    </table>
+
+    <h3 id="oauth-client-example">Usage Example</h3>
+    <pre><code>#include "oauth_client/oauth_client.h"
+
+// 1) Build endpoints
+http::oauth_client::oauth_endpoints ep;
+ep.authorize_url  = "https://www.hggq.com/oauth/authorize";
+ep.token_url      = "https://www.hggq.com/oauth/token";
+ep.introspect_url = "https://www.hggq.com/oauth/introspect";
+ep.revoke_url     = "https://www.hggq.com/oauth/revoke";
+// prefer_basic_auth defaults to true — paozhu OAuth server uses it
+
+// 2) PKCE
+std::string verifier = http::oauth_client::make_code_verifier();
+std::string challenge = http::oauth_client::pkce_challenge(verifier);
+
+// 3) Build authorize URL (browser redirect)
+std::string url;
+http::oauth_client::build_authorize_url(
+    ep, "test_client", "https://example.com/callback",
+    "read write", "state-xyz", challenge, url);
+
+// 4) Exchange authorization code for tokens
+http::oauth_client::token_answer out;
+http::oauth_client::exchange_code(
+    ep, "test_client", "test-secret-abc123-xyz789",
+    "CODE_FROM_CALLBACK", "https://example.com/callback",
+    verifier, out);
+
+if (out.ok) {
+    // out.access_token  — JWT or opaque
+    // out.refresh_token — empty if this round didn't issue one
+    // out.http_status   — 200
+} else {
+    // out.error         — failure reason, NEVER contains secrets
+    // out.http_status   — non-200 HTTP code (transport succeeded but business rejected) or 0 (network error)
+}</code></pre>
+
+    <h3 id="oauth-client-shape">How it Relates to github_oauth</h3>
+    <div class="tip-box">💡 <code>libs/github/github_oauth.{h,cpp}</code> is <strong>GitHub-specific</strong>. Differences from the generic client:
+
+<ul style="margin: 0.3rem 0 0 1.2rem; padding: 0;">
+    <li><code>github_settings</code> has <code>auth_base</code> / <code>api_base</code> / <code>http_timeout</code> instead of four separate endpoints</li>
+    <li>State is a three-part <code>adminid.client_id.rand32</code> (each base64url) — used on callback to identify which admin started the flow</li>
+    <li>Revocation uses DELETE + HTTP Basic (<code>curl -X DELETE /applications/:client_id/tokens/:access_token</code>), not RFC 7009 POST</li>
+    <li><code>normalize_scopes()</code> force-appends <code>read:user</code> — without it, <code>GET /user</code> returns 403 and the identity columns on the binding row stay empty</li>
+</ul>
+
+PKCE shape is identical — RFC 7636 defines exactly one standard.</div>
+
+    <h2 id="demo">Part 3: Demo &amp; Test Endpoints</h2>
+    <p><code>controller/src/oauth_client/oauth_client_demo.cpp</code> exposes 7 REST endpoints that move the bash/Python test scripts directly into paozhu's controller layer:</p>
+    <table>
+        <tr><th>Endpoint</th><th>Method</th><th>Function</th></tr>
+        <tr><td><code>GET /oauth_client/page</code></td><td>GET</td><td>Bootstrap form pre-filled with paozhu OAuth server endpoints + test_client credentials</td></tr>
+        <tr><td><code>POST /oauth_client/client_credentials</code></td><td>POST</td><td>Calls <code>oauth_client::client_credentials()</code></td></tr>
+        <tr><td><code>POST /oauth_client/build_authorize</code></td><td>POST</td><td>Generates PKCE + builds authorize URL</td></tr>
+        <tr><td><code>POST /oauth_client/exchange_code</code></td><td>POST</td><td>authorization_code grant</td></tr>
+        <tr><td><code>POST /oauth_client/refresh</code></td><td>POST</td><td>refresh_token grant</td></tr>
+        <tr><td><code>POST /oauth_client/introspect</code></td><td>POST</td><td>Token liveness query</td></tr>
+        <tr><td><code>POST /oauth_client/revoke</code></td><td>POST</td><td>Token revocation</td></tr>
+    </table>
+    <p>By default, endpoints point to paozhu's own OAuth server at <code>www.hggq.com</code>. To test a GitHub OAuth App, change in the page form:</p>
+    <ul>
+        <li><code>authorize_url</code> → <code>https://github.com/login/oauth/authorize</code></li>
+        <li><code>token_url</code> → <code>https://github.com/login/oauth/access_token</code></li>
+        <li>(<code>introspect_url</code> / <code>revoke_url</code> stay empty — GitHub doesn't have these endpoints)</li>
+        <li>Client credentials → your GitHub OAuth App pair</li>
+        <li>Key: switch client auth from Basic to body, because GitHub doesn't accept Basic</li>
+    </ul>
+
+    <h2 id="mini-project">OAuth in mini_project.sh</h2>
+    <p><code>mini_project.sh</code> strips OAuth server directories (<code>libs/oauth/</code> + <code>controller/src/oauth/</code>) from scaffold projects because they depend on ORM. However, <strong><code>libs/oauth_client/</code> and <code>libs/github/</code> are preserved</strong> — the former is a pure HTTP client library, the latter also never touches ORM. New mini-projects automatically include both.</p>
+
+    <h2 id="constants">Compile-time Constants</h2>
+    <p>Token lifetime constants are centralized in <code>common/cost_define.h</code>:</p>
+    <table>
+        <tr><th>Constant</th><th>Value</th><th>Description</th></tr>
+        <tr><td><code>CONST_OAUTH_ACCESS_TTL</code></td><td>900</td><td>Access token validity in seconds (15 minutes)</td></tr>
+        <tr><td><code>CONST_OAUTH_CODE_TTL</code></td><td>300</td><td>Authorization code validity in seconds (5 minutes)</td></tr>
+        <tr><td><code>CONST_OAUTH_REFRESH_TTL</code></td><td>2592000</td><td>Default refresh token lifetime (30 days) — overridable in <code>conf/oauth.conf</code></td></tr>
+        <tr><td><code>CONST_OAUTH_PURGE_KEEP</code></td><td>7776000</td><td>Expired rows kept 90 days (<code>oauth_purge.cpp</code> cleans periodically)</td></tr>
+    </table>
+
+    <h2 id="deploy-checklist">Deployment Checklist</h2>
+    <ol>
+        <li><code>conf/oauth.conf</code> — issuer correct, kid correct, both PEM paths readable</li>
+        <li><code>conf/oauth_rsa_private.pem</code> / <code>oauth_rsa_public.pem</code> — PKCS#8 private + PKCS#8 public (NOT PKCS#1), permissions <code>0600</code></li>
+        <li>Database tables <code>oauth_client</code> / <code>oauth_code</code> / <code>oauth_refresh</code> created (in <code>conf/cppcms.sql</code>)</li>
+        <li>At least one test client registered (<code>INSERT INTO oauth_client ...</code>, <code>client_secret</code> is <code>lowerhex(SHA-256(plaintext))</code>)</li>
+        <li>Verify metadata endpoint: <code>curl -s https://www.hggq.com/oauth/metadata</code></li>
+        <li>Verify JWKS endpoint returns the correct <code>kid</code>: <code>curl -s https://www.hggq.com/oauth/jwks</code></li>
+    </ol>
+
+    <a href="index.html" class="back-to-index">← Back to Home</a>
+    `;
+
+    function buildHierarchyNav(lang) {
+        const container = document.getElementById('dynamic-nav');
+        const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+        if (!contentDiv) { container.innerHTML = '<p>Content not found</p>'; return; }
+        const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+        if (headings.length === 0) { container.innerHTML = '<p style="padding: 1rem;">No sections</p>'; return; }
+
+        const root = { children: [] };
+        let stack = [root];
+        headings.forEach(heading => {
+            let level = parseInt(heading.tagName[1]);
+            const id = heading.id;
+            let title = heading.innerText.trim();
+            if (!title) title = heading.textContent.trim() || "Section";
+            const node = { level, id, title, children: [] };
+            while (stack.length > 0 && stack[stack.length-1].level >= level) { stack.pop(); }
+            const parent = stack[stack.length-1];
+            parent.children.push(node);
+            stack.push(node);
+        });
+
+        function renderTree(nodes) {
+            let html = '<ul class="nav-tree">';
+            nodes.forEach(node => {
+                const levelClass = 'level-' + (node.level - 1);
+                html += `<li class="${levelClass}"><a href="#${node.id}" class="nav-link" data-id="${node.id}">${node.title}</a>`;
+                if (node.children.length > 0) { html += renderTree(node.children); }
+                html += '</li>';
+            });
+            html += '</ul>';
+            return html;
+        }
+        container.innerHTML = renderTree(root.children);
+        container.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const id = link.getAttribute('data-id');
+                const target = document.getElementById(id);
+                if (target) {
+                    window.scrollTo({ top: target.offsetTop - 20, behavior: 'smooth' });
+                    history.replaceState(null, null, '#' + id);
+                }
+            });
+        });
+    }
+
+    function injectContent() {
+        document.getElementById('content-cn').innerHTML = cnFullContent;
+        document.getElementById('content-en').innerHTML = enFullContent;
+    }
+    injectContent();
+
+    // Active heading tracking
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.id;
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active-link');
+                    if (link.getAttribute('data-id') === id) { link.classList.add('active-link'); }
+                });
+            }
+        });
+    }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+
+    const allHeadings = document.querySelectorAll('.content-panel [id]');
+    allHeadings.forEach(el => observer.observe(el));
+
+    let currentLang = 'cn';
+    function switchLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+        if (lang === 'cn') document.getElementById('content-cn').classList.add('active-lang');
+        else document.getElementById('content-en').classList.add('active-lang');
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        buildHierarchyNav(lang);
+        window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang) switchLanguage(lang);
+        });
+    });
+
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => sidebar.classList.toggle('mobile-open'));
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+
+    const topBtn = document.getElementById('scrollTopBtn');
+    topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) topBtn.classList.add('visible');
+        else topBtn.classList.remove('visible');
+    });
+
+    const hashLang = window.location.hash;
+    if (hashLang === '#english' || hashLang === '#en') switchLanguage('en');
+    else if (hashLang === '#chinese' || hashLang === '#zh') switchLanguage('cn');
+    else buildHierarchyNav('cn');
+</script>
+</body>
+</html>
