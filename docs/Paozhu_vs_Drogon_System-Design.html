@@ -231,7 +231,7 @@
 <tbody>
 <tr>
 <td>HTTP/1.1</td>
-<td>自研解析 <code>http_parse.cpp</code>(122KB) + <code>request.cpp</code>/<code>httppeer.cpp</code>；<strong>无 HTTP/1.1 pipeline</strong>（请求-响应串行；但 HTTP/2 多路复用已覆盖此场景——现代客户端普遍协商 HTTP/2，且 Paozhu 支持 <strong>h2c 明文 HTTP/2</strong>，内网代理、微服务间调用无需 TLS 协商就能直接享多路复用，队头阻塞天然解决）</td>
+<td>自研解析 <code>http_parse.cpp</code>(122KB) + <code>request.cpp</code>/<code>httppeer.cpp</code>；<strong>无 HTTP/1.1 pipeline</strong>（请求-响应串行；但 pipeline 在现实中几乎没人用——Chrome/Firefox 从未默认开启，Firefox 54 直接移除，Nginx 1.29.7 之前默认 HTTP/1.0 根本没 pipeline；<strong>HTTP/2 多路复用 + h2c 明文已完全取代</strong>，Paozhu 支持 h2c，内网代理、微服务间调用无需 TLS 协商就能直接享多路复用，队头阻塞天然解决）</td>
 <td>自研状态机 <code>HttpRequestParser.cc</code>（<code>kExpectMethod</code>→…），<strong>完整支持 HTTP/1.1 pipeline</strong>（服务端 <code>pushResponseToPipelining</code>/<code>popReadyResponses</code> 按接收顺序排队响应，可配置 <code>pipeliningRequestsNumber</code> 最大深度；客户端 <code>setPipeliningDepth()</code> 批量发送；仅在 HTTP/1.1 连接下生效，TCP 队头阻塞仍在）</td>
 </tr>
 <tr>
@@ -828,8 +828,8 @@ auto one = co_await cmapper.findOne(
 </ul>
 <h3>6.9 HTTP Client</h3>
 <ul>
-<li><strong>Paozhu（内置，全协程风格）</strong>：<code>httpclient</code> + <code>http_websocket_client.h</code> 客户端，同步和协程（<code>asio::awaitable</code>）双形态——<code>co_await httpclient(peer, &quot;GET https://...&quot;)</code> 直接拿响应；支持 <code>add_client_task_loop</code> 让 client_context 托管；示例 <code>controller/src/testcowaitclient.cpp</code> 演示协程 HTTP client。<strong>无 HTTP/1.1 pipeline 客户端</strong>——但 HTTP/2 多路复用在单连接上并行交错发多个请求，效果等价且更彻底（天然解决队头阻塞）；加上 Paozhu 支持 <strong>h2c 明文 HTTP/2</strong>，内网微服务调用、代理转发场景无需 TLS 协商开销，也能直接享多路复用。绝大多数现代场景走 HTTP/2 即可覆盖。</li>
-<li><strong>Drogon（内置，四形态 + HTTP/1.1 pipeline 客户端）</strong>：<code>HttpClient.h</code> + <code>HttpClientImpl.cc</code>，同步/回调/future 三形态 + 协程 <code>Task</code> 叠加层；<strong>独有 HTTP/1.1 pipeline 客户端</strong>——<code>setPipeliningDepth()</code> 在单 HTTP/1.1 连接上批量发送，<code>pipeliningCallbacks_</code> 队列按序回调（<code>HttpClientImpl.h:62/185</code>）。<code>examples/client_example/</code> 与 <code>tests/integration_test/client/</code> 有完整测试。该能力仅在 HTTP/1.1 连接下生效，TCP 队头阻塞仍在。</li>
+<li><strong>Paozhu（内置，全协程风格）</strong>：<code>httpclient</code> + <code>http_websocket_client.h</code> 客户端，同步和协程（<code>asio::awaitable</code>）双形态——<code>co_await httpclient(peer, &quot;GET https://...&quot;)</code> 直接拿响应；支持 <code>add_client_task_loop</code> 让 client_context 托管；示例 <code>controller/src/testcowaitclient.cpp</code> 演示协程 HTTP client。<strong>无 HTTP/1.1 pipeline 客户端</strong>——但这基本不是缺失，因为 Chrome/Firefox 从未默认开启 pipeline，Nginx 1.29.7 之前默认 HTTP/1.0 根本没有；HTTP/2 多路复用在单连接上并行交错发多个请求，效果等价且更彻底（天然解决队头阻塞）；加上 Paozhu 支持 <strong>h2c 明文 HTTP/2</strong>，内网微服务调用、代理转发场景无需 TLS 协商开销，也能直接享多路复用。绝大多数现代场景走 HTTP/2 即可覆盖。</li>
+<li><strong>Drogon（内置，四形态 + HTTP/1.1 pipeline 客户端）</strong>：<code>HttpClient.h</code> + <code>HttpClientImpl.cc</code>，同步/回调/future 三形态 + 协程 <code>Task</code> 叠加层；<strong>独有 HTTP/1.1 pipeline 客户端</strong>——<code>setPipeliningDepth()</code> 在单 HTTP/1.1 连接上批量发送，<code>pipeliningCallbacks_</code> 队列按序回调（<code>HttpClientImpl.h:62/185</code>）。<code>examples/client_example/</code> 与 <code>tests/integration_test/client/</code> 有完整测试。该能力仅在 HTTP/1.1 连接下生效，TCP 队头阻塞仍在，且现实中几乎没有浏览器或反代默认开启 pipeline。</li>
 </ul>
 <h3>6.10 监控与可观测性</h3>
 <ul>
@@ -985,8 +985,8 @@ loop-&gt;cancel(tid);
 </tr>
 <tr>
 <td>HTTP Client</td>
-<td><strong>内置</strong>（同步/协程双形态；无 HTTP/1.1 pipeline 客户端，但 HTTP/2 多路复用覆盖并发场景）</td>
-<td><strong>内置</strong>（同步/回调/future/协程四形态 + HTTP/1.1 pipeline 客户端 <code>setPipeliningDepth</code>，仅 HTTP/1.1 生效）</td>
+<td><strong>内置</strong>（同步/协程双形态；无 HTTP/1.1 pipeline 客户端，但 pipeline 现实中几乎没人用——Chrome/Firefox 从未默认开启，HTTP/2 多路复用 + h2c 明文覆盖内外网）</td>
+<td><strong>内置</strong>（同步/回调/future/协程四形态 + HTTP/1.1 pipeline 客户端 <code>setPipeliningDepth</code>，仅 HTTP/1.1 生效，现实中几乎没浏览器反代默认开启）</td>
 </tr>
 <tr>
 <td>监控 / Prometheus</td>
@@ -1370,7 +1370,7 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <ul>
 <li>成熟工业级 reactor 模型（多独立 EventLoop、MPSC 跨线程、epoll/kqueue）。</li>
 <li>反射宏注册 + 编译期静态自注册，零运行时扫描，注册路径自动推导。</li>
-<li><strong>独有 HTTP 增强</strong>：RequestStream 流式请求体、反向代理 <code>forward()</code>、PostgreSQL LISTEN/NOTIFY（DbListener）、插件体系（AOP Advice + 依赖拓扑排序）、静态文件预压缩查找、<strong>HTTP/1.1 pipeline 及其客户端</strong>（仅在 HTTP/1.1 连接下生效，TCP 队头阻塞仍在；HTTP/2 多路复用 + h2c 明文可彻底解决）。</li>
+<li><strong>独有 HTTP 增强</strong>：RequestStream 流式请求体、反向代理 <code>forward()</code>、PostgreSQL LISTEN/NOTIFY（DbListener）、插件体系（AOP Advice + 依赖拓扑排序）、静态文件预压缩查找、<strong>HTTP/1.1 pipeline 及其客户端</strong>（HTTP/1.1 仅，TCP 队头阻塞仍在；<strong>但现实中几乎没人用</strong>——Chrome/Firefox 从未默认开启，Firefox 54 直接移除，Nginx 1.29.7 之前默认 HTTP/1.0；HTTP/2 多路复用 + h2c 明文已完全取代）。</li>
 <li>Prometheus 监控完整内建（<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> 插件 JSON 配置即用）。</li>
 <li>生态丰富（CSP 模板、nosql、plugin、filter、ORM 三方言、示例齐全），社区活跃、文档完善。</li>
 </ul>
@@ -1426,7 +1426,7 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <td><strong>Paozhu</strong></td>
 </tr>
 <tr>
-<td>需要 HTTP/1.1 Pipeline（仅 HTTP/1.1 连接且需单连接并发；Paozhu 无 HTTP/1.1 pipeline，但 <strong>HTTP/2 多路复用 + h2c 明文</strong>内外网都能覆盖并发场景，效果等价且更彻底）</td>
+<td>需要 HTTP/1.1 Pipeline（现实中几乎没人用：Chrome/Firefox 从未默认开启、Firefox 54 移除、Nginx 1.29.7 前默认 HTTP/1.0；Paozhu 无 HTTP/1.1 pipeline，但 <strong>HTTP/2 多路复用 + h2c 明文</strong>内外网都能覆盖并发场景，效果等价且更彻底）</td>
 <td><strong>Drogon</strong>（<code>HttpServer.cc</code> pipeline 队列 + <code>HttpClient</code> <code>setPipeliningDepth()</code>）</td>
 </tr>
 <tr>
@@ -1434,7 +1434,7 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <td><strong>Drogon</strong>（<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> 插件 JSON 配置即用）</td>
 </tr>
 <tr>
-<td>需要 HTTP/1.1 pipeline 客户端（仅 HTTP/1.1 连接；HTTP/2 多路复用已覆盖并发请求）</td>
+<td>需要 HTTP/1.1 pipeline 客户端（现实中几乎没人用——HTTP/2 多路复用已覆盖并发请求；内网还能走 h2c）</td>
 <td><strong>Drogon</strong>（<code>HttpClientImpl.h:62</code> 独有能力）</td>
 </tr>
 <tr>
@@ -1452,6 +1452,10 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <tr>
 <td>需要框架级反向代理</td>
 <td><strong>Drogon</strong>（<code>forward()</code> + 插件示例 <code>SimpleReverseProxy</code>）</td>
+</tr>
+<tr>
+<td><strong>内网代理 / 微服务间调用</strong>（需明文 HTTP/2 + 多路复用，避免 TLS 协商开销）</td>
+<td><strong>Paozhu</strong>（h2c 明文 HTTP/2 直接享多路复用，无 TLS 协商开销，单连接并行交错发多个请求；Drogon 无 HTTP/2 服务器，反代后端只能走 HTTP/1.1，无多路复用）</td>
 </tr>
 <tr>
 <td>需要统一插件体系（AOP Advice + 依赖拓扑排序）</td>

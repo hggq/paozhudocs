@@ -231,7 +231,7 @@
 <tbody>
 <tr>
 <td>HTTP/1.1</td>
-<td>Custom parser <code>http_parse.cpp</code> (122KB) + <code>request.cpp</code> / <code>httppeer.cpp</code>. <strong>No HTTP/1.1 pipeline</strong> (request-response serial; however, HTTP/2 multiplexing covers this — modern clients widely negotiate HTTP/2, and Paozhu supports <strong>h2c (plaintext HTTP/2)</strong> so internal proxies and inter-service calls enjoy multiplexing without TLS overhead, head-of-line blocking solved natively)</td>
+<td>Custom parser <code>http_parse.cpp</code> (122KB) + <code>request.cpp</code> / <code>httppeer.cpp</code>. <strong>No HTTP/1.1 pipeline</strong> (request-response serial; however, pipeline is practically dead — Chrome and Firefox never enabled it by default, Firefox 54 removed it entirely, Nginx defaulted to HTTP/1.0 until 1.29.7 which has no pipeline at all; <strong>HTTP/2 multiplexing + h2c (plaintext)</strong> fully covers this — Paozhu supports h2c so internal proxies and inter-service calls enjoy multiplexing without TLS overhead, head-of-line blocking solved natively)</td>
 <td>Custom state machine <code>HttpRequestParser.cc</code> (<code>kExpectMethod</code> → ...). <strong>Full HTTP/1.1 pipeline</strong> (server-side <code>pushResponseToPipelining</code> / <code>popReadyResponses</code> queues responses in receive order, configurable <code>pipeliningRequestsNumber</code> max depth; client-side <code>setPipeliningDepth()</code> for batch sends; only effective on HTTP/1.1 connections, TCP head-of-line blocking remains)</td>
 </tr>
 <tr>
@@ -828,8 +828,8 @@ auto one = co_await cmapper.findOne(
 </ul>
 <h3>6.9 HTTP Client</h3>
 <ul>
-<li><strong>Paozhu (built-in, full-coroutine style)</strong>: <code>httpclient</code> + <code>http_websocket_client.h</code> client, sync and coroutine (<code>asio::awaitable</code>) dual form — <code>co_await httpclient(peer, &quot;GET https://...&quot;)</code> directly returns the response. Supports <code>add_client_task_loop</code> for <code>client_context</code> to manage lifecycle. Example <code>controller/src/testcowaitclient.cpp</code> demonstrates coroutine HTTP client. <strong>No HTTP/1.1 pipeline client</strong> — but HTTP/2 multiplexing interlaces requests and responses on a single connection, equivalent and more thorough (head-of-line blocking solved natively). Paozhu also supports <strong>h2c (plaintext HTTP/2)</strong>, so internal microservice calls and proxy forwarding get the same multiplexing benefit without any TLS negotiation overhead. Most modern scenarios negotiate HTTP/2 and don't need pipeline.</li>
-<li><strong>Drogon (built-in, four forms + HTTP/1.1 pipeline client)</strong>: <code>HttpClient.h</code> + <code>HttpClientImpl.cc</code>, sync/callback/future three forms + coroutine <code>Task</code> overlay. <strong>Exclusive HTTP/1.1 pipeline client</strong> — <code>setPipeliningDepth()</code> batch sends on a single HTTP/1.1 connection, <code>pipeliningCallbacks_</code> queue calls back in order (<code>HttpClientImpl.h:62/185</code>). Complete tests in <code>examples/client_example/</code> and <code>tests/integration_test/client/</code>. This capability only works on HTTP/1.1 connections; TCP head-of-line blocking remains.</li>
+<li><strong>Paozhu (built-in, full-coroutine style)</strong>: <code>httpclient</code> + <code>http_websocket_client.h</code> client, sync and coroutine (<code>asio::awaitable</code>) dual form — <code>co_await httpclient(peer, &quot;GET https://...&quot;)</code> directly returns the response. Supports <code>add_client_task_loop</code> for <code>client_context</code> to manage lifecycle. Example <code>controller/src/testcowaitclient.cpp</code> demonstrates coroutine HTTP client. <strong>No HTTP/1.1 pipeline client</strong> — but this is barely a gap: Chrome and Firefox never enabled pipeline by default, Firefox 54 removed it entirely, Nginx defaulted to HTTP/1.0 until 1.29.7; HTTP/2 multiplexing interlaces requests and responses on a single connection, equivalent and more thorough (head-of-line blocking solved natively). Paozhu also supports <strong>h2c (plaintext HTTP/2)</strong>, so internal microservice calls and proxy forwarding get the same multiplexing benefit without any TLS negotiation overhead. Most modern scenarios negotiate HTTP/2 and don't need pipeline.</li>
+<li><strong>Drogon (built-in, four forms + HTTP/1.1 pipeline client)</strong>: <code>HttpClient.h</code> + <code>HttpClientImpl.cc</code>, sync/callback/future three forms + coroutine <code>Task</code> overlay. <strong>Exclusive HTTP/1.1 pipeline client</strong> — <code>setPipeliningDepth()</code> batch sends on a single HTTP/1.1 connection, <code>pipeliningCallbacks_</code> queue calls back in order (<code>HttpClientImpl.h:62/185</code>). Complete tests in <code>examples/client_example/</code> and <code>tests/integration_test/client/</code>. This capability only works on HTTP/1.1 connections; TCP head-of-line blocking remains, and practically no browser or reverse proxy enables pipeline by default.</li>
 </ul>
 <h3>6.10 Monitoring &amp; Observability</h3>
 <ul>
@@ -985,8 +985,8 @@ loop-&gt;cancel(tid);
 </tr>
 <tr>
 <td>HTTP Client</td>
-<td><strong>Built-in</strong> (sync/coroutine dual form; no HTTP/1.1 pipeline client, but HTTP/2 multiplexing covers concurrent scenarios)</td>
-<td><strong>Built-in</strong> (sync/callback/future/coroutine four forms + HTTP/1.1 pipeline client <code>setPipeliningDepth</code>, HTTP/1.1 only)</td>
+<td><strong>Built-in</strong> (sync/coroutine dual form; no HTTP/1.1 pipeline client, but pipeline is practically dead — Chrome/Firefox never enabled by default, HTTP/2 multiplexing + h2c covers both internet and intranet)</td>
+<td><strong>Built-in</strong> (sync/callback/future/coroutine four forms + HTTP/1.1 pipeline client <code>setPipeliningDepth</code>, HTTP/1.1 only — practically no browser or reverse proxy enables pipeline by default)</td>
 </tr>
 <tr>
 <td>Monitoring / Prometheus</td>
@@ -1370,7 +1370,7 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <ul>
 <li>Mature industrial-grade reactor model (multiple independent EventLoops, MPSC cross-thread, epoll/kqueue).</li>
 <li>Reflection macro registration + compile-time static self-registration, zero runtime scanning, auto-derived registration paths.</li>
-<li><strong>Exclusive HTTP enhancements</strong>: RequestStream streaming request body, reverse proxy <code>forward()</code>, PostgreSQL LISTEN/NOTIFY (DbListener), plugin system (AOP Advice + dependency topological sort), static-file pre-compression lookup, <strong>HTTP/1.1 pipeline and its client counterpart</strong> (HTTP/1.1 only; TCP head-of-line blocking remains — HTTP/2 multiplexing + h2c solves this completely).</li>
+<li><strong>Exclusive HTTP enhancements</strong>: RequestStream streaming request body, reverse proxy <code>forward()</code>, PostgreSQL LISTEN/NOTIFY (DbListener), plugin system (AOP Advice + dependency topological sort), static-file pre-compression lookup, <strong>HTTP/1.1 pipeline and its client counterpart</strong> (HTTP/1.1 only; TCP head-of-line blocking remains — and practically nobody uses it: Chrome/Firefox never enabled by default, Firefox 54 removed it, Nginx defaulted to HTTP/1.0 until 1.29.7; HTTP/2 multiplexing + h2c solves this completely).</li>
 <li>Prometheus monitoring complete built-in (<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> plugin, JSON config to enable).</li>
 <li>Rich ecosystem (CSP templates, nosql, plugin, filter, ORM three dialects, complete examples), active community, thorough documentation.</li>
 </ul>
@@ -1426,7 +1426,7 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <td><strong>Paozhu</strong></td>
 </tr>
 <tr>
-<td>Need HTTP/1.1 pipeline (HTTP/1.1 connection only; Paozhu has no HTTP/1.1 pipeline, but <strong>HTTP/2 multiplexing + h2c (plaintext)</strong> covers concurrent scenarios both inside and outside the network — equivalent and more thorough)</td>
+<td>Need HTTP/1.1 pipeline (practically dead: Chrome/Firefox never enabled by default, Firefox 54 removed it, Nginx defaulted to HTTP/1.0 until 1.29.7; Paozhu has no HTTP/1.1 pipeline, but <strong>HTTP/2 multiplexing + h2c (plaintext)</strong> covers concurrent scenarios both inside and outside the network — equivalent and more thorough)</td>
 <td><strong>Drogon</strong> (<code>HttpServer.cc</code> pipeline queue + <code>HttpClient</code> <code>setPipeliningDepth()</code>)</td>
 </tr>
 <tr>
@@ -1434,7 +1434,7 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <td><strong>Drogon</strong> (<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> plugin, JSON config to enable)</td>
 </tr>
 <tr>
-<td>Need HTTP/1.1 pipeline client (HTTP/1.1 connection only; HTTP/2 multiplexing already covers concurrent requests)</td>
+<td>Need HTTP/1.1 pipeline client (practically dead — HTTP/2 multiplexing already covers concurrent requests; intranet can use h2c)</td>
 <td><strong>Drogon</strong> (<code>HttpClientImpl.h:62</code> exclusive capability)</td>
 </tr>
 <tr>
@@ -1452,6 +1452,10 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <tr>
 <td>Need framework-level reverse proxy</td>
 <td><strong>Drogon</strong> (<code>forward()</code> + plugin example <code>SimpleReverseProxy</code>)</td>
+</tr>
+<tr>
+<td><strong>Internal proxy / inter-service calls</strong> (plaintext HTTP/2 + multiplexing, avoid TLS negotiation overhead)</td>
+<td><strong>Paozhu</strong> (h2c plaintext HTTP/2 with multiplexing — zero TLS overhead, multiple requests interleaved on a single connection; Drogon has no HTTP/2 server, so reverse proxies and inter-service traffic can only use HTTP/1.1 with no multiplexing)</td>
 </tr>
 <tr>
 <td>Need unified plugin system (AOP Advice + dependency topological sort)</td>
