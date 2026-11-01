@@ -244,19 +244,28 @@
 </table>
 
 <p><strong>Drogon 的缓解手段</strong>（但根本没内置业务线程池）：</p>
-<p>Drogon 架构里<strong>没有业务线程池这个东西</strong>——handler 直接跑在所属 <code>ioLoop</code> 线程上。所以阻塞 handler 要想不堵死那个 <code>ioLoop</code>，只能走三条路：</p>
+<p>Drogon 架构里<strong>没有业务线程池这个东西</strong>——handler 直接跑在所属 <code>ioLoop</code> 线程上。所以阻塞 handler 要想不堵死那个 <code>ioLoop</code>，只能靠协程覆盖或用户自建：</p>
 
-<p><strong>路一：CoroMapper（官方唯一内置 offload，但仅限数据库）</strong><br />
-Drogon 自带的协程 ORM <code>CoroMapper</code> 底层用 future/回调实现，<code>co_await</code> 挂起而非阻塞 ioLoop。但这个能力<strong>仅限数据库操作</strong>，文件 IO、计算、外部 HTTP 调用等一律用不上。</p>
-<pre><code>METHOD_ADD(MyController::slowQuery, "/query", Get) {
+<p><strong>缓解方式 A：全程协程（能覆盖大部分场景，但有边界）</strong><br />
+Drogon 的 handler 可以写成协程函数，只要所有耗时操作都有异步 API（数据库用 <code>CoroMapper</code>、HTTP 客户端用 <code>co_await</code>、文件 IO 用异步版本），<code>co_await</code> 挂起后 ioLoop 就空出来处理其他连接——这种情况下不会堵。</p>
+<p>但<strong>协程救不了没有异步 API 的东西</strong>。比如用 Chromium 生成 PDF、用 ffmpeg 转码、用 OpenCV 做图片处理、AI 推理模型——这些全是纯 CPU 计算或只有同步接口的库，<code>co_await</code> 对它们没用，<strong>直接跑在 ioLoop 上就堵死</strong>。</p>
+<pre><code>// ✅ 协程能缓解：数据库查询（有异步 API）
+METHOD_ADD(MyController::slowQuery, "/query", Get) {
     auto result = co_await drogon::orm::CoroMapper<User>(drogon::app().getDbClient()).filter(...).exec();
-    // co_await 挂起后 ioLoop 空出来处理其他连接，等 DB 结果回来再 resume
+    // co_await 挂起后 ioLoop 空出来处理其他连接
+}
+
+// ❌ 协程救不了：生成 PDF（纯 CPU 计算，Chromium 只有同步接口）
+METHOD_ADD(MyController::genPdf, "/pdf", Get) {
+    auto pdf = chromium.generatePdf(html);  // 同步阻塞，直接堵 ioLoop！
+    res->setBody(pdf);
+    res->send();
 }</code></pre>
 
-<p><strong>路二：用户自建业务线程池</strong><br />
-对于非数据库的阻塞操作（文件 IO、计算、外部 HTTP 调用等），Drogon 架构里没有任何内置的业务线程池或 offload 机制，需要开发者自己设计和实现（自建 <code>std::thread</code> 池、任务队列、线程间通信等）。Drogon 生态里没有通用的 offload 方案可以直接拿来用。</p>
+<p><strong>缓解方式 B：用户自建业务线程池</strong><br />
+对于协程覆盖不了的场景（纯计算、同步第三方库），Drogon 架构里没有任何内置的业务线程池或 offload 机制，需要开发者自己设计和实现（自建 <code>std::thread</code> 池、任务队列、线程间通信等）。Drogon 生态里没有通用的 offload 方案可以直接拿来用。</p>
 
-<p><strong>路三：多实例 + Nginx 负载均衡</strong><br />
+<p><strong>缓解方式 C：多实例 + Nginx 负载均衡</strong><br />
 从架构层面分散压力，一个实例卡了其他实例还能接。</p>
 
 <p>但所有这些都是<strong>开发者主动加才生效</strong>的——<strong>默认 handler 就在 ioLoop 上直接跑</strong>。不手动 offload = 阻塞了就卡死这个 ioLoop 上所有连接的读写事件 = 线上事故。</p>

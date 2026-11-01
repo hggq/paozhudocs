@@ -244,20 +244,28 @@
 </table>
 
 <p><strong>Drogon's mitigation paths</strong> (but there is no built-in business thread pool):</p>
-<p>Drogon's architecture simply <strong>has no such thing as a business thread pool</strong> — handlers run directly on their owning <code>ioLoop</code> thread. So a blocking handler can avoid pinning the ioLoop in only three ways:</p>
+<p>Drogon's architecture simply <strong>has no such thing as a business thread pool</strong> — handlers run directly on their owning <code>ioLoop</code> thread. So a blocking handler can avoid pinning the ioLoop only through coroutine coverage or user-built infrastructure:</p>
 
-<p><strong>Option 1: CoroMapper (the only built-in offload, but DB-only)</strong><br />
-Drogon ships with a coroutine ORM called <code>CoroMapper</code>. Under the hood it uses futures/callbacks, so <code>co_await</code> suspends rather than blocking the ioLoop. But this is <strong>limited to database operations</strong> — file I/O, heavy computation, outbound HTTP calls, and anything else get zero help.</p>
-<pre><code>METHOD_ADD(MyController::slowQuery, "/query", Get) {
+<p><strong>Mitigation A: Full coroutines (covers most scenarios, but has hard limits)</strong><br />
+Drogon handlers can be written as coroutine functions. As long as every blocking operation has an async API — database via <code>CoroMapper</code>, outbound HTTP via <code>co_await</code>, file I/O via async versions — <code>co_await</code> suspends and the ioLoop is free to serve other connections. This works well.</p>
+<p>But <strong>coroutines can't save operations with no async API</strong>. Think Chromium PDF generation, ffmpeg transcoding, OpenCV image processing, AI inference models — pure CPU computation or libraries that only expose synchronous interfaces. <code>co_await</code> does nothing for them — <strong>they run straight on the ioLoop and block it</strong>.</p>
+<pre><code>// ✅ Coroutine helps: DB query (has async API)
+METHOD_ADD(MyController::slowQuery, "/query", Get) {
     auto result = co_await drogon::orm::CoroMapper<User>(drogon::app().getDbClient()).filter(...).exec();
     // co_await yields, ioLoop is free to serve other connections
-    // resumes when DB result arrives
+}
+
+// ❌ Coroutine can't help: PDF generation (pure CPU, Chromium only has sync API)
+METHOD_ADD(MyController::genPdf, "/pdf", Get) {
+    auto pdf = chromium.generatePdf(html);  // synchronous block — pins the ioLoop!
+    res->setBody(pdf);
+    res->send();
 }</code></pre>
 
-<p><strong>Option 2: User-built business thread pool</strong><br />
-For non-DB blocking work (file I/O, heavy computation, outbound HTTP calls, etc.), Drogon's architecture has zero built-in business thread pool or offload mechanism. Developers must design and implement this themselves — custom <code>std::thread</code> pools, task queues, inter-thread communication. There is no generic offload solution in the Drogon ecosystem to pull off the shelf.</p>
+<p><strong>Mitigation B: User-built business thread pool</strong><br />
+For scenarios coroutines can't cover (pure computation, sync third-party libs), Drogon's architecture has zero built-in business thread pool or offload mechanism. Developers must design and implement this themselves — custom <code>std::thread</code> pools, task queues, inter-thread communication. There is no generic offload solution in the Drogon ecosystem to pull off the shelf.</p>
 
-<p><strong>Option 3: Multi-instance + Nginx load balancing</strong><br />
+<p><strong>Mitigation C: Multi-instance + Nginx load balancing</strong><br />
 Spread load across instances at the architecture level — if one clogs, others keep serving.</p>
 
 <p>But every option above is <strong>opt-in, developer-initiated</strong>. <strong>By default</strong>, a handler runs straight on its ioLoop thread. No manual offload = blocking = every other connection on that ioLoop queueing up = production incident.</p>
