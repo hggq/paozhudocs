@@ -1,0 +1,1504 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Paozhu vs Drogon — System Design Comparison</title>
+     <style>
+        /* Light mode */
+        body {
+            font-family: 'Helvetica Neue',Arial,Helvetica,sans-serif;
+            font-size: 16px;
+            line-height: 1.45em;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        blockquote {
+            border-left: 4px solid #ccc;
+            margin: 1em 0;
+            padding: 0.2em 1em;
+            color: #555;
+            background-color: #f9f9f9;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #ddd;
+            margin: 2em 0;
+        }
+        h1, h2, h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        ul, ol {
+            padding-left: 1.5em;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        blockquote {
+            color: #555;
+            background-color: #f9f9f9;
+        }
+        hr {
+            border-top-color: #ddd;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        blockquote {
+            color: #aaa;
+            background-color: #1a1a1a;
+        }
+        hr {
+            border-top-color: #444;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+
+        /* Table styling */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+        table th, table td {
+            border: 1px solid;
+            padding: 6px 10px;
+            text-align: left;
+        }
+        table th { font-weight: bold; }
+        @media (prefers-color-scheme: light) {
+            table th, table td { border-color: #bbb; }
+            table th { background-color: #eef; }
+            table tr:nth-child(even) td { background-color: #f7f7f7; }
+        }
+        @media (prefers-color-scheme: dark) {
+            table th, table td { border-color: #555; }
+            table th { background-color: #224; }
+            table tr:nth-child(even) td { background-color: #1a1a1a; }
+        }
+    </style>
+  </head>
+  <body>
+     <div class="container">
+
+<h1>Paozhu vs Drogon — System Design Comparison</h1>
+<blockquote>
+<p>Based on source-code verification (<code>paozhu(https://github.com/hggq/paozhu)</code>, <code>drogon(https://github.com/drogonframework/drogon)</code>, both retrieved Oct 2026).
+<strong>Key finding</strong>: drogon-master (master branch checked out Oct 2026) has <strong>no HTTP/2 server implementation</strong> in <code>lib/</code> or <code>trantor/</code> (no <code>Http2Server</code>/<code>Http2Connection</code>; <code>lib/src/HttpServer.cc</code> only outputs <code>HTTP/1.1</code>, no <code>h2</code>/ALPN registration; trantor only has TLS-layer ALPN stubs). Paozhu ships HTTP/2 built-in (<code>http2_parse.cpp</code> and related). All Drogon HTTP/2 references below are scoped to the actual code present in this checkout — Drogon's mainline had not yet landed an HTTP/2 server at time of writing, making Paozhu's HTTP/2 a genuine differentiator.</p>
+</blockquote>
+<hr />
+<h2>0. One-Line Positioning</h2>
+<ul>
+<li><strong>Drogon</strong>: Classic <em>muduo-style</em> reactor + reflection-macro registration + compile-time code generation. Industrial-grade, complete ecosystem, friendly high-level API.</li>
+<li><strong>Paozhu (炮竹)</strong>: Single <code>io_context</code> + Asio C++20 coroutines throughout the stack (even ORM queries are coroutines). HTTP/1.1 <strong>and</strong> HTTP/2 both custom-built. &quot;Full async coroutine + multi-tenant&quot; orientation.</li>
+</ul>
+<hr />
+<h2>1. Concurrency / I/O Model (Core Difference)</h2>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (this tree)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Underlying lib</td>
+<td>Standalone <strong>Asio</strong> (<code>#include &lt;asio.hpp&gt;</code>, <code>asio::io_context</code> exposed at the bottom, <strong>full compatibility with the Asio ecosystem</strong>)</td>
+<td><strong>trantor</strong> (in-house network lib, muduo branch, <code>epoll_wait</code> + <code>timerfd</code> + min-heap, <strong>not an <code>asio::io_context</code></strong>, Asio ecosystem libraries cannot directly integrate)</td>
+</tr>
+<tr>
+<td>Event loop topology</td>
+<td><strong>Single shared <code>io_context</code></strong>, N worker threads each calling <code>io_context.run()</code></td>
+<td><strong>One EventLoop per thread</strong> (one loop per thread, muduo style), multiple <code>ioLoop</code>s running in parallel</td>
+</tr>
+<tr>
+<td>Connection dispatch</td>
+<td>Each connection is bound to an <code>asio::strand</code> (<code>client_session.h:194</code>) to guarantee protocol ordering</td>
+<td><code>TcpServer</code> uses <code>nextLoopIdx_</code> <strong>round-robin</strong> to assign new connections to an <code>ioLoop</code> (<code>TcpServer.cc:65</code>)</td>
+</tr>
+<tr>
+<td>Cross-thread communication</td>
+<td>Coroutine <code>co_await</code> + strand serialization</td>
+<td>Lock-free <strong>MPSC queue</strong> <code>funcs_</code> + <code>wakeupFd_</code> (<code>EventLoop.h:311-321</code>)</td>
+</tr>
+<tr>
+<td>Business threads</td>
+<td><strong>Dedicated business thread pool</strong> <code>clientrunpool</code> (<code>server.h:487</code>, <code>hardware*2+2</code>, dynamically resizable). Synchronous handlers run inside the pool</td>
+<td>Handlers default to running on the owning <code>ioLoop</code> thread; can manually offload or coroutine-switch threads</td>
+</tr>
+<tr>
+<td>Thread config</td>
+<td><code>cothreadnum</code>, <code>threadmax</code> (<code>conf/server.conf</code>)</td>
+<td><code>numThreads</code> / <code>EventLoopThreadPool</code> size</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Philosophical divergence</strong>:</p>
+<ul>
+<li>Drogon's &quot;multiple independent loops&quot; fits the classic Reactor model more cleanly — a single connection binds to one thread for its full lifetime, lock-free, good cache locality.</li>
+<li>Paozhu's &quot;single <code>io_context</code>, multiple workers&quot; is the classic Asio model. Coroutine frames live on the heap and don't occupy I/O threads. I/O and business are <strong>explicitly layered</strong> (I/O coroutines vs. business <code>clientrunpool</code>). <code>router::co_resolve</code> dispatches incrementally: coroutine steps <code>co_await</code> in place; synchronous steps go to the business pool (<code>server.cpp:2351</code> comment).</li>
+</ul>
+<hr />
+<h2>2. HTTP Protocol Layer</h2>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (this tree)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP/1.1</td>
+<td>Custom parser <code>http_parse.cpp</code> (122KB) + <code>request.cpp</code> / <code>httppeer.cpp</code>. <strong>No HTTP/1.1 pipeline</strong> (request-response serial; however, HTTP/2 multiplexing covers this — modern clients widely negotiate HTTP/2, and Paozhu supports <strong>h2c (plaintext HTTP/2)</strong> so internal proxies and inter-service calls enjoy multiplexing without TLS overhead, head-of-line blocking solved natively)</td>
+<td>Custom state machine <code>HttpRequestParser.cc</code> (<code>kExpectMethod</code> → ...). <strong>Full HTTP/1.1 pipeline</strong> (server-side <code>pushResponseToPipelining</code> / <code>popReadyResponses</code> queues responses in receive order, configurable <code>pipeliningRequestsNumber</code> max depth; client-side <code>setPipeliningDepth()</code> for batch sends; only effective on HTTP/1.1 connections, TCP head-of-line blocking remains)</td>
+</tr>
+<tr>
+<td>HTTP/2</td>
+<td><strong>Built-in</strong>: <code>http2_parse.cpp</code> (192KB) + <code>http2_frame/huffman/ring_queue/send_queue</code>, including <strong>HPACK</strong>, ALPN, h2c, enabled via <code>http2_enable=1</code></td>
+<td><strong>drogon-master's <code>lib/</code> has no HTTP/2 server implementation</strong> (no <code>Http2Server</code>/<code>Http2Connection</code>; <code>HttpServer.cc</code> only outputs <code>HTTP/1.1</code>, no <code>h2</code>/ALPN registration); trantor only has TLS-layer ALPN capability stubs</td>
+</tr>
+<tr>
+<td>Request/response model</td>
+<td><code>httppeer</code> (<code>httppeer.h:41</code>, <code>enable_shared_from_this</code>) holding urlpath / get / post / output / session</td>
+<td>Abstract classes <code>HttpRequest</code>/<code>HttpResponse</code> + <code>Impl</code> (<code>HttpRequestImpl</code>/<code>HttpResponseImpl</code>, serialized via <code>renderToBuffer</code>)</td>
+</tr>
+<tr>
+<td>Caveat</td>
+<td><code>request.h</code> names a built-in JSON micro-object <code>obj_val</code>, <strong>not</strong> an HTTP request body</td>
+<td>Passed around via <code>HttpRequestPtr</code> smart pointer; implicit conversion via <code>fromRequest&lt;T&gt;/toRequest&lt;T&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Note: <code>request.h</code> is a misleading name — Paozhu's actual HTTP request model is <code>httppeer</code>.</p>
+</blockquote>
+<h3>2.1 Static File Serving + Compression Cache (Both Have It, Opposite Strategies)</h3>
+<blockquote>
+<p>Neither does &quot;real-time compression on every request&quot; — both use a cache after the first access. But the caching strategies are diametrically opposed: Paozhu lazily compresses and auto-writes to disk; Drogon expects pre-compressed files to already exist.</p>
+</blockquote>
+<p><strong>Paozhu — Lazy cache + auto-reclaim</strong> (<code>server.cpp:395-518</code>):</p>
+<ul>
+<li><strong>Compress on first request</strong>: Detect Accept-Encoding → brotli / gzip → temp file → <code>rename</code> atomic write (safe for concurrent first hits).</li>
+<li><strong>Cache filename</strong>: <code>{original_path}.{hash(host+&quot;\n&quot;+urlpath)}.br</code> or <code>.gzip</code>. Subsequent hits just <code>fopen</code> and serve — zero CPU cost.</li>
+<li><strong>Large file protection</strong>: Skip compression for <code>content_length &gt; 16MB</code> (saves memory).</li>
+<li><strong>Bad-cache protection</strong>: Fall back to original content on compression failure, don't write cache; auto-detects 0-byte cache files, deletes and regenerates.</li>
+<li><strong>Cache reclaim</strong>: Pushes <code>mtime</code> back on large-file hits; background daemon reclaims cold entries based on <code>CONST_HTTP_STATIC_CACHE_REFRESH_AGE</code>.</li>
+</ul>
+<p><strong>Drogon — Pre-compressed file lookup</strong> (<code>config.example.json:296-301</code> + <code>StaticFileRouter.cc</code>):</p>
+<ul>
+<li><strong>Framework reads but never writes</strong>: <code>gzip_static: true</code> (default), <code>brotli_static: false</code>. On request, framework <strong>directly looks for pre-compressed <code>.gz</code> / <code>.br</code> files</strong> in the same directory. If not found, serves original.</li>
+<li>Requires <strong>pre-compression via <code>gzip -k</code> / <code>brotli</code></strong> in CI/CD deploy pipelines. Framework itself never computes compression.</li>
+<li>Plus: <code>IOThreadStorage</code>-isolated static file content cache (<code>StaticFileRouter.h:150-153</code>, per-EventLoop isolation, lock-free).</li>
+</ul>
+<p><strong>Essential difference</strong>: Paozhu makes compression caching an <strong>auto-managed framework concern</strong> (lazy compression + atomic write + bad-cache guard + reclaim) — zero developer cost. Drogon pushes compression caching to <strong>the deployment phase</strong> — framework only reads, never writes, keeping itself lighter. Both have equivalent runtime performance (zero CPU after cache hit), but the first-access path and operational model are different.</p>
+<hr />
+<h2>3. Routing System (Deep Dive)</h2>
+<blockquote>
+<p>Both use &quot;declarative route registration&quot;, but the mechanisms fork: Drogon uses <strong>compile-time reflection + macros + static self-registration</strong>; Paozhu uses <strong>source annotations + build-time codegen generating <code>reg_raw</code> tables</strong>. Additionally, <strong>Paozhu extra-provides simple task orchestration based on <code>httppeer::flow_method</code></strong> (see §3.4). Drogon has no equivalent.</p>
+</blockquote>
+<h3>3.1 Registration &amp; Code Generation</h3>
+<p><strong>Paozhu</strong> (<code>controller/src/*.cpp</code> with <code>//@urlpath(pre,urlpath):mask</code>, scanned by <code>paozhu_pre</code> at build time):</p>
+<ul>
+<li>The generated <code>common/autocontrolmethod.hpp</code> contains a <code>reg_raw</code> call table (<code>autocontrolmethod.hpp:127-141</code>): <code>reg_raw(site, path, pre_sync, co_pre, reg_sync, co_reg, mask_code)</code>. Each route registers <strong>5 slots</strong>: synchronous pre, <code>co_await</code>-pre, synchronous handler, coroutine handler, and <code>mask_code</code> (numeric in the <code>//@urlpath</code> annotation distinguishing HTTP methods).</li>
+<li>Paths with a <code>:param</code> segment get a separate <code>reg_urlpath(site, path, {param_names...})</code> table right after (<code>autocontrolmethod.hpp:139-140</code>).</li>
+<li>Build also generates helper tables: <code>common/autorestfulpaths.hpp</code>, <code>common/reghttpmethod.hpp</code>, etc.</li>
+</ul>
+<p><strong>Drogon</strong> (via <code>HttpController.h</code> macros, compile-time):</p>
+<ul>
+<li><code>METHOD_ADD(method, pattern, ...)</code> / <code>ADD_METHOD_TO(method, path, ...)</code> (<code>HttpController.h:31-34</code>) → <code>registerMethod(&amp;method, pattern, {...}, ...)</code>. Also supports <code>ADD_METHOD_VIA_REGEX</code> (<code>:35</code>) for regex patterns.</li>
+<li><strong>Static self-registration</strong>: Each controller includes <code>class methodRegistrator</code> + <code>static methodRegistrator registrator_</code> (<code>HttpController.h:127-139</code>). The constructor registers the method name + parameter pack into the framework — <strong>completed by CRT static init before <code>main()</code></strong>, zero runtime scanning. Class-name-to-path mapping is auto-derived by <code>DrClassMap::demangle(typeid(T).name())</code> (<code>HttpBinder.h:235</code>), <code>::</code> becomes <code>/</code>.</li>
+</ul>
+<h3>3.2 Matching Structures</h3>
+<p><strong>Paozhu</strong>: Core <code>router</code> class (<code>router.h:32</code>). At runtime, <code>reg_raw</code> populates <code>_handlers</code> / <code>_urlpath_map</code> / <code>_site_to_slot</code> (global slot 0; multi-tenant see §3.5). <code>co_resolve(peer, known_idx)</code> (<code>router.h:79</code>) coroutine-drives the entire match + pre + handler chain, with <code>route_exact_checked</code> optimization (<code>httppeer.h:298-299</code>, RPC/sync chains skip redundant exact lookup).</p>
+<ul>
+<li>If exact match fails, <strong>prefix fallback up to 6 segments</strong> (<code>router.cpp</code> two-level lookup: <code>lookup_exact</code> → <code>lookup_registered</code> → <code>lookup_key_in_slots</code>, <code>router.cpp:180-185</code>). Unregistered hop names are skipped during chain draining (<code>router.cpp:350-363</code>).</li>
+</ul>
+<p><strong>Drogon</strong>: <code>HttpControllersRouter</code> + <code>StaticFileRouter</code>. Three structures (<code>HttpControllersRouter.cc</code>):</p>
+<ul>
+<li><code>simpleCtrlMap_</code>: no-parameter exact match (lowercase-keyed <code>std::unordered_map</code>).</li>
+<li><code>ctrlMap_</code>: parameterized but <strong>structurally fixed</strong> exact routes. <code>ctrlMap_.find(loweredPath)</code> directly hash-hits (<code>HttpControllersRouter.cc:626</code>).</li>
+<li><code>ctrlVector_</code>: routes with <code>:param</code> / regex. At compile time <code>{param}</code> placeholders are replaced with <code>([^/]*)</code> via <code>regex_replace</code> (<code>:564</code>). At runtime, <code>std::regex_match</code> does linear matching (<code>:635-640</code>).</li>
+<li>Each route has <code>binders_[req-&gt;method()]</code> buckets by <code>HttpMethod</code>; <code>initMiddlewaresAndCorsMethods</code> auto-injects middlewares and opens <code>OPTIONS</code>/CORS (<code>:58/63/75</code>).</li>
+</ul>
+<h3>3.3 Pre-handler Chain &amp; Sync/Coroutine Mixing</h3>
+<p><strong>Paozhu — Each route splits into 4 independent slots; sync and coroutine are &quot;first-class routing citizens&quot;</strong>: <code>reg_raw(site, path, pre_sync, co_pre, reg_sync, co_reg, mask_code)</code> (<code>common/autocontrolmethod.hpp</code>) registers a route as <strong>sync-pre / coro-pre / sync-handler / coro-handler</strong> four separate entry points. The main driver <code>co_resolve</code> (<code>router.cpp:694</code>) <strong>transparently interleaves</strong> them: coroutine steps <code>co_await</code> in place (pre <code>co_await h.co_pre(peer)</code>; handler <code>co_await h.co_regfun(peer)</code>); synchronous steps go to the business thread pool.</p>
+<ul>
+<li><strong>Sync/coroutine mixing is a built-in capability</strong>: Within one request, &quot;sync-pre auth → coro-handler DB lookup&quot; and &quot;coro-pre → sync-handler&quot; can be declared directly. The framework auto-dispatches based on each entry's <code>pre_kind</code>/<code>reg_kind</code>. Developers never need to manually switch threads or wrap in <code>std::async</code>. This is a <strong>different design philosophy</strong> from Drogon's &quot;handler picks one form, CoroMapper is a separate type&quot; — Paozhu treats &quot;is this a coroutine&quot; as a property of each registration slot, not the handler as a whole.</li>
+<li><strong>Built-in urlpath pre interception</strong>: Each route's <code>pre_sync</code>/<code>co_pre</code> chain up in declaration order into a <strong>serial pre chain</strong>; <code>classify_step()</code> decides direction based on return value — <code>@ok</code> (pass), same-name (continue), <code>@exit</code> (explicit stop), jump name (<code>router.cpp:76-87</code>). First non-empty return short-circuits; empty string is the only &quot;pass&quot; signal (<code>router.cpp:458-461</code>). Additionally, <strong>site-level pre/after hooks</strong>: <code>run_site_hooks</code> (sync <code>:462</code>) and <code>co_run_site_hooks</code> (coro <code>:478</code>) batch-run <code>action_pre_lists</code>/<code>action_after_lists</code>. When the list exceeds the limit, it truncates to the first <code>site_hook_limit</code> entries rather than dropping the whole thing (avoids silent auth failures).</li>
+<li>Flow stack draining: When the orchestration stack drains (<code>pop_flow_index</code>), if the driver is a sync chain but the popped entry is a coroutine, draining stops (<code>:364-368</code>); if coroutine-driven, it <code>co_await</code>s inline (<code>:865-873</code>).</li>
+</ul>
+<p><strong>Drogon</strong>: Pre-handler logic lives in <strong>Filters</strong> (<code>HttpFilter</code> + <code>ADD_FILTER_TO</code> / <code>GlobalFilters.cc</code>) and <strong>Middlewares</strong> (<code>HttpMiddleware</code>, <code>MiddlewaresFunction.cc</code> + <code>HttpAppFramework.h:718</code>). The framework executes them before handlers, ordered by <code>path</code> / global ordering, decoupled from the routing table, reusable, sortable. The sync/async choice lives <strong>on the individual method form</strong> (binder's Blocking/Callback/future triad, or coroutines via separate <code>CoroMapper</code>). There is <strong>no slot-based mixed declaration</strong> like &quot;one route declares a sync-pre + coro-handler together&quot;.</p>
+<h3>3.4 Simple Task Orchestration (Paozhu <code>flow_method</code>)</h3>
+<p><strong>Conclusion: Yes, Paozhu has built-in simple task orchestration on <code>httppeer</code></strong>, implemented via <code>httppeer::flow_method</code> for &quot;sequential multi-handler orchestration within a single request&quot;.</p>
+<ul>
+<li>Structure: <code>httppeer</code> holds a lazily-allocated stack <code>std::unique_ptr&lt;std::list&lt;std::string&gt;&gt; flow_method</code> (<code>httppeer.h:300-301</code>) — stores <strong>names of subsequent handlers to execute</strong>.</li>
+<li>Push API (<code>httppeer.cpp:2135-2155</code>):
+<ul>
+<li><code>push_next(name)</code>: <code>push_back</code> (<strong>stack top, LIFO — last pushed runs first</strong>).</li>
+<li><code>push_last(name)</code>: <code>push_front</code> (<strong>stack bottom, FIFO — first pushed runs first, the default recommended for sequential breakdowns</strong>).</li>
+<li><code>push_steps({...})</code>: batch-push.</li>
+</ul>
+</li>
+<li>Pop/Consume (<code>httppeer.cpp:2156-2169</code> <code>pop_flow()</code> pops <code>back</code>; <code>router.cpp:340-368</code> <code>pop_flow_index</code>): After a handler <strong>completes normally (returns empty string)</strong>, the router pops the next registered handler name from the stack and executes it. <strong>One handler pops exactly one</strong>; the rest wait for that handler to return empty before popping, until the stack empties or the chain hits the top (<code>router.cpp:651-657</code> sync chain, <code>834-839</code> coro chain).</li>
+<li>Flow control directives: <code>kFlowOk</code> / <code>kFlowExit</code> (explicit stop, no pop) / <code>kFlowTimeloop</code> (transfer to event loop), interpreted by <code>classify_step</code> (<code>router.cpp:76-87</code>).</li>
+<li>Robustness: When popping an unregistered name, <strong>skip and continue to the next</strong> (don't swallow the whole chain, <code>:350-363</code>); a coroutine entry pushed onto a sync chain stops by design (<code>:364-368</code>).</li>
+</ul>
+<blockquote>
+<p>This means one request can do &quot;handler A → push B, C, D → after A returns empty, run B→C→D in order&quot;, forming a lightweight <strong>sequential workflow / pipeline</strong>. Drogon <strong>has no equivalent built-in mechanism</strong>: its composition primitives are Filters/Middlewares (cross-cutting concerns, not sequential step orchestration) and handler-internal logic. To chain multiple handlers in Drogon, you'd manually call or redirect inside the handler — the framework layer provides no orchestration stack.</p>
+</blockquote>
+<h3>3.5 Multi-Tenant / Site Slot</h3>
+<p><strong>Paozhu</strong>: Routes naturally attach to <strong>site slots</strong> — <code>host_index → slot</code>, <code>_site_to_slot</code> maintains one slot per site. Route tables are isolated by slot (<code>router.cpp:337</code> <code>find_name_in_slots(peer_slot(peer), ...)</code>); the first argument of <code>reg_raw</code> is <code>site</code> (domain, empty string = global slot 0). Combined with theme views (§9), this is framework-level multi-tenancy.
+<strong>Drogon</strong>: Routes themselves carry no tenant concept. Multi-tenancy is achieved at the business layer via &quot;multiple apps / multiple controller groups + <code>DrObject</code> naming&quot; — no one-stop slot isolation.</p>
+<h3>3.6 Summary Table</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (drogon-master 1.9.14)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Registration mechanism</td>
+<td>Source <code>//@urlpath</code> annotation + build-time codegen generating <code>reg_raw</code> tables</td>
+<td>Reflection macro <code>METHOD_ADD</code>/<code>ADD_METHOD_TO</code> + static self-registration (<code>methodRegistrator</code>, before <code>main</code>)</td>
+</tr>
+<tr>
+<td>Path params</td>
+<td><code>:param</code> placeholder + <code>reg_urlpath</code> parameter name table</td>
+<td><code>{param}</code> placeholder, compiled to <code>([^/]*)</code> regex</td>
+</tr>
+<tr>
+<td>Exact match</td>
+<td><code>_urlpath_map</code> + prefix fallback (up to 6 segments)</td>
+<td><code>simpleCtrlMap_</code>/<code>ctrlMap_</code> hash; <code>ctrlVector_</code> regex</td>
+</tr>
+<tr>
+<td>Pre / cross-cutting</td>
+<td>Per-route <code>pre_sync</code>/<code>co_pre</code> serial chain (<code>@ok/@exit</code>/jump) + site-level pre/after hooks</td>
+<td>Filters + Middlewares (sortable, reusable, decoupled from routing)</td>
+</tr>
+<tr>
+<td>Sync/coroutine mixing</td>
+<td><strong>First-class in routing layer</strong>: <code>reg_raw</code> splits into sync-pre / coro-pre / sync-handler / coro-handler four slots; <code>co_resolve</code> transparently interleaves</td>
+<td>Sync/async lives on the individual method form (Callback/future/<code>CoroMapper</code>), no slot-based mixed declaration</td>
+</tr>
+<tr>
+<td>Simple task orchestration</td>
+<td><strong>Yes</strong>: <code>httppeer::flow_method</code> stack (<code>push_next/push_last/pop_flow</code>), multiple handlers execute in sequence within one request</td>
+<td><strong>No built-in</strong>; manual call / redirect</td>
+</tr>
+<tr>
+<td>Multi-tenant routing</td>
+<td>Site slot isolation (<code>_site_to_slot</code>)</td>
+<td>None; business-layer grouping</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key difference</strong>: Drogon routing is an industrial-class classic pattern — &quot;macro reflection + static registration + Filters/Middlewares&quot; with clean separation of concerns. Paozhu takes an integrated approach — &quot;annotation + codegen + site slot + <code>flow_method</code> orchestration&quot; with built-in light sequential workflow capability and multi-tenancy right at the routing layer.</p>
+<hr />
+<h2>4. ORM Deep Dive</h2>
+<blockquote>
+<p>Both support MySQL / PostgreSQL / SQLite and their ORM queries support C++20 coroutine async. But they differ significantly in <strong>generation timing, code organization, query style, caching, transactions, and relationship expression</strong>.</p>
+</blockquote>
+<h3>4.1 Generated Code Structure</h3>
+<p><strong>Paozhu</strong> (<code>paozhu_cli orm &lt;dbtag&gt;</code>, generator <code>vendor/httpcli/modelfun.hpp</code>) produces <strong>three layers</strong> per table:</p>
+<ul>
+<li><code>&lt;table&gt;_base.h</code>: pure data/reflection layer — <code>namespace &lt;table&gt;_info</code> contains <code>col_count</code>, <code>enum cols</code>, <code>struct meta</code> (field definitions), <code>type::</code> type aliases, <code>col_names</code>, <code>null_col</code> bitmap, <code>assign_field_value</code> (<code>world_base.h:41-45</code>, <code>L76-80</code>), plus <strong>dirty-field bitmap</strong> <code>__dirty_bits</code> + <code>get_dirty_indices()</code>/<code>clear_dirty()</code>/<code>make_update_dirty_sql()</code>.</li>
+<li><code>&lt;table&gt;_opsql.h</code>: <code>template&lt;M_MODEL,B_BASE&gt; class &lt;table&gt;_opsql : public B_BASE</code> containing <strong>all query/cache/dirty-update methods</strong>. Constructor fetches <code>orm_conn_pool</code> from <code>get_orm_conn_pool_obj()</code> per dbtag.
+<ul>
+<li><strong>Dirty-update mechanism</strong>: <code>setXxx()</code> marks the corresponding dirty bit when writing a field. <code>update_dirty()</code> (text protocol) / <code>exec_update_dirty()</code> (prepared) / <code>async_update_dirty()</code> / <code>async_exec_update_dirty()</code> / <code>commit_update_dirty()</code> only build <code>UPDATE</code> for dirty-bit fields. On success <code>clear_dirty()</code>. Short-circuits when the dirty set is empty (prevents accidental all-field updates) and refuses execution without WHERE (<code>article_opsql.h:9866/15248/10319/15323/13120</code>). Mechanistically equivalent to Drogon's <code>dirtyFlag_[]</code> — both are &quot;incremental writes of changed columns only&quot;.</li>
+</ul>
+</li>
+<li><code>models/include/&lt;Model&gt;.h</code>: thin shell <code>class &lt;Model&gt; : public &lt;table&gt;_opsql&lt;&lt;Model&gt;,&lt;table&gt;_base&gt;</code> (<code>models/include/World.h:11</code>).</li>
+<li>FK relationships live in <strong>external .cpp</strong>: <code>orm/fk_child_opsql.cpp</code>, <code>orm/fk_parent_opsql.cpp</code> (see §4.6).</li>
+</ul>
+<p><strong>Drogon</strong> (<code>drogon_ctl create_model</code>, reuses CSP templates <code>model_h.csp</code>/<code>model_cc.csp</code>) generates one model class per table (example <code>orm_lib/tests/mysql/Users.h</code>):</p>
+<ul>
+<li><code>struct Cols</code> (column-name constants), table metadata (<code>tableName</code>/<code>primaryKeyName</code>/<code>PrimaryKeyType</code>: single PK = concrete type, composite = <code>std::tuple</code>, no PK = <code>void</code>).</li>
+<li>Three pieces per field: <code>getValueOfXxx()</code> / <code>getXxx()</code> / <code>setXxx()</code> + <code>setXxxToNull()</code> (nullable).</li>
+<li>JSON interop &amp; validation: <code>toJson()</code> / <code>updateByJson()</code> / <code>validateJsonForCreation/Update</code>.</li>
+<li><strong>Private persistence friend methods</strong>: <code>outputArgs</code> / <code>updateColumns</code> / <code>updateArgs</code> / <code>insertColumns</code>, called internally by <code>Mapper</code>.</li>
+<li><strong>Dirty flag</strong> <code>dirtyFlag_[]</code>: determines <code>insert</code>/<code>update</code> writes only changed columns (<code>Users.h:252-274</code>).</li>
+<li>Static SQL strings: <code>sqlForFindingByPrimaryKey()</code> / <code>sqlForDeletingByPrimaryKey()</code> / <code>sqlForInserting(bool&amp; needSelection)</code> (dynamically builds column list from <code>dirtyFlag_[]</code>; PG appends <code>returning *</code>, MySQL/SQLite relies on <code>LAST_INSERT_ID</code>/<code>insertId()</code>).</li>
+</ul>
+<blockquote>
+<p>Key difference: Paozhu separates &quot;data definition (base)&quot; from &quot;SQL operations (opsql)&quot; into <strong>two files</strong> and supports external FK .cpp; Drogon puts everything into <strong>one model class</strong> with private+friend persistence internals — more OOP.</p>
+</blockquote>
+<h3>4.2 Query API Style</h3>
+<p><strong>Paozhu — Chained builder (returns <code>M_MODEL&amp;</code>)</strong>, method names lean toward &quot;direct SQL verbs&quot;:</p>
+<ul>
+<li>Read: <code>count()</code> / <code>page()</code> / <code>fetch()</code> / <code>fetch_one()</code> / <code>fetch_to&lt;T&gt;()</code> / <code>fetch_one_to()</code>.</li>
+<li>Write: <code>update_col</code> / <code>exec_update_col</code> / <code>replace_col</code>.</li>
+<li>Conditions: <code>where()</code> / <code>whereIn</code> / <code>whereNull</code> / <code>whereEQ</code> / per-column shortcuts <code>eqId()</code>; condition operators <code>orm::wq::eq/nq/bt/be/lt/le</code>.</li>
+<li>JOIN: <code>leftJoin()</code>.</li>
+<li>Async: <code>async_fetch</code> / <code>async_count</code> / <code>async_page</code>, plus <code>exec_*</code> variants with <code>_prepared</code>.</li>
+<li><strong>Pagination auto-reuses existing conditions</strong>: <code>page()</code> internally calls <code>count()</code> first. <code>count()</code> reads the already-set <code>.where()</code> filters from the model; subsequent <code>fetch()</code> also goes through the same <code>build_text_where</code> — <strong>COUNT and data queries share the same <code>where</code>, set conditions once</strong>. <code>page()</code> also directly returns the navigation 4-tuple <code>(nav_min, nav_max, cur_page, total_page)</code> — no manual pagination math.</li>
+</ul>
+<p><strong>Drogon — Streaming <code>Mapper&lt;T&gt;</code> + <code>Criteria</code></strong> (template <code>Mapper</code> in <code>orm/Mapper.h:115</code>, constructor takes <code>DbClientPtr</code>):</p>
+<ul>
+<li>Read: <code>findByPrimaryKey</code> / <code>findAll</code> / <code>count</code> / <code>findOne</code> / <code>findBy</code>, each in three forms (sync/callback/future).</li>
+<li>Write: <code>insert</code> / <code>update</code> / <code>updateBy</code> / <code>increment</code> / <code>deleteOne</code> / <code>deleteBy</code> / <code>deleteByPrimaryKey</code>.</li>
+<li>Condition <code>Criteria</code> (<code>Criteria.h:73</code>): <code>CompareOperator</code> has <code>EQ/NE/GT/GE/LT/LE/Like/In/IsNull/IsNotNull</code>; supports <code>operator&amp;&amp;</code>/<code>||</code> composition, <code>CustomSql</code> + <code>_sql</code> literals, <code>Criteria(Json::Value)</code>.</li>
+<li>Streaming builder: <code>limit</code> / <code>offset</code> / <code>orderBy</code> / <code>paginate</code> / <code>forUpdate</code> / <code>innerJoin</code> / <code>leftJoin</code> / <code>rightJoin</code>; placeholder <code>$?</code> is DB-aware and replaced with <code>$1,..</code> (PG) or <code>?</code> (MySQL/SQLite).</li>
+</ul>
+<blockquote>
+<p>Style divergence: Paozhu leans toward &quot;familiar chained verbs + per-column shortcuts&quot; — low learning curve. Drogon uses <code>Criteria</code> expression objects + <code>Mapper</code> streaming — more type-safe, but needs understanding the <code>Criteria</code>/<code>SqlBinder</code> system.
+Pagination comparison: Paozhu's <code>page()</code> <strong>auto-reuses already-set <code>where</code></strong>, completes &quot;count + fetch + return navigation 4-tuple&quot; in one call. Drogon's <code>paginate(page,perPage)</code> (<code>Mapper.h:173/2013</code>) <strong>only sets offset/limit</strong>; <code>count()</code> defaults to empty <code>Criteria()</code> (<code>Mapper.h:459</code>), so you need to pass the same <code>Criteria</code> to both <code>count(criteria)</code> and the query. Pagination navigation (total pages / window) you compute yourself.</p>
+</blockquote>
+<h3>4.3 Query-Result Caching (Largest Functional Gap)</h3>
+<p><strong>Paozhu — Optional capability on the model object, ready out of the box</strong>: Caching is an optional feature on the model object, no third-party library needed. Core API:</p>
+<ul>
+<li>Enable: call <code>use_cache()</code> before query; subsequent calls automatically hit cache; <code>save_cache(exptime)</code> writes back.</li>
+<li>Read: <code>try_get_cache(name)</code> returns <code>std::optional</code> (miss = <code>nullopt</code>, <strong>non-throwing</strong>); <code>is_hit_cache</code> flag indicates whether the current result came from cache.</li>
+<li>Key: <code>std::hash&lt;std::string&gt;{}(sqlstring)</code> or custom <code>cache_key_name</code>.</li>
+<li>TTL clamping &amp; background reclaim: <code>orm_cache_deadline()</code> clamps to <code>ORM_CACHE_DEFAULT_TTL</code> (120s) ~ <code>ORM_CACHE_MAX_TTL</code> (3600s); a single background daemon scans expired entries every <code>ORM_CACHE_SCAN_INTERVAL</code> (30s). All three are overridable at compile time via <code>-D</code>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Paozhu</th>
+<th>Drogon (this tree)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Query-result cache</td>
+<td><strong>Yes</strong> (<code>orm_cache.hpp</code>'s <code>model_meta_cache&lt;BASE_T&gt;</code>, <code>std::map&lt;size_t,data_cache_t&gt;</code> + mutex)</td>
+<td><strong>No</strong> (zero cache in ORM layer; every query hits the pool)</td>
+</tr>
+<tr>
+<td>Access</td>
+<td><code>use_cache()</code> / <code>save_cache()</code> / <code>try_get_cache()</code> / <code>remove_cache()</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Reclaim</td>
+<td>Background daemon periodically scans expired entries</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3>4.4 Async &amp; Coroutine Model</h3>
+<p><strong>Paozhu — Sync + coroutine dual form; coroutine is the primary paradigm</strong>:</p>
+<ul>
+<li>Every query method has both sync and coroutine forms: sync <code>fetch()</code> / <code>count()</code> / <code>page()</code> / <code>exec_fetch()</code> / <code>exec_count()</code>; coro <code>async_fetch()</code> / <code>async_count()</code> / <code>async_page()</code> / <code>async_exec_fetch()</code>.</li>
+<li>Coro versions internally <code>co_await select_conn-&gt;async_fetch_directly(...)</code>; DML does <code>co_await edit_conn-&gt;async_exec_dml</code>.</li>
+<li>Connection pool <code>orm_conn_pool.cpp</code>: coroutine <code>async_get_mysql_select_conn</code> / <code>async_get_mysql_edit_conn</code> uses <code>co_await async_add_*_connect</code> to fetch/build connections; sync <code>get_mysql_*_conn</code>.</li>
+<li>Backends: <code>pg_conn.cpp</code> <code>async_read_loop</code> <code>co_await</code>; <code>sqlite_conn.cpp</code> goes through <code>run_on_worker</code> queue.</li>
+<li>Business handler layer: <code>reg_raw</code> provides sync slots (<code>reg_sync</code> / <code>pre_sync</code>) and coro slots (<code>co_reg</code> / <code>co_pre</code>) simultaneously; <code>co_resolve</code> interleaves transparently — developers choose the form by function signature (see §3.3).</li>
+</ul>
+<p><strong>Drogon — Three forms (sync / callback / future) + coroutine overlay</strong>:</p>
+<ul>
+<li>Every <code>Mapper</code> method provides three sets: <code>binder &lt;&lt; Mode::Blocking</code> (sync, throws exception) / <code>binder &gt;&gt; rcb &gt;&gt; ecb</code> (callback) / <code>std::promise</code> + <code>get_future</code> (future).</li>
+<li>Bottom layer <code>DbClient::operator&lt;&lt;(sql)</code> returns <code>SqlBinder</code> (<code>DbClient.h:256</code>) — <code>&lt;&lt;</code> binds params, <code>&gt;&gt;</code> registers callbacks, <code>exec()</code> executes.</li>
+<li>Coroutines: <code>CoroMapper</code> (<code>CoroMapper.h:67</code>, inherits <code>Mapper&lt;T&gt;</code>) returns <code>MapperAwaiter</code>, whose <code>await_suspend</code> plugs the callback into <code>CallbackAwaiter</code> and <code>resume()</code>s. Also has <code>execSqlCoro</code>, <code>newTransactionCoro</code>.</li>
+<li>Result abstraction: <code>Result</code> (<code>Result.h:57</code>, reference-counted, polymorphic <code>size()/affectedRows()/insertId()</code> etc.) / <code>Row</code> (<code>Row.h:46</code>, <code>operator[]</code> returns <code>Field</code>).</li>
+</ul>
+<h4>4.4.1 Dual-Pool Concurrency Architecture (<code>io_context</code> Coroutine Pool + Dedicated ThreadPool)</h4>
+<p>Paozhu's execution layer runs <strong>two thread pools side by side</strong>, with concurrency split into three layers via &quot;strand serialization + business-pool dispatch-back-to-strand + peer chained shared ownership&quot;. No GC needed, still safe:</p>
+<ul>
+<li><strong>Pool 1: Asio <code>io_context</code> coroutine pool</strong> (<code>server.h:381</code>, single <code>io_context</code> + <code>runthreads</code>). Runs all <code>co_spawn</code> coroutines — HTTP/1.1 · HTTP/2 · WS · MQTT · RPC.</li>
+<li><strong>Pool 2: Dedicated <code>ThreadPool clientrunpool</code></strong> (<code>server.h:487</code>, initial size <code>hardware_concurrency()*2+2</code>, <code>threadpool.h</code>). Picks up sync/blocking tasks offloaded from the coroutine loop (router <code>sync pre/regfun</code>, timers, WS data messages). Supports dynamic resize (<code>addthread</code>/<code>fixthread</code>, cap 32) and 503 backpressure (<code>force_reject_*</code> → <code>add_sync_task</code>/<code>add_conn_task</code> returns false).</li>
+<li><strong>I/O layer</strong>: Each <code>client_session</code> (<code>client_session.h:76</code>, <code>enable_shared_from_this</code>) binds an <code>asio::strand</code>. Per-connection send/receive serialized, lock-free. Sends go through <code>post_write</code> (:81-91) into the per-connection send ring, written out serially by a consumer coroutine.</li>
+<li><strong>Business layer</strong>: Blocking code (router sync handlers, MQTT/socket sync hooks) is dispatched to <code>clientrunpool</code> via <code>co_pool_run_step</code> (<code>pool_step.h:41</code>). After <code>fn()</code> completes in the pool thread, <code>finish</code> uses <code>asio::dispatch</code> to put the continuation back onto the session strand — business threads only run <code>fn()</code>, response sending always lands on the strand (<code>pool_step.cpp:18-20</code>).</li>
+<li><strong>Lifecycle / deadlock prevention</strong>: <code>peer</code> is a first-class parameter throughout &quot;task closure → finish → wake-up op → strand resume&quot;, each carrying one strong reference sequentially (<code>pool_step.cpp:91-117</code>). Release point is fixed on the strand thread, send threads never get freed objects. When the pool can't accept work, it <strong>doesn't drop tasks</strong> but completes the awaitable in-place with <code>rejected=true</code> (<code>pool_step.cpp:79-86</code>), eliminating permanent coroutine hangs.</li>
+</ul>
+<p><strong>Drogon comparison</strong>: Drogon uses &quot;multiple independent EventLoop&quot; (one <code>EventLoop</code> per worker, MPSC cross-thread, epoll/kqueue). Handlers run on the owning <code>ioLoop</code>; heavy blocking needs manual offload. It <strong>doesn't</strong> have Paozhu's &quot;shared io_context + independent generic ThreadPool + strand closed loop&quot; cross-pool model, so it also avoids the cross-pool object ownership question.</p>
+<h3>4.5 Transactions</h3>
+<p>Paozhu transactions have <strong>two layers of API</strong>, both with real examples in business code (<code>controller/src/test_sql_commit.cpp</code>):</p>
+<p><strong>① Native SQL layer (<code>orm::db_conn</code> directly holds the transaction connection)</strong>:</p>
+<pre><code class="language-cpp">auto ulink = std::make_unique&lt;orm::db_conn&gt;(&quot;cms&quot;);
+ulink-&gt;begin_commit();                 // BEGIN / BEGIN IMMEDIATE
+ulink-&gt;edit_query(&quot;UPDATE sysuser set ...&quot;);
+ulink-&gt;edit_query(&quot;INSERT INTO sysuser ...&quot;);
+// Queries also go through the same write connection (reads what we just wrote, no master-replica replication lag)
+orm::cms::LocalusersqlStruct row;
+ulink-&gt;edit_query(&quot;SELECT * FROM sysuser WHERE ...&quot;, row);
+if (ulink-&gt;iserror) ulink-&gt;rollback();
+else                ulink-&gt;commit();
+</code></pre>
+<ul>
+<li>A single <code>db_conn</code> instance holds one <code>mysql_edit_conn</code>. Inside a transaction, <strong>both reads and writes go through this one write connection</strong> — <code>edit_query(sql)</code> writes, <code>edit_query(sql, struct&amp;)</code> reads (second param is the output). This guarantees intra-transaction read consistency, no master-replica replication lag.</li>
+<li>Coroutine form: <code>async_begin_commit()</code> / <code>async_commit()</code> / <code>async_rollback()</code> / <code>async_edit_query()</code>.</li>
+<li><strong>Cross-object</strong>: Native SQL has no model concept — naturally cross-table / cross-object.</li>
+</ul>
+<p><strong>② ORM layer (<code>lock_conn</code> binds the transaction connection to the model)</strong>:</p>
+<pre><code class="language-cpp">auto txnlink = std::make_unique&lt;orm::db_conn&gt;(&quot;cms&quot;);
+txnlink-&gt;begin_commit();
+
+// Multiple different model objects all lock onto the same transaction connection — cross-object transaction
+orm::cms::Sysuser user_m;
+user_m.lock_conn(txnlink-&gt;mysql_edit_conn);
+user_m.where(&quot;adminid&quot;, 10000);
+user_m.update(&quot;nickname&quot;);
+
+orm::cms::Sysroles role_m;              // Different table, different model class
+role_m.lock_conn(txnlink-&gt;mysql_edit_conn);  // Also locks onto the same one
+role_m.where(&quot;roleid&quot;, 50);
+role_m.update(&quot;remark&quot;);
+
+user_m.unlock_conn();
+role_m.unlock_conn();
+txnlink-&gt;commit();                      // Unified commit or rollback
+</code></pre>
+<ul>
+<li>Models fetch their own connections from the pool (read-write separated). Running ORM operations directly inside a <code>db_conn</code> transaction would land on <strong>another auto-committed session</strong> — <code>lock_conn()</code> binds the model onto the write connection opened by <code>db_conn</code>, so all models' reads and writes inside the transaction go through the same one.</li>
+<li><strong>Cross-object</strong>: Multiple different model objects (different tables, different generated opsql classes) can all <code>lock_conn</code> onto the same <code>db_conn</code>'s write connection, forming a cross-table transaction.</li>
+<li><code>unlock_conn()</code> only unbinds, <strong>does not return to pool</strong> (prevents uncommitted session leaks). The final <code>commit()</code>/<code>rollback()</code> on <code>db_conn</code> unifies the return.</li>
+</ul>
+<p><strong>Drogon — First-class <code>Transaction</code> object</strong>:</p>
+<ul>
+<li><code>Transaction</code> inherits <code>DbClient</code>; <code>Mapper&lt;T&gt;(transactionPtr)</code> makes subsequent reads and writes happen on the same transaction connection.</li>
+<li><code>newTransaction</code> / <code>newTransactionAsync</code> / <code>newTransactionCoro</code>. <code>TransactionImpl</code> borrows a single connection from <code>readyConnections_</code> and moves it to <code>busyConnections_</code>, auto-sends <code>BEGIN</code> / <code>BEGIN IMMEDIATE</code> / <code>BEGIN EXCLUSIVE</code>; after commit/rollback, returns via <code>usedUpCallback</code>.</li>
+<li>Supports isolation level selection: <code>TransactionType::{Deferred, Immediate, Exclusive}</code>.</li>
+</ul>
+<p><strong>Comparison</strong>: Drogon uses a first-class <code>Transaction</code> object passed to <code>Mapper</code> — API is clean, models don't know they're inside a transaction. Paozhu is <strong>explicit and manual</strong> — either use <code>db_conn</code> for native SQL, or <code>lock_conn</code> to bind ORM models to the transaction connection (models need to be aware of transaction state). Both work, but Drogon is more elegant.</p>
+<h3>4.6 Relationships / Foreign Keys</h3>
+<p><strong>Paozhu</strong>: <code>oneXXX/manyXXX</code> live in <strong>external .cpp</strong> (<code>orm/fk_child_opsql.cpp</code> / <code>orm/fk_parent_opsql.cpp</code>), implemented by applying <code>where()</code>/<code>whereIn()</code> to the related model using this table's FK values. Also provides generic <code>leftJoin()</code> for explicit JOINs.</p>
+<p><strong>Drogon</strong>: Relationships are &quot;generation-time config + per-model methods at runtime&quot;, no generic <code>Mapper</code> API for <code>hasMany</code>/<code>hasOne</code> style.</p>
+<ul>
+<li>Config structure <code>Relationship</code> (<code>create_model.h:211</code>, <code>Type{HasOne,HasMany,ManyToMany}</code> + <code>PivotTable</code> for many-to-many join tables).</li>
+<li><strong>Auto FK detection</strong>: <code>tryAddAutoRelationship</code> (<code>create_model.cc:181</code>); PG queries <code>information_schema</code> FK views, MySQL queries <code>KEY_COLUMN_USAGE</code>, SQLite queries <code>PRAGMA foreign_key_list</code>.</li>
+<li>Generates method bodies (<code>model_cc.csp:1580-1789</code>): per-type generates <code>getXxx(clientPtr)</code> sync/async pairs — HasOne builds <code>select * from &lt;target&gt; where &lt;key&gt; = ?</code>, HasMany returns <code>vector&lt;Target&gt;</code>, ManyToMany does join + pivot returning <code>vector&lt;pair&lt;Target,Pivot&gt;&gt;</code>. Relationship queries go through <code>DbClient</code>/<code>SqlBinder</code>, can take a transaction client.</li>
+</ul>
+<h3>4.7 Type Mapping &amp; Parameter Binding</h3>
+<p><strong>Paozhu</strong>: At generation time, <code>modelfun.hpp</code> uses <code>pg_type_to_mysql_type()</code> + SQLite affinity mapping to convert SQL types to <strong>MySQL binary type codes</strong>, then <code>get_field_type()</code> maps codes to C++ (integers/dates/strings etc.), landing in the <code>struct meta</code> + <code>type::</code> of <code>_base.h</code>.</p>
+<p><strong>Drogon</strong>: At generation time, <code>create_model.cc</code> writes per-DB hardcoded mappings (PG / MySQL / SQLite branches). Parameter binding <code>SqlBinder::operator&lt;&lt;</code> branches on <code>ClientType</code>:</p>
+<ul>
+<li>PG: 2/4/8-byte integers go through <code>htons/htonl/htonll</code> for network order, <code>format=1</code> (binary);</li>
+<li>MySQL: uses <code>getMysqlType&lt;ParaType&gt;()</code> mapping (with <code>static_assert</code> rejecting unsupported types);</li>
+<li>SQLite: picks type based on <code>sizeof(T)</code>; also supports <code>trantor::Date</code> / <code>vector&lt;char&gt;</code> / <code>optional&lt;T&gt;</code> / <code>Json::Value</code>.</li>
+<li>DB row → C++ field: <code>Field::as&lt;T&gt;()</code> (<code>Field.h:70-107</code>, extensive specializations) + model constructor <code>T(const Row&amp;, indexOffset)</code>, does special parsing for date/bytea, and controls incremental column writes based on <code>dirtyFlag_[]</code>.</li>
+</ul>
+<h3>4.8 Connection Pools</h3>
+<p><strong>Paozhu</strong>: <code>orm_conn_pool.cpp</code> maintains a <strong>read-write separated</strong> pool per dbtag (<code>async_get_mysql_select_conn</code> for reads / <code>async_get_mysql_edit_conn</code> for writes); coroutine connection fetch/build via <code>co_await async_add_*_connect</code>; backends <code>pg_conn</code>/<code>mysql_conn</code>/<code>sqlite_conn</code> each implement <code>async_*</code> non-blocking I/O; started by <code>init_orm_conn_pool(io_context,...)</code> (<code>server.cpp:9269</code>).</p>
+<ul>
+<li><strong>Framework-level connection health check</strong> <code>orm_connect_mar_t</code> (<code>orm_connect_mar.h/cpp</code>): When borrowing, <code>watch_mysql_connect(conn)</code> registers a weak_ptr + <code>time_begin</code>. The server main loop calls <code>clear_connect()</code> every <strong>320 ticks</strong> — automatically prunes <code>weak_ptr</code> that have expired, skips async connections, and hard-closes (<code>hard_close()</code>) sync connections exceeding <code>CONST_ORM_QUERY_CONNECT_TIMEOUT</code>. Rate-limit: max 10 connections per scan round, scan over multiple rounds, sleeps 200ns between rounds to yield CPU.</li>
+<li><strong>ORM query logging</strong>: In debug mode, <code>push_log(sql_string, duration_ms)</code> records slow queries; <code>save_log()</code> flushes to disk every <code>CONST_ORM_QUERY_LOG_TIME</code> ticks.</li>
+</ul>
+<p><strong>Drogon</strong>: <code>DbClientLockFree</code> (<code>orm_lib/src/DbClientLockFree.cc</code>) with three-state collections <code>connections_</code>/<code>readyConnections_</code>/<code>busyConnections_</code> (mutex-protected). <code>execSql</code> reuses an idle one if available, otherwise pushes into <code>sqlCmdBuffer_</code> (max <strong>20000</strong>; exceeding it reports &quot;Too many queries in buffer&quot;, <code>DbClientLockFree.cc:203</code>). Number of event loops decided by <code>connNum</code> (SQLite fixed at 1, PG/MySQL take <code>min(hardware_concurrency(), connNum)</code>). Per-library connection classes <code>PgConnection</code>/<code>MysqlConnection</code>/<code>Sqlite3Connection</code> only handle single-connection non-blocking I/O; supports <code>execSqlWithTimeout</code> which throws <code>TimeoutError</code> on timeout.</p>
+<p><strong>Underlying protocol implementation divergence (architecture-level)</strong>:</p>
+<ul>
+<li><strong>Paozhu self-implements MySQL / PostgreSQL wire protocols; SQLite uses the official library</strong>:
+<ul>
+<li><strong>MySQL</strong>: <code>mysql_conn.cpp</code> hand-written <code>read_server_hello</code> (parses <code>capability_flags</code>, <code>auth_plugin_salt_data</code>), <code>caching_sha2_password</code> auth handshake, <code>mysqlnd_xor_string</code> encryption, <code>seq_next_id</code> packet sequence number.</li>
+<li><strong>PostgreSQL</strong>: <code>pg_conn.cpp</code> hand-written <code>build_startup_message</code>, SCRAM-SHA-256 handshake (<code>sasl_scram_sha256</code>, <code>int32_to_buf</code> message frames).</li>
+<li><strong>SQLite</strong>: <code>sqlite_conn.cpp</code> / <code>sqlite_conn.h</code> (L45) <strong>directly uses the official sqlite3 C API</strong> (<code>sqlite3_open</code>/<code>sqlite3_prepare_v2</code>/<code>sqlite3_step</code>/<code>sqlite3_stmt*</code>), guarded by <code>#ifdef ENABLE_SQLITE</code>, CMake <code>find_package(SQLite3 REQUIRED)</code> linking. SQLite is an embedded database with no wire protocol of its own to self-implement.</li>
+<li>The entire project <code>CMakeLists.txt</code> does <strong>not</strong> link <code>libmysqlclient</code> / <code>libpq</code> (the cost of self-implementing MySQL/PG wire protocols), but SQLite needs <code>SQLite::SQLite3</code>.</li>
+</ul>
+</li>
+<li><strong>Drogon wraps all official client libraries</strong>: <code>MysqlConnection</code> directly <code>#include &lt;mysql.h&gt;</code> (links <code>unofficial::libmariadb</code>); <code>PgConnection</code> uses <code>libpq</code> (<code>find_package(pg)</code>); SQLite uses <code>SQLite3_lib</code>. <strong>Wire protocols are delegated entirely to third-party libraries</strong>; Drogon only provides async wrappers (based on non-blocking APIs like <code>mysql_real_connect_start/cont</code>).</li>
+</ul>
+<h3>4.9 Business Code Style (Actual Usage)</h3>
+<blockquote>
+<p>§4.2 covered API shapes. Here's <strong>what real business code looks like</strong> (examples taken from both sides' source).</p>
+</blockquote>
+<p><strong>Paozhu — The model object IS the query builder; chained verbs + coro/sync dual form</strong> (example <code>controller/src/testormcache.cpp</code> / <code>testcrud.cpp</code>):</p>
+<pre><code class="language-cpp">// The model object itself is the builder; conditions, caching, and query all chained in one go
+Article art;
+art.where(&quot;isopen&quot;, 1).whereEQ(art.Alias::aid, aid).use_cache();  // Chained conditions + query cache
+co_await art.fetch_one();                          // Coroutine query, result backfills art
+client &lt;&lt; &quot;&lt;br/&gt;title:&quot; &lt;&lt; art.getTitle();
+if (art.is_hit_cache()) { /* cache hit branch */ }
+
+// Pagination: directly returns (nav_min, nav_max, cur_page, total_page)
+unsigned int page = client.get[&quot;page&quot;].to_int();
+auto [nav_min, nav_max, cur_page, total_page] = art.page(page, 10, 5); // page, per_page, nav width
+</code></pre>
+<p>Style takeaway: get a model instance → chain <code>.where()/.whereEQ()/.use_cache()/.fetch_one()/.page()</code> on it → <code>co_await</code> or sync <code>fetch_one()</code>. <strong>No separate Mapper layer</strong> — the model IS the DAO.</p>
+<p><strong>Drogon — Generic <code>Mapper&lt;T&gt;</code> + <code>Criteria</code> expression; CRUD by model type</strong> (example <code>orm_lib/tests/db_test.cc</code>):</p>
+<pre><code class="language-cpp">using namespace drogon_model::postgres;
+Mapper&lt;Users&gt; mapper(clientPtr);          // clientPtr = app().getDbClient()
+Users user;
+user.setUserId(&quot;pg&quot;); user.setUserName(&quot;alice&quot;);
+mapper.insert(user);                      // Sync write
+auto u = mapper.findByPrimaryKey(2);      // PK lookup
+
+// Coroutine form
+CoroMapper&lt;Users&gt; cmapper(clientPtr);
+auto cu  = co_await cmapper.findByPrimaryKey(2);
+auto us  = co_await cmapper.orderBy(Users::Cols::_user_id).limit(2).findAll();
+auto one = co_await cmapper.findOne(
+    Criteria(Users::Cols::_id, CompareOperator::EQ, 1));
+</code></pre>
+<p>Style takeaway: <code>Mapper&lt;Model&gt;</code> is a generic CRUD facade independent of the model object. Conditions use <code>Criteria(col, op, val)</code> expression construction. <strong>The model object only carries data + setter/getter</strong>; all persistence goes through <code>Mapper</code>.</p>
+<blockquote>
+<p>One-liner: Paozhu is &quot;<strong>the model queries itself</strong>&quot; (builder attached to the model, verb-style, quick to pick up). Drogon is &quot;<strong>Mapper proxies model CRUD</strong>&quot; (generic facade + Criteria expressions, type-safe, cleaner separation of concerns).</p>
+</blockquote>
+<h3>4.10 Summary Table</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (this tree)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Supported DBs</td>
+<td>MySQL / PostgreSQL / SQLite (configured via <code>dbtype</code>)</td>
+<td>PostgreSQL / MySQL(MariaDB) / SQLite3</td>
+</tr>
+<tr>
+<td>Generation source</td>
+<td><strong>Dual mode</strong>: Live DB introspection (<code>modelfun.hpp</code> runs <code>SHOW CREATE TABLE</code>/PG table list, <strong>database-first</strong>) + also pure offline reading <code>schema/&lt;dbtag&gt;/tables/*.sql</code> (<strong>CI-friendly, decoupled from runtime DB</strong>)</td>
+<td><strong>Live DB only</strong> — reads <code>information_schema</code>/PRAGMA (<code>create_model</code>, database-first)</td>
+</tr>
+<tr>
+<td>Artifact organization</td>
+<td>base (opsql separated) + external FK .cpp</td>
+<td>Single model class + private/friend encapsulation + dirtyFlag</td>
+</tr>
+<tr>
+<td>Query style</td>
+<td>Chained verb builder (<code>where/page/fetch</code>)</td>
+<td><code>Mapper&lt;T&gt;</code> + <code>Criteria</code> streaming expressions</td>
+</tr>
+<tr>
+<td>Query-result cache</td>
+<td><strong>Built-in</strong> <code>orm_cache.hpp</code> / <code>model_meta_cache</code></td>
+<td><strong>None</strong> (cache delegated to upper layer / Redis)</td>
+</tr>
+<tr>
+<td>Async paradigm</td>
+<td><strong>Sync + coroutine dual form</strong>: sync <code>count()</code>/<code>fetch()</code>/<code>page()</code> + coro <code>async_count()</code>/<code>async_fetch()</code>/<code>async_page()</code> (<code>asio::awaitable</code>)</td>
+<td>Sync / callback / future three forms + <code>CoroMapper</code> coroutine overlay (four forms)</td>
+</tr>
+<tr>
+<td>Transactions</td>
+<td><strong>Two-layer API</strong>: <code>orm::db_conn</code> native SQL transaction + model <code>lock_conn(txn_conn)</code> to bind to transaction connection (manual unbind + returned by <code>db_conn</code> lifecycle)</td>
+<td>First-class <code>Transaction</code> object threaded into <code>Mapper</code>; model is unaware, API cleaner</td>
+</tr>
+<tr>
+<td>Relationships / FK</td>
+<td><code>oneXXX/manyXXX</code> in external .cpp</td>
+<td>Generated-time <code>Relationship</code> + model <code>getXxx(client)</code> method</td>
+</tr>
+<tr>
+<td>Connection pool</td>
+<td>dbtag read-write separated coroutine pool + <strong>framework-level health check</strong> (<code>orm_connect_mar</code> periodic zombie scan + hard-close on timeout) + ORM query logging</td>
+<td><code>DbClientLockFree</code> three-state pool + buffer cap 20000; <strong>no framework-level connection health check</strong> (zombie cleanup relies on DB server <code>wait_timeout</code>)</td>
+</tr>
+<tr>
+<td>Type mapping</td>
+<td>SQL → MySQL binary code → C++</td>
+<td>Per-DB hardcoded mapping + <code>SqlBinder</code> binary binding</td>
+</tr>
+<tr>
+<td><strong>Wire protocol / client dependency</strong></td>
+<td><strong>Self-implemented MySQL/PG wire protocols</strong> (<code>mysql_conn.cpp</code>/<code>pg_conn.cpp</code> hand-written handshake and auth); <strong>SQLite uses official sqlite3 C API</strong> (<code>sqlite3_open</code>/<code>sqlite3_prepare_v2</code>), does not link <code>libmysqlclient</code>/<code>libpq</code>, links <code>SQLite3</code></td>
+<td><strong>Wraps all official client libraries</strong> (<code>MysqlConnection</code>→<code>libmariadb</code>, <code>PgConnection</code>→<code>libpq</code>, SQLite→<code>sqlite3</code>), wire protocols delegated to third parties</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key difference takeaways</strong>:</p>
+<ul>
+<li>Generation timing: Both support <strong>live DB reverse engineering</strong> (Drogon <code>create_model</code>; Paozhu <code>modelfun.hpp</code> connects to <code>mysql_conn_base</code>/<code>pg_conn_base</code>/<code>sqlite_db_conn</code> running <code>SHOW CREATE TABLE</code>/PG table list, and can dump live DB into <code>schema/*.sql</code>). Paozhu additionally supports <strong>pure offline</strong> <code>schema/*.sql</code> generation (decoupled from DB, CI-friendly, can be offline).</li>
+<li>Abstraction style: Drogon uses template <code>Mapper&lt;T&gt;</code> + <code>Criteria</code> for unified CRUD (OOP, type-safe); Paozhu generates per-table independent <code>_opsql.h</code> operation classes (verb-style builder, quick to pick up).</li>
+<li><strong>Caching is a watershed</strong>: Paozhu supports query-result caching out of the box; Drogon ORM has no such built-in layer.</li>
+<li>Transaction API: Drogon is more elegant (<code>Transaction</code> object), Paozhu is more manual (<code>lock_conn</code>).</li>
+<li><strong>Dirty updates (incremental column writes) both support</strong>: Paozhu uses <code>__dirty_bits</code> bitmap + <code>update_dirty()</code>/<code>exec_update_dirty()</code> (short-circuit on empty dirty set, rejects execution without WHERE); Drogon uses <code>dirtyFlag_[]</code> controlling <code>insertColumns</code>/<code>updateColumns</code>. Mechanistically equivalent.</li>
+<li>Common ground: Both ORM queries <strong>support C++20 coroutine async</strong>, and cover all three SQL dialects.</li>
+</ul>
+<hr />
+<h2>5. Rate Limiting Comparison</h2>
+<blockquote>
+<p>Both have rate limiting at <strong>different layers, with some overlap</strong>: Drogon has both <strong>hard connection caps</strong> (<code>HttpConnectionLimit</code>, global + per-IP hard caps) and <strong>request-level</strong> (per-IP / per-user / per-route, token bucket/sliding window/fixed window, plugin-ready out of the box). Paozhu has <strong>connection-admission-level</strong> overload protection (60-second connection window + load-adaptive admission rate + queued slow admission) + site upload limits + IP blocking. They approach connection-level protection differently (hard reject vs. queued admission); request-level quotas are Drogon's unique business capability.</p>
+</blockquote>
+<h3>5.1 Drogon — Request-Level RateLimiter + Hodor Plugin</h3>
+<p><strong>Core class</strong> (<code>lib/inc/drogon/RateLimiter.h</code>):</p>
+<ul>
+<li><code>RateLimiterType</code> three algorithms: <code>kFixedWindow</code> / <code>kSlidingWindow</code> / <code>kTokenBucket</code> (<code>RateLimiter.h:10-15</code>).</li>
+<li>Factory <code>RateLimiter::newRateLimiter(type, capacity, timeUnit=60s)</code> (<code>RateLimiter.h:42-45</code>), interface <code>isAllowed()→bool</code> (<code>:52</code>); <code>SafeRateLimiter</code> wraps with mutex for thread safety (<code>:56-74</code>).</li>
+<li>Three implementations: <code>TokenBucketRateLimiter</code> / <code>SlidingWindowRateLimiter</code> / <code>FixedWindowRateLimiter</code> (<code>lib/src/</code> .cc/.h files).</li>
+</ul>
+<p><strong>Hodor plugin</strong> (<code>lib/inc/drogon/plugins/Hodor.h</code>, official Drogon rate-limiting plugin):</p>
+<ul>
+<li>JSON config to enable. Intercepts via AOP <code>onHttpRequest</code> (<code>Hodor.h:144</code>) <code>AdviceCallback</code> pre-advice. On limit hit returns <code>rejection_message</code> (default <code>&quot;Too many requests&quot;</code>).</li>
+<li>Complete dimension support (<code>Hodor.h:36-77</code>): <code>algorithm</code> (default token_bucket), <code>urls</code> regex (empty = all), <code>time_unit</code>, <code>capacity</code> (global), <code>ip_capacity</code> (<strong>per-IP</strong>), <code>user_capacity</code> (<strong>per-user</strong>, configurable <code>setUserIdGetter</code>), <code>sub_limits</code> (per-URL group sub-policies), <code>trust_ips</code> / <code>use_real_ip_resolver</code> (XFF / real IP), <code>limiter_expire_time</code> (default 600s, uses <code>CacheMap</code> storing limiter per IP/user).</li>
+</ul>
+<blockquote>
+<p>Drogon's request-level rate limiting is <strong>production-grade, fine-grained, and declarative</strong>: configure one JSON block to get &quot;global 1000/s + per-IP 100/s + per-user 50/s&quot; combo policies matching URLs like <code>/api/.*</code>, with swappable algorithms.</p>
+</blockquote>
+<p><strong>Hard connection cap</strong> (<code>lib/src/HttpConnectionLimit.h:26</code>, atomic counting at accept stage):</p>
+<ul>
+<li><code>HttpConnectionLimit::setMaxConnectionNum(num)</code> — global hard connection cap; <code>setMaxConnectionNumPerIP(num)</code> — per-IP hard connection cap.</li>
+<li><code>HttpServer.cc:L121</code> calls <code>tryAddConnection()</code> at accept time; over-limit rejects immediately; <code>releaseConnection()</code> atomically decrements on connection close.</li>
+<li>Property: <strong>hard-reject</strong> — over-limit immediately closes new connections, no queue, no wait. Different approach from Paozhu §5.2's &quot;queued slow admission&quot; for the same problem.</li>
+</ul>
+<h3>5.2 Paozhu — Connection-Admission Overload Protection + Upload Limits + IP Blocking</h3>
+<p><strong>Connection admission throttling</strong> (built into <code>httpserver</code> core, <code>server.h:247</code> <code>ratelimiter()</code> thread-driven):</p>
+<ul>
+<li><strong>60-second traffic window</strong>: <code>update_minute_count()</code> (<code>server.cpp:8583-8632</code>) — each accept thread holds one 60-bucket thread-local ring, snapshots global <code>total_count</code> (connection counter), computes &quot;connections entering in the last ~60 seconds&quot;.</li>
+<li><strong>Load-adaptive admission rate</strong>: <code>compute_rate_from_load(has_save_link_count)</code> (<code>server.cpp:8636-8647</code>) — maps active connection count to <code>[lo,hi]</code> interval as percentage, then linearly converts to admission rate <code>[num1,num2]</code>; thresholds controlled by <code>rate_limit_new_wait_num</code> / <code>rate_limit_accept_wait_num</code> / <code>rate_limit_second_num1</code> / <code>rate_limit_second_num2</code>.</li>
+<li><strong>Queued slow admission</strong>: When thresholds exceeded (<code>has_save_link_count &gt; rate_limit_new_wait_num &amp;&amp; live_link_count &gt; rate_limit_new_wait_num</code>, <code>server.cpp:9014-9022</code> / <code>9197-9204</code>), calls <code>enqueue_rate_limited()</code> (<code>:8650</code>) to push connections into <code>socket_session_wait_rate</code>. The throttling thread wakes up on <code>rate_limit_condition</code> and admits them <strong>gradually at <code>rate_limit_second_time_num</code> per second</strong> (<code>:8749-8758</code> slot loop).</li>
+<li>Property: <strong>per-connection (not per-request) total-cap gate</strong> — overload-smoothing admission of new connections, not &quot;N requests per IP/user per second&quot; quota.</li>
+</ul>
+<p><strong>Upload limits</strong>: <code>httppeer::check_upload_limit()</code> (<code>httppeer.cpp:789</code>, guarded by site-level <code>host_index</code>) — limits upload body size per site.</p>
+<p><strong>IP blocking</strong>: <code>check_blockip(peer_session)</code> (<code>server.cpp:5757</code>, TLS handshake failed connections excluded from traffic counts), blacklist/whitelist access-layer interception.</p>
+<blockquote>
+<p>Paozhu has <strong>no built-in</strong> &quot;per-IP / per-user / per-route request quota&quot; layer, but can be implemented with framework capabilities: add an IP sliding-window counter (maintaining <code>std::unordered_map&lt;ip, deque&lt;timestamp&gt;&gt;</code>) inside <code>router</code>'s site pre hooks (<code>action_pre_lists</code>, <code>router.cpp:462</code>), and on limit hit return <code>httppeer::kFlowExit</code> (<code>@exit</code>) to reject the request — the pre chain short-circuits on the first non-empty return. The whole implementation closes within the framework, no core extension needed.</p>
+</blockquote>
+<h3>5.3 Summary Table</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (drogon-master 1.9.14)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Limiting layer</td>
+<td><strong>Connection-admission-level</strong> (overload protection) + upload limits + IP blocking</td>
+<td><strong>Hard connection cap</strong> + <strong>request-level quota</strong> (per-IP / per-user / per-route)</td>
+</tr>
+<tr>
+<td>Hard connection cap</td>
+<td><strong>No hard upper bound</strong>; over threshold → <strong>queued slow admission</strong> (gradual per-tick)</td>
+<td><strong>Global + per-IP hard caps</strong> (<code>HttpConnectionLimit</code>, atomic counter at accept), immediate reject on over-limit</td>
+</tr>
+<tr>
+<td>Algorithms</td>
+<td>Fixed admission rate + load-adaptive (<code>compute_rate_from_load</code>)</td>
+<td>Token bucket / sliding window / fixed window (pick one), Hodor plugin</td>
+</tr>
+<tr>
+<td>Measurement window</td>
+<td>60-second connection count window + active connection load</td>
+<td>Configurable <code>time_unit</code> (default 60s), counted by request</td>
+</tr>
+<tr>
+<td>Per-IP / per-user request quota</td>
+<td><strong>No built-in</strong>; can self-implement with site pre hooks + IP sliding-window counter (framework-internal closed loop)</td>
+<td><strong>Built-in</strong> (<code>ip_capacity</code> / <code>user_capacity</code>)</td>
+</tr>
+<tr>
+<td>Per-route subdivision</td>
+<td>None (site-wide total gate)</td>
+<td><code>urls</code> regex + <code>sub_limits</code> grouping</td>
+</tr>
+<tr>
+<td>Enablement</td>
+<td>Compiled into <code>httpserver</code>, tune via threshold params</td>
+<td>Connection gate hardcoded in <code>HttpAppFrameworkImpl.cc</code> + Hodor plugin JSON config</td>
+</tr>
+<tr>
+<td>Over-limit response</td>
+<td>Connections queued / slow-admitted; IP directly stopped</td>
+<td>Connections over limit closed immediately; request over limit returns <code>rejection_message</code> (default 429 text)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Core difference</strong>: Drogon rate limiting is <strong>two-layer</strong> — bottom layer <code>HttpConnectionLimit</code> hard cap (prevent overload, reject immediately on over-limit) + top layer Hodor request-level quota (business-friendly, per-IP/user/route, swappable algorithms, pluginized). Paozhu is <strong>single-layer</strong> connection-admission-level protection — over threshold it doesn't reject, it queues and admits gradually (gentler, avoids transient rejection shock), but request-level quotas need self-implementation via site pre hooks. The two-layer connection protection is different strategies for the same problem (hard reject vs. queued admission), not entirely non-overlapping.</p>
+<hr />
+<h2>6. Protocol &amp; Middleware Support (WebSocket / MQTT / Redis / RPC / Socket)</h2>
+<blockquote>
+<p>This dimension diverges sharply: <strong>Paozhu builds all five protocol types natively</strong> into <code>httpserver</code> core (and uses a unified <code>subpub</code> registration model across ws/mqtt/socket); <strong>Drogon only builds WebSocket and Redis natively</strong>, with no framework-level support for MQTT / RPC / raw Socket servers.</p>
+</blockquote>
+<h3>6.1 WebSocket</h3>
+<ul>
+<li><strong>Paozhu (built-in server + client)</strong>: <code>websockets.h</code> + <code>ws_conn.cpp</code> (connection) / <code>ws_handshake.cpp</code> (handshake) / <code>ws_parser.cpp</code> + <code>ws_wire.h</code> (frame codec) / <code>http_websocket_client.cpp</code> (65KB client); <code>websockets_callback.cpp</code> + <code>websockets.conf</code> config; controller layer also provides <code>websockets/loopwebsockets.hpp</code> / <code>loopwebsockets_co.hpp</code> (coroutine loop) / <code>wssleepwebsockets.hpp</code> and other loop abstractions.</li>
+<li><strong>Drogon (built-in server + client)</strong>: <code>WebSocketController.h</code> (server controller) / <code>WebSocketConnection.h</code> (connection) / <code>WebSocketClient.h</code> (client), with matching <code>*Impl.cc</code> files; <code>tests/</code> has complete coro/keepalive/upgrade tests. Capabilities are equivalent.</li>
+</ul>
+<h3>6.2 Redis</h3>
+<ul>
+<li><strong>Paozhu (built-in, <code>vendor/pzredis/</code>)</strong>: Complete client <code>redis_client.h</code> + <code>redis_conn.h</code> (connection) + <code>redis_pool.h</code> (<strong>per-section multi-instance connection pool</strong>) + <code>redis_pubsub.h</code>/<code>redis_subpub.h</code> (publish-subscribe) + <code>redis_reply.h</code> (reply parsing) + <code>redis_types.h</code>; synchronous bare names / coroutine <code>async_</code> prefix (<code>redis_client.h:294-296</code> <code>asio::awaitable</code>), configured via <code>redis.conf</code>. <strong>Does not depend on hiredis</strong> — self-implemented RESP parsing.</li>
+<li><strong>Drogon (built-in, <code>nosql_lib/redis/</code>)</strong>: <code>RedisClient</code> + <code>RedisConnection</code> + <code>RedisSubscriber</code> + <code>RedisTransaction</code> + <code>RedisClientManager</code>; uses <strong>hiredis</strong> underneath (<code>cmake_modules/FindHiredis.cmake</code>). Capability matches Paozhu, but leans on a third-party library.</li>
+</ul>
+<h3>6.3 MQTT</h3>
+<ul>
+<li><strong>Paozhu (built-in broker + client, complete implementation)</strong>: <code>mqtt_broker.h</code> is a <strong>singleton broker</strong> (<code>mqtt_broker::instance()</code>), containing subscription tables <code>subscribe()</code>/<code>unsubscribe()</code>/<code>unsubscribe_all</code>, retained messages, topic filter matching, <code>publish()</code> delivery, <code>prune_expired()</code> expiry cleanup, plus a global cap <code>kMaxSubscriptionsTotal=100000</code> (<code>:84-198</code>); <code>mqtt_session.cpp</code> + <code>mqtt_frame.cpp</code> (35KB, MQTT frame codec including MQTT5's No Local / Retain As Published / Retain Handling / shared subscriptions group+device); <code>http_mqtt_client.cpp</code> client + <code>mqtt.conf</code>, controllers <code>mqtt/echo_mqtt_client.hpp</code> / <code>my_test_mqtt.hpp</code>. <strong>Ready-to-use MQTT service</strong>.</li>
+<li><strong>Drogon (absent)</strong>: The entire <code>drogon-master</code> repository contains zero MQTT source files. The framework ships neither a broker nor a client; you'll need a third-party plugin (e.g. the community <code>drogon-mqtt</code>) or build one on top of WebSocket/TCP yourself.</li>
+</ul>
+<h3>6.4 RPC</h3>
+<ul>
+<li><strong>Paozhu (built-in custom RPC protocol)</strong>: <code>rpc_parse.h</code> / <code>rpc_parse.cpp</code> parses a custom <code>rpc</code> wire format (request line + KV headers + binary body, with <code>CONST_RPC_*</code> size limits). <code>http_rpcclient.cpp</code> (73KB) handles client-side and connection logic, dispatches by its own routing. Controller <code>test_rpc_handle.cpp</code> demonstrates handlers. Provides RPC semantics on the same connection layer.</li>
+<li><strong>Drogon (not built-in)</strong>: The only match for <code>rpc</code> in <code>lib/</code> is a Windows-specific <code>#include &lt;rpc.h&gt;</code> (<code>Utilities.cc:24</code>, unrelated to any RPC framework). No protobuf / thrift / gRPC wrappers exist. RPC has to be built on top yourself — for instance JSON-over-custom-controllers, or an external gRPC process.</li>
+</ul>
+<h3>6.5 Raw Socket / TCP Server</h3>
+<ul>
+<li><strong>Paozhu (built-in)</strong>: <code>http_socket.h</code> + <code>http_socket_client.cpp</code> provides raw TCP connection support; <code>sock_subpub_reg.h/.cpp</code> + <code>sock_subpub_client.h</code> plugs sockets into the unified <code>subpub</code> registration/subscription model, configured via <code>sockets_config.cpp</code>. The framework can act as HTTP/WS/MQTT/Socket multi-protocol server simultaneously.</li>
+<li><strong>Drogon (absent)</strong>: <code>HttpAppFramework</code> only exposes <code>addListener()</code> for HTTP listeners (<code>:864</code>). There is no <code>createTcpServer</code>, <code>UdpServer</code>, or any raw socket server API. If you need raw TCP, you'd build directly on trantor's <code>TcpServer</code> or self-managed Asio — the framework won't do protocol dispatch for you.</li>
+</ul>
+<h3>6.6 Architecture Theme: Unified <code>subpub</code> Registration Model</h3>
+<p>Paozhu uses <code>*_subpub_reg</code> across ws/mqtt/socket (<code>ws_subpub_reg</code> / <code>mqtt_subpub_reg</code> / <code>sock_subpub_reg</code>) — <strong>the same &quot;subscription registration + publish dispatch&quot; kernel</strong> spans multiple protocols. Redis also goes through <code>redis_subpub</code>. This is the unified abstraction behind Paozhu's &quot;protocol big family&quot;. Drogon's capabilities are independent of each other (WebSocket controller, Redis nosql lib, no MQTT/socket), with <strong>no framework-level cross-protocol unified pub/sub kernel</strong>. However, the business layer has a <code>PubSubService&lt;MessageType&gt;</code> template class (<code>lib/inc/drogon/PubSubService.h</code>) — it provides named topics + subscribe/publish/unsubscribe, uses <code>shared_mutex</code> + copy-on-write, and is an in-process tool for business code, not a protocol dispatch mechanism inside the framework.</p>
+<h3>6.7 JWT &amp; OAuth 2.0 / OIDC</h3>
+<ul>
+<li><strong>Paozhu (built-in JWT + complete OAuth 2.0 / OIDC server + client)</strong>:
+<ul>
+<li><strong>JWT</strong>: <code>jwt.cpp</code> / <code>jwt.h</code> is a complete self-implementation depending on OpenSSL 3; supports <code>HS256</code>, <code>RS256</code>/<code>RS384</code>/<code>RS512</code> (PKCS1 + PSS), <code>ES256</code> (<code>:523 es256_verify</code>), includes <code>alg:none</code> protection (signature segment can be empty but has a clear error state), strict scan of <code>exp/iat/nbf</code> claims, full token length bound <code>CONST_JWT_TOKEN_MAX_LEN</code>, separates <code>decode_without_verify</code> and <code>verify</code> (unverified tokens are never treated as valid) — <strong>security-oriented self-implementation</strong>.</li>
+<li><strong>OAuth 2.0 / OIDC authorization server</strong>: <code>libs/oauth/oauth_store.cpp</code> (35KB, auth code / token / refresh storage) + full endpoints in <code>controller/src/oauth/</code>: <code>oauth_authorize</code> / <code>oauth_token</code> / <code>oauth_introspect</code> / <code>oauth_jwks</code> / <code>oauth_userinfo</code> / <code>oauth_revoke</code> / <code>oauth_metadata</code> / <code>oauth_purge</code>; paired with <code>conf/oauth.conf</code> + RSA key pairs; <code>schema/cms/tables/oauth_*.sql</code> generates <code>OauthClient</code> / <code>OauthCode</code> / <code>OauthRefresh</code> ORM models. Ready-to-use authorization server.</li>
+<li><strong>OAuth client + third-party integration</strong>: <code>libs/oauth_client/oauth_client.cpp</code> + <code>controller/src/oauth_client/oauth_client_demo.cpp</code>; <code>libs/github/github_oauth.cpp</code> has GitHub OAuth login built in.</li>
+</ul>
+</li>
+<li><strong>Drogon (not built-in)</strong>: The entire <code>drogon-master</code> repository contains no JWT or OAuth implementation files (<code>lib/</code> only has incidental Bearer header mentions in <code>HttpResponse.h</code> and <code>HttpHeaderTest.cc</code>, not a real implementation). For JWT you'll need a third-party library (e.g. <code>jwt-cpp</code>) or a community plugin; an OAuth 2.0 server/client has to be built yourself or wired to an external service (there is a community <code>drogon-oauth</code> among others).</li>
+</ul>
+<h3>6.8 Session Management</h3>
+<ul>
+<li><strong>Paozhu (built-in, weak-typed)</strong>: <code>httppeer</code> directly holds <code>http::obj_val session</code> (<code>httppeer.h:228</code>) — the same JSON micro-object, naturally nested, weak-typed. Lifecycle methods <code>parse_session()</code>/<code>save_session()</code>/<code>clear_session()</code>/<code>get_session_id()</code>. <strong>Two persistence modes</strong> — file storage <code>save_session_file</code>/<code>parse_session_file</code> + memory storage <code>save_session_memory</code>/<code>parse_session_memory</code>. <strong>Automatic SameSite handling</strong> — <code>session_samesite()</code>: when the site has <code>cors_credentials</code> configured and the current request is HTTPS, auto-sets <code>&quot;None&quot;</code>; otherwise empty string (attribute omitted).</li>
+<li><strong>Drogon (built-in, strong-typed)</strong>: <code>Session</code> class (<code>lib/inc/drogon/Session.h</code>, <code>map&lt;string, std::any&gt;</code> + mutex) with lifecycle managed by framework-level <code>SessionManager</code>, configurable timeouts. <code>any</code> + <code>any_cast&lt;T&gt;</code> strong-typed access — safer than Paozhu's <code>obj_val</code> but heavier. SameSite needs manual configuration.</li>
+</ul>
+<h3>6.9 HTTP Client</h3>
+<ul>
+<li><strong>Paozhu (built-in, full-coroutine style)</strong>: <code>httpclient</code> + <code>http_websocket_client.h</code> client, sync and coroutine (<code>asio::awaitable</code>) dual form — <code>co_await httpclient(peer, &quot;GET https://...&quot;)</code> directly returns the response. Supports <code>add_client_task_loop</code> for <code>client_context</code> to manage lifecycle. Example <code>controller/src/testcowaitclient.cpp</code> demonstrates coroutine HTTP client. <strong>No HTTP/1.1 pipeline client</strong> — but HTTP/2 multiplexing interlaces requests and responses on a single connection, equivalent and more thorough (head-of-line blocking solved natively). Paozhu also supports <strong>h2c (plaintext HTTP/2)</strong>, so internal microservice calls and proxy forwarding get the same multiplexing benefit without any TLS negotiation overhead. Most modern scenarios negotiate HTTP/2 and don't need pipeline.</li>
+<li><strong>Drogon (built-in, four forms + HTTP/1.1 pipeline client)</strong>: <code>HttpClient.h</code> + <code>HttpClientImpl.cc</code>, sync/callback/future three forms + coroutine <code>Task</code> overlay. <strong>Exclusive HTTP/1.1 pipeline client</strong> — <code>setPipeliningDepth()</code> batch sends on a single HTTP/1.1 connection, <code>pipeliningCallbacks_</code> queue calls back in order (<code>HttpClientImpl.h:62/185</code>). Complete tests in <code>examples/client_example/</code> and <code>tests/integration_test/client/</code>. This capability only works on HTTP/1.1 connections; TCP head-of-line blocking remains.</li>
+</ul>
+<h3>6.10 Monitoring &amp; Observability</h3>
+<ul>
+<li><strong>Paozhu (base built-in + business-layer extensibility)</strong>: Core framework provides <strong>basic self-check capability</strong>: <code>controller/src/serverwatch.cpp</code> registers a <code>paozhu_status</code> route (returns version, current online connection count <code>total_count</code>, coroutine pool <code>clientrunpool</code> thread status); <code>frametasks_timeloop</code> is the framework-level interval task registration point (router triggers it periodically by <code>run_timeloop</code> chain name). Access log is embedded in server.cpp (<code>access_loglist</code> + <code>httpwatch_flush_access_log</code>). However, <strong>no Prometheus-style Collector/Registry/Counter/Gauge/Histogram abstraction</strong> — if Prometheus metrics are needed, business layer must instrument with prometheus-cpp (<code>docs/qiyedev.txt</code> mentions this).</li>
+<li><strong>Drogon (built-in complete Prometheus system)</strong>: <code>lib/inc/drogon/utils/monitoring/</code> — full <code>Collector</code>/<code>Counter</code>/<code>Gauge</code>/<code>Histogram</code>/<code>Metric</code>/<code>Registry</code> abstraction + <code>PromExporter</code> plugin (<code>plugins/PromExporter.h</code>). Enable with JSON config, default exposes <code>/metrics</code> endpoint, configurable collectors + labels (e.g. <code>http_requests_total{method, status}</code>); <code>version.cc</code> explicitly lists Prometheus-related dependencies. Production observability ready out of the box.</li>
+</ul>
+<h3>6.11 Timers &amp; Scheduled Tasks</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (trantor EventLoop Timer)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Underlying mechanism</td>
+<td><strong>Frame-driven</strong>: <code>fps</code> counter in server.cpp main loop (<code>server.cpp:7656</code> <code>clientloop_ticks += 1</code>), triggers when <code>fps % timeloop_num == 0</code></td>
+<td><strong>timerfd + min-heap</strong> (<code>trantor/net/inner/TimerQueue.h</code>), kernel-level high-precision timer</td>
+</tr>
+<tr>
+<td>Registration</td>
+<td>Business layer <strong>zero-boilerplate plug-in</strong>: controller writes <code>//@urlpath(null, taskname)</code> annotation → auto-registers as both route AND scheduled task target. Any handler (URL-triggered, pre hook, startup init) just calls <code>peer-&gt;add_timeloop_task(&quot;taskname&quot;, interval_ticks)</code> + returns <code>&quot;@timeloop&quot;</code></td>
+<td><code>EventLoop::runAt(Date)</code> / <code>runAfter(delay)</code> / <code>runEvery(interval)</code> — <strong>framework does NOT provide auto-mapping from interval tasks to route handlers</strong>. Business code must fetch an EventLoop + manage callback lifecycle itself</td>
+</tr>
+<tr>
+<td>Task carrier</td>
+<td>Route handler (controller function); on trigger goes through <code>router.run_timeloop_task()</code> → <code>call_sync_regfun(taskname)</code> — <strong>shares the same registration system as HTTP routes</strong>. But only accepts <strong>sync annotation functions</strong> (<code>fn_kind::sync</code>); coroutine handlers are skipped (timeloop runs in a sync thread pool, no strand available for <code>co_spawn</code>)</td>
+<td><code>std::function&lt;void()&gt;</code> — any callback</td>
+</tr>
+<tr>
+<td>Business-layer plug-in cost</td>
+<td><strong>Extremely low</strong>: add a scheduled task = write one <strong>sync</strong> controller function + one arm route. Remove scheduled task = delete controller file, task table auto-clears. <strong>All sync functions registered via <code>//@urlpath</code></strong> can be called by timeloop (name match only)</td>
+<td><strong>Higher</strong>: fetch EventLoop → write lambda → manage TimerId → lifecycle bound to EventLoop. <strong>No controller annotation auto-registration</strong></td>
+</tr>
+<tr>
+<td>Running thread</td>
+<td><strong><code>clientrunpool</code> thread pool</strong> (sync-only, explained in §3.3)</td>
+<td><strong>EventLoop's owning I/O thread</strong> (single-thread serial, no cross-thread return issue)</td>
+</tr>
+<tr>
+<td>Time precision</td>
+<td>Depends on server main loop frame rate (~ms typical)</td>
+<td>Sub-millisecond (timerfd)</td>
+</tr>
+<tr>
+<td>Periodic scheduling</td>
+<td>✅ Trigger every N ticks</td>
+<td>✅ <code>runEvery(interval)</code> every interval seconds</td>
+</tr>
+<tr>
+<td>One-shot task</td>
+<td>✅ Implemented via <strong>counting</strong>: <code>timecount_num</code> starts at 1, handler calls <code>peer-&gt;add_timeloop_count()</code> to accumulate. After N calls, <code>add_timeloop_count(0)</code> clears → next tick server finds <code>timecount_num==0</code> and auto-removes the task</td>
+<td>✅ <code>runAfter(delay)</code> run once with auto-removal (framework-managed)</td>
+</tr>
+<tr>
+<td>Specified time point</td>
+<td>❌ No</td>
+<td>✅ <code>runAt(Date)</code> trigger at a specific absolute time</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td><code>clear_timeloop_task()</code> sets <code>timeloop_num=0</code></td>
+<td><code>cancel(TimerId)</code></td>
+</tr>
+<tr>
+<td>Single-flight protection</td>
+<td>✅ <code>timeloop_inflight</code> atomic CAS: if still running from last tick, skip current tick — <strong>no backlog accumulation</strong></td>
+<td>Callbacks are responsible for their own idempotency; TimerQueue itself does NOT enforce single-flight</td>
+</tr>
+<tr>
+<td>Cron expressions</td>
+<td>❌ No</td>
+<td>❌ No</td>
+</tr>
+<tr>
+<td>Cross-EventLoop</td>
+<td><strong>Globally unified scheduling</strong> (main loop's single fps counter drives all tasks)</td>
+<td>Each EventLoop has its own independent TimerQueue; cross-thread coordination must be done manually</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Paozhu timeloop workflow</strong> (using <code>frametasks_timeloop</code> as example):</p>
+<pre><code>1. Business code calls httppeer.add_timeloop_task(&quot;frametasks_timeloop&quot;, 100)
+   → peer.linktype = 7, timeloop_num = 100
+2. server.cpp main loop: fps++ every frame
+3. When fps % 100 == 0 AND timeloop_inflight == false:
+   → CAS sets timeloop_inflight
+   → Dispatches to clientrunpool thread pool (linktype==7 → timetasks_run)
+4. Inside thread pool (threadpool.cpp:603):
+   → router.run_timeloop_task(peer, &quot;frametasks_timeloop&quot;)
+   → call_sync_regfun finds the controller function with the same name (registered at serverwatch.cpp:67)
+   → After execution, inflight_release() resets timeloop_inflight
+</code></pre>
+<p><strong>Drogon EventLoop Timer usage</strong>:</p>
+<pre><code class="language-cpp">auto loop = drogon::app().getMainEventLoop();
+// Run every 5 seconds
+auto tid = loop-&gt;runEvery(5.0, [] { doSomething(); });
+// Cancel
+loop-&gt;cancel(tid);
+</code></pre>
+<p><strong>Summary</strong>: Neither supports cron expressions; both are interval-based timers. But <strong>business-layer plug-in cost is drastically different</strong>. Paozhu binds scheduled tasks to route handlers + thread-pool execution, fully integrated with the framework routing system — write a sync controller function annotated with <code>//@urlpath(null, taskname)</code>, plus an arm route (URL trigger or startup-time registration), and the task is into the scheduler; deleting the controller file auto-clears the task table. <strong>Zero boilerplate, zero framework-API learning cost, routes and tasks share one registration</strong>. But it only accepts <strong>sync annotation functions</strong> (<code>fn_kind::sync</code>); coroutine handlers are skipped (timeloop runs in a sync thread pool, no strand to <code>co_spawn</code> on). Drogon is a <strong>low-level EventLoop primitive</strong> (higher precision, richer API — <code>runAt</code>/<code>runAfter</code>), but interval-task→business-handler mapping, EventLoop ownership, TimerId lifecycle all must be handled by business code itself, with no controller annotation auto-registration.</p>
+<h3>6.12 Summary Table</h3>
+<table>
+<thead>
+<tr>
+<th>Protocol / Middleware</th>
+<th>Paozhu</th>
+<th>Drogon (drogon-master 1.9.14)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WebSocket</td>
+<td><strong>Built-in</strong> server + client</td>
+<td><strong>Built-in</strong> server + client</td>
+</tr>
+<tr>
+<td>Redis</td>
+<td><strong>Built-in</strong> (<code>pzredis</code>, self-implemented RESP, per-section pool, sync/async)</td>
+<td><strong>Built-in</strong> (<code>nosql_lib/redis</code>, based on hiredis)</td>
+</tr>
+<tr>
+<td>MQTT</td>
+<td><strong>Built-in broker + client</strong> (MQTT5, retained / shared subscriptions)</td>
+<td><strong>None</strong> (third-party plugin required)</td>
+</tr>
+<tr>
+<td>RPC</td>
+<td><strong>Built-in</strong> custom <code>rpc</code> protocol (<code>rpc_parse</code> / <code>http_rpcclient</code>)</td>
+<td><strong>No built-in</strong> (no protobuf/thrift/gRPC)</td>
+</tr>
+<tr>
+<td>Raw Socket / TCP</td>
+<td><strong>Built-in</strong> (<code>http_socket</code> + <code>sock_subpub_reg</code>)</td>
+<td><strong>None</strong> (only HTTP <code>addListener</code>; raw TCP needs self-managed trantor/asio)</td>
+</tr>
+<tr>
+<td>JWT</td>
+<td><strong>Built-in</strong> (<code>jwt.cpp</code>, HS256/RS256/ES256, OpenSSL3, self-implemented with security orientation)</td>
+<td><strong>No built-in</strong> (third-party lib like <code>jwt-cpp</code> / community plugin required)</td>
+</tr>
+<tr>
+<td>OAuth 2.0 / OIDC</td>
+<td><strong>Built-in</strong> authorization server + client (full endpoints + ORM models + GitHub integration)</td>
+<td><strong>No built-in</strong> (self-implementation / community plugin required)</td>
+</tr>
+<tr>
+<td>Session</td>
+<td><strong>Built-in</strong> (<code>httppeer.session</code> is <code>obj_val</code>, weak-typed, file/memory dual storage, automatic SameSite)</td>
+<td><strong>Built-in</strong> (<code>Session</code> class + <code>SessionManager</code>, strong-typed <code>std::any</code>, manual SameSite config)</td>
+</tr>
+<tr>
+<td>HTTP Client</td>
+<td><strong>Built-in</strong> (sync/coroutine dual form; no HTTP/1.1 pipeline client, but HTTP/2 multiplexing covers concurrent scenarios)</td>
+<td><strong>Built-in</strong> (sync/callback/future/coroutine four forms + HTTP/1.1 pipeline client <code>setPipeliningDepth</code>, HTTP/1.1 only)</td>
+</tr>
+<tr>
+<td>Monitoring / Prometheus</td>
+<td><strong>Basic built-in</strong>: <code>serverwatch.cpp</code> status route + Access log + interval task registration; no Collector/Registry abstraction; Prometheus metrics require business-layer instrumentation</td>
+<td><strong>Built-in complete system</strong> (<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> plugin, JSON config to enable)</td>
+</tr>
+<tr>
+<td>Scheduled tasks</td>
+<td><strong>Frame-driven</strong>: <code>add_timeloop_task(taskname, interval_ticks)</code> → route handler + <code>clientrunpool</code> thread pool. Globally unified scheduling, built-in single-flight protection. But precision limited by main loop frame rate, only &quot;every N ticks&quot;</td>
+<td><strong>EventLoop-level</strong>: <code>runAt</code>/<code>runAfter</code>/<code>runEvery</code> + timerfd. Precision sub-millisecond, supports absolute time point and one-shot. But each EventLoop has its own independent TimerQueue, no global scheduling</td>
+</tr>
+<tr>
+<td>Cross-protocol unified abstraction</td>
+<td><strong>Yes</strong>: ws/mqtt/socket/redis share <code>subpub</code> registration model</td>
+<td>None in framework layer (each capability independent). Business layer has <code>PubSubService&lt;&gt;</code> template tool</td>
+</tr>
+<tr>
+<td>RequestStream streaming request body</td>
+<td><strong>Partial</strong>: multipart upload auto-persists at 3MB threshold (memory protection) + HTTP client <code>save()</code> streaming file writes; but no handler-per-chunk-callback streaming API</td>
+<td><strong>Complete</strong>: <code>RequestStreamReader</code> + <code>MultipartStreamParser</code>, handler gets per-chunk callbacks</td>
+</tr>
+<tr>
+<td>Reverse proxy</td>
+<td><strong>None</strong> (self-implement via HTTP client)</td>
+<td><strong>Yes</strong> (framework-level <code>forward()</code> + plugin example <code>SimpleReverseProxy</code>)</td>
+</tr>
+<tr>
+<td>PostgreSQL LISTEN/NOTIFY</td>
+<td><strong>None</strong> (sync/coroutine queries only)</td>
+<td><strong>Yes</strong> (<code>DbListener</code>, event-driven, no polling)</td>
+</tr>
+<tr>
+<td>Resident outbound clients</td>
+<td><strong>Yes</strong>: four types — Redis subscription / WS / raw TCP / MQTT — all start on framework boot, lifecycle managed by <code>client_context</code>, self-check route <code>resident_stop</code></td>
+<td><strong>None</strong> (DbListener is DB-layer only; HttpClient is on-demand)</td>
+</tr>
+<tr>
+<td>Plugin system</td>
+<td><strong>No unified mechanism</strong> (AccessLog / static-file redirect embedded in server.cpp)</td>
+<td><strong>Complete AOP Advice</strong> (<code>registerSyncAdvice</code>/<code>registerPreHandlingCallback</code>/<code>registerPostHandlingCallback</code> + dependency topological sort)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Core difference</strong>: Paozhu is &quot;<strong>multi-protocol + built-in identity stack + resident outbound</strong>&quot; — one framework is simultaneously HTTP/2, WebSocket, MQTT(broker), Redis, RPC, raw Socket server, with built-in JWT + OAuth 2.0/OIDC authorization server, plus Session, HTTP client, and <strong>four resident outbound clients</strong> (Redis subscription / WS / TCP / MQTT). But <strong>monitoring needs business-layer integration</strong>, no HTTP pipeline, no handler-per-chunk-callback streaming request body (only parser-layer auto-persist memory protection), no reverse proxy, no LISTEN/NOTIFY. Drogon is a &quot;<strong>production-grade Web framework focused on HTTP</strong>&quot; — WebSocket and Redis are first-class citizens, HTTP client is stronger (with pipeline), Session/monitoring/Prometheus/RequestStream/reverse proxy/DbListener are all built-in, with a unified plugin system. But JWT/OAuth/MQTT/RPC/TCP/resident outbound are delegated to external libraries or self-implementation — the framework itself doesn't build them in.</p>
+<h3>6.13 Drogon-Exclusive HTTP Enhancements (Items marked as Drogon-only in §6.12 table)</h3>
+<p>The following capabilities are <strong>directly provided</strong> by Drogon's framework layer, with no equivalent API in Paozhu:</p>
+<p><strong>RequestStream streaming request body</strong> (<code>RequestStream.h</code> + <code>MultipartStreamParser.h</code>): per-chunk callbacks; handler doesn't wait for the entire body to arrive before processing. Multipart stream parser decomposes while receiving. Enable with <code>enableRequestStream(true)</code>; handler receives <code>RequestStreamPtr</code>. Official example <code>examples/async_stream/RequestStreamExampleCtrl.cc</code>.</p>
+<blockquote>
+<p><strong>Note: Paozhu also has large-file memory protection, but by a different mechanism</strong>. Multipart uploads have <strong>auto-persist at 3MB threshold</strong> (<code>http_parse.cpp</code>: opens <code>fp</code> when threshold exceeded, then <code>post_multipart_itemcontent_append()</code> flushes accumulated blocks via <code>fwrite</code>). HTTP client has <code>save(path)</code> → <code>respreadtofile()</code> streaming file-write interface. Neither accumulates large files in memory, but <strong>Paozhu doesn't have Drogon's framework-level &quot;handler gets per-chunk callbacks&quot; streaming API</strong>: Paozhu's parser layer auto-persists to disk, business handlers receive paths to already-persisted temp files (<code>httppeer::upload_file.tempfile</code>), business code never sees the byte stream itself.</p>
+</blockquote>
+<p><strong>Reverse proxy / <code>forward()</code></strong> (<code>HttpAppFramework.h:732-764</code>): framework-level built-in reverse proxy. <code>forward(req, targetHost)</code> forwards requests to a specified backend. Plugin example <code>examples/simple_reverse_proxy/</code> uses <code>IOThreadStorage&lt;vector&lt;HttpClientPtr&gt;&gt;</code> as a connection pool, isolated per EventLoop for lock-freedom.</p>
+<p><strong>DbListener — PostgreSQL LISTEN/NOTIFY</strong> (<code>DbListener.h</code>): based on PostgreSQL native LISTEN/NOTIFY, event-driven, no polling. <code>DbListener::newPgListener(connectionInfo)</code> → <code>listen(chan, cb)</code> / <code>unlisten(chan)</code>. Complete <code>db_listener_test.cc</code>.</p>
+<p><strong>Plugin system (AOP Advice)</strong>: unified framework plugin mechanism, three hooks <code>registerSyncAdvice</code> / <code>registerPreHandlingCallback</code> / <code>registerPostHandlingCallback</code>. Redirector, SlashRemover, AccessLogger, GlobalFilters, PromExporter, Hodor all go through this system; plugins can declare dependencies, startup order auto-topologically sorted.</p>
+<h3>6.14 Paozhu-Exclusive Resident Outbound Clients (Items marked as Paozhu-only in §6.12 table)</h3>
+<p>At framework boot, <strong>four types of resident outbound clients</strong> can be spun up, sharing the same coroutine pool as HTTP handlers, for cross-process reporting / subscription:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Enable macro</th>
+<th>Registration container</th>
+<th>Typical use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Redis subscription resident</strong></td>
+<td><code>ENABLE_REDIS_CLIENT</code></td>
+<td><code>server.redis_subpub_tasks</code></td>
+<td>Subscribe to Redis channels, receive messages from other services</td>
+</tr>
+<tr>
+<td><strong>WebSocket outbound resident</strong></td>
+<td><code>ENABLE_WEBSOCKETS_CLIENT</code></td>
+<td><code>server.ws_subpub_tasks</code></td>
+<td>Connect to another WS service for reporting / two-way subscription</td>
+</tr>
+<tr>
+<td><strong>Raw TCP outbound resident</strong></td>
+<td><code>ENABLE_SOCKETS_CLIENT</code></td>
+<td><code>server.sockets_clients</code></td>
+<td>Connect to arbitrary TCP services (e.g. private protocol push)</td>
+</tr>
+<tr>
+<td><strong>MQTT outbound resident</strong></td>
+<td><code>ENABLE_MQTT_CLIENT</code></td>
+<td><code>server.mqtt_clients</code></td>
+<td>Connect to external MQTT broker for device reporting</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Unified management infrastructure</strong>:</p>
+<ul>
+<li><strong><code>client_context</code></strong> (<code>client_context.h/cpp</code>) — manages resident client lifecycle, auto-shuts down underlying connection on timeout, wakes blocked <code>poll/recv</code> (prevents zombie coroutines).</li>
+<li><strong><code>resident_stop</code> self-check route</strong> (<code>resident_stop.cpp</code>) — GET <code>/resident_stop?kind=redis|ws|sock|mqtt&amp;name=&lt;conf_section&gt;</code>: calls <code>stop()</code> then waits for connection handles to clear, verifying resident coroutines exit correctly.</li>
+<li><strong>Framework-level coroutine registration point</strong> — business code calls <code>add_client_task_loop(peer)</code> at initialization time to hand resident coroutines over to <code>client_context</code>; no need to write heartbeats/reconnect loops yourself.</li>
+<li><strong>Integrated with subpub</strong> — all four resident client types share the <code>subpub_reg</code> model from §6.6, naturally interoperating with WS/MQTT/Socket servers inside the framework.</li>
+</ul>
+<p><strong>Drogon comparison</strong>: No framework-level resident client registration system. <code>DbListener</code> (PostgreSQL LISTEN/NOTIFY) is DB-layer only; <code>HttpClient</code> is on-demand — neither is a &quot;process-boot-spun, long-lived outbound long connection&quot;.</p>
+<hr />
+<h2>7. Controllers &amp; Code Generation</h2>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (this tree)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Code generator</td>
+<td>Build-time <code>paozhu_pre</code> (CMake target <code>paozhu_codegen</code>, <code>CMakeLists.txt:466-492</code>), scans <code>controller/src</code></td>
+<td><code>drogon_ctl</code> CLI tool</td>
+</tr>
+<tr>
+<td>Input</td>
+<td><code>//@urlpath(pre,urlpath)</code> annotations in <code>controller/src/*.cpp</code></td>
+<td>Manual / semi-automated skeleton generation via CLI</td>
+</tr>
+<tr>
+<td>Incremental</td>
+<td><code>cache/method_notes.data</code> (md5+mtime) skips unchanged files (<code>autopickmethod.cpp:170-288</code>)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Generated artifacts</td>
+<td><code>controller/include/&lt;name&gt;.h</code> (forward declarations) + <code>common/autocontrolmethod.hpp</code> (<code>reg_raw</code> route table)</td>
+<td><code>create_controller</code> skeleton; <code>create_view</code> compiles <code>.csp</code> → <code>DrTemplate</code> subclass</td>
+</tr>
+<tr>
+<td>Template engine</td>
+<td><code>view/</code> HTML compiled into <code>viewsrc/</code> C++ source (<code>viewsrc/view/</code>)</td>
+<td><strong>CSP</strong> (C++ Server Pages): <code>.csp</code> compiles into <code>DrTemplateBase</code> subclass <code>genText()</code></td>
+</tr>
+<tr>
+<td>View mechanism</td>
+<td><code>view()</code> / <code>theme_view()</code> (multi-theme prefix)</td>
+<td><code>DrTemplate&lt;ClassName&gt;</code> + <code>newTemplate()</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key differences</strong>:</p>
+<ul>
+<li>Paozhu's codegen is <strong>part of the build pipeline</strong> (auto-runs before each main-program compile, forces route table refresh). Drogon's <code>drogon_ctl</code> is a <strong>manually-executed CLI</strong> — artifacts persist in the repo.</li>
+<li>Views: Paozhu self-developed HTML→C++ compilation; Drogon uses CSP (C++ inline templates). Both share the philosophy of &quot;template compiled into binary&quot;, but syntax and mechanism differ.</li>
+</ul>
+<h3>7.1 Minimal Working Examples (Annotation Functions vs. Registration Macros)</h3>
+<p><strong>Paozhu — Annotation functions (from <code>controller/src/testrand.cpp</code>, real minimal form)</strong>:</p>
+<pre><code class="language-cpp">#include &quot;httppeer.h&quot;
+namespace http
+{
+//@urlpath(null,testrand)        // site(null = global slot) + URL path; no pre-filter
+std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    httppeer &amp;client = peer-&gt;get_peer();
+    client &lt;&lt; &quot;&lt;p&gt;Random number: &quot; &lt;&lt; rand_range(100, 999) &lt;&lt; &quot;&lt;/p&gt;&quot;;
+    return &quot;&quot;;   // empty string = normal completion / pass; non-empty = jump or terminate
+}
+}//namespace http
+</code></pre>
+<ul>
+<li>Signature <code>std::string handler(shared_ptr&lt;httppeer&gt;)</code> registers as <strong>sync handler</strong> (<code>reg_sync</code> slot in <code>reg_raw</code>); returning <code>asio::awaitable&lt;std::string&gt;</code> falls into the <code>co_reg</code> coroutine slot — <strong>sync/coroutine determined by signature, no extra macro needed</strong>.</li>
+<li><code>paozhu_pre</code> scans <code>//@urlpath</code> at build time and auto-generates the <code>reg_raw</code> route table; developers write zero registration statements.</li>
+</ul>
+<p><strong>Drogon — Registration macro (HttpController + reflection, class name auto-derived to path)</strong>:</p>
+<pre><code class="language-cpp">class TestCtrl : public drogon::HttpController&lt;TestCtrl&gt;
+{
+  public:
+    METHOD_LIST_BEGIN
+    // Path &quot;/testrand&quot;, GET method, binds testrand method
+    ADD_METHOD_TO(TestCtrl::testrand, &quot;/testrand&quot;, Get);
+    METHOD_LIST_END
+
+    void testrand(const HttpRequestPtr &amp;req,
+                  std::function&lt;void(const HttpResponsePtr &amp;)&gt; &amp;&amp;cb) const
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp-&gt;setBody(&quot;&lt;p&gt;Random number&lt;/p&gt;&quot;);
+        cb(resp);   // callback-style return
+    }
+};
+</code></pre>
+<ul>
+<li>Methods live inside <code>HttpController&lt;Derived&gt;</code> subclasses. Static self-registration happens via <code>DrObject</code> reflection before <code>main</code>. Class name <code>TestCtrl</code> maps to <code>/testctrl</code> by default (can be explicitly overridden with <code>ADD_METHOD_TO</code>).</li>
+<li>The sync/async choice lives <strong>on the individual method form</strong> (callback / <code>std::future</code> / <code>CoroMapper</code>/<code>Task</code> coroutine), unlike Paozhu's &quot;signature is slot&quot;.</li>
+</ul>
+<blockquote>
+<p>One-liner: Paozhu is &quot;<strong>one <code>//@urlpath</code> annotation in business code completes registration</strong>&quot; — declarative, zero boilerplate. Drogon is &quot;<strong>declare routes inside the class with <code>METHOD_LIST_BEGIN/ADD_METHOD_TO</code> macros</strong>&quot; — macro reflection, requires inheriting from an <code>HttpController</code> base class.</p>
+</blockquote>
+<h3>7.2 Code Generation Engine (<code>vendor/httpcli</code>) vs. Database Migration Tools</h3>
+<p><strong>Clarification</strong>: Paozhu's <code>vendor/httpcli/</code> is <strong>not</strong> a database migration tool — it's the <strong>build-time codegen / ORM schema parsing engine</strong> (the implementation behind <code>paozhu_pre</code>, the CMake target <code>paozhu_codegen</code>), equivalent to Drogon's <code>drogon_ctl</code>. It does three things:</p>
+<ul>
+<li><strong>Controller method extraction</strong>: <code>autopickmethod.cpp</code> (<code>@dest controller method pick file</code>) scans <code>//@urlpath</code> annotations to generate the <code>reg_raw</code> route table; <code>autopickcontrolmethod.hpp</code> / <code>controllerparse.hpp</code> parse controllers.</li>
+<li><strong>SQL schema → ORM model</strong>: <code>dbtypes.hpp</code> (<code>parse_pg_ddl</code>/<code>parse_sqlite_ddl</code>/<code>parse_mysql_show_create</code>/<code>gen_ddl</code>) + <code>dbconvert.hpp</code>/<code>dbcreate.hpp</code>/<code>modelfun.hpp</code>, compiling <code>schema/&lt;tag&gt;/tables/*.sql</code> into <code>orm/*/include/*_opsql.h</code> and similar model headers.</li>
+<li><strong>Struct reflection / templates</strong>: <code>struct_reflectfile.cpp</code>, <code>templateparse.hpp</code>, <code>dbdump_all.hpp</code>/<code>dbdump_schema.hpp</code>/<code>dbschema_check.hpp</code> (the latter is a &quot;<code>schema/&lt;tag&gt;/tables/*.sql</code> management tool&quot; — validates SQL completeness, uses <code>gen_ddl()</code> to rewrite normalized SQL — <strong>manages schema files themselves, not runtime migration</strong>).</li>
+</ul>
+<p><strong>Migration tool comparison</strong>:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Paozhu (<code>httpcli</code> engine)</th>
+<th>Drogon (<code>drogon_ctl</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nature</td>
+<td>Build-time codegen: <strong>dual mode</strong> — live DB introspection (<code>modelfun.hpp</code> runs <code>SHOW CREATE TABLE</code> / PG table lists) or offline reading <code>schema/*.sql</code>. Both generate ORM models + controller extraction + struct reflection</td>
+<td>CLI: connects to <strong>live DB</strong> (<code>create_model</code>) → ORM models / generates controller/view/plugin skeletons</td>
+</tr>
+<tr>
+<td>Schema source</td>
+<td><strong>Dual mode</strong>: database-first (live DB introspection) + offline SQL files (handwritten or dumped from live DB)</td>
+<td><strong>Database-first</strong> (connects to live DB for <code>create_model</code>)</td>
+</tr>
+<tr>
+<td>Runtime migration (versioned up/down)</td>
+<td><strong>None</strong>; <code>dbschema_check</code> only validates/normalizes SQL files</td>
+<td><strong>None</strong>; <code>create_model</code> only reverse-generates models</td>
+</tr>
+<tr>
+<td>Equivalence</td>
+<td><code>httpcli</code> ≈ <code>drogon_ctl</code> (both codegen tools, <strong>neither is a migration tool</strong>)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Conclusion</strong>: Neither has <strong>Flyway/Liquibase-style versioned migration executors</strong>, and both support database-first (connect to live DB to reverse-generate models: Drogon <code>create_model</code>; Paozhu <code>modelfun.hpp</code> runs <code>SHOW CREATE TABLE</code> / PG table lists). The difference is Paozhu additionally supports <strong>pure offline</strong> <code>schema/*.sql</code> generation (CI-friendly, decoupled from DB), while Drogon's <code>create_model</code> must connect to a live DB. If you need a real DB migration pipeline, both need external tools or self-managed SQL scripts — this is the <strong>uncovered area</strong> in the &quot;full self-built stack&quot; engineering story.</p>
+</blockquote>
+<hr />
+<h2>8. C++20 Coroutines</h2>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (this tree)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Support</td>
+<td><strong>Full-stack coroutines</strong>: <code>asio::awaitable&lt;T&gt;</code> + <code>co_await</code> + <code>co_spawn(..., detached)</code> throughout server/router/httppeer/ORM/clients</td>
+<td><strong>Complete C++20 coroutines</strong>: <code>Task&lt;T&gt;</code> (<code>coroutine.h:160</code>), <code>AsyncTask</code>, <code>CallbackAwaiter</code>, <code>when_all</code>, <code>Mutex</code> coroutine lock</td>
+</tr>
+<tr>
+<td>Trigger points</td>
+<td>Per-connection <code>http1loop</code>/<code>http2loop</code> coroutines; router <code>co_resolve</code>; DB queries</td>
+<td>ORM <code>CoroMapper</code>; <code>co_future</code>/<code>sync_wait</code> bridging futures</td>
+</tr>
+<tr>
+<td>Positioning</td>
+<td>Coroutines are the <strong>primary paradigm</strong> (even ORM); callbacks are rare</td>
+<td>Coroutines are an <strong>optional paradigm</strong>; default is callbacks/future, coroutines are enhancement</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key difference</strong>: Paozhu makes coroutines the <strong>only first-class citizen</strong> (IO, business, DB all end-to-end awaitable). Drogon is a hybrid model: &quot;callbacks/future as base + coroutine overlay&quot;. Paozhu uses Asio's standard <code>co_await</code>; Drogon has self-developed <code>Task</code>/<code>Awaiter</code> system.</p>
+<hr />
+<h2>9. Multi-Tenant / Theme</h2>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (this tree)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mechanism</td>
+<td>Site slot model: <code>host_index → slot</code>, <code>_site_to_slot</code> maintains one slot per site. Directory namespaces via <code>split_domain_path</code></td>
+<td>Multiple apps / multiple controller groups; depends on <code>DrObject</code> naming</td>
+</tr>
+<tr>
+<td>Themes</td>
+<td><code>theme_view()</code> auto-adds <code>themes=</code> prefix; <code>get_theme()</code> (<code>httppeer.h</code>)</td>
+<td>No built-in equivalent to theme_view (requires self-implementation)</td>
+</tr>
+</tbody>
+</table>
+<p>Paozhu's multi-tenancy is <strong>framework-level built-in</strong> (domain → slot → route-table isolation + theme views). Drogon has no equivalent one-stop multi-tenant abstraction in this tree.</p>
+<hr />
+<h2>10. Dependencies &amp; Engineering</h2>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu</th>
+<th>Drogon (this tree)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Core third-party</td>
+<td><strong>Asio</strong> (can switch to boost::asio), <strong>OpenSSL 3</strong>; SQLite optionally links <code>SQLite::SQLite3</code> (<code>ENABLE_SQLITE=ON</code>); MySQL/PG have no library dependencies (self-implemented protocol)</td>
+<td><strong>trantor</strong> (self-developed net lib), OpenSSL / Botan (pluggable TLS)</td>
+</tr>
+<tr>
+<td>Build</td>
+<td>CMake, build-time codegen (<code>paozhu_pre</code>), <code>controller/include</code> auto-generated</td>
+<td>CMake, <code>drogon_ctl</code> external CLI generates</td>
+</tr>
+<tr>
+<td>Additional modules</td>
+<td><strong>Mostly self-built inside <code>vendor/</code> with zero external deps</strong>: <code>pzimage</code>(images) / <code>pzexcel</code>(Excel) / <code>pzword</code>(Word) / <code>webpdf</code>(PDF) / <code>pzcharts</code>(charts) / <code>sms</code>(SMS) / <code>webpay</code>(payments) / <code>pzzip</code>(compression) / <code>pzredis</code>(Redis client) / <code>httpcli</code>(codegen). Only SQLite links <code>sqlite3</code>; HTTP client optionally links <code>brotlienc/brotlidec</code> for brotli</td>
+<td><strong>Data-layer libs</strong>: <code>nosql_lib/redis</code> (Redis client, based on hiredis) + <code>orm_lib</code> (ORM, all MySQL/MariaDB/PG/SQLite link official client libs). Note: <code>nosql_lib/</code> in drogon-master only has <code>redis/</code> (no MongoDB/Cassandra etc.). Images/Excel/Word/PDF/charts/SMS/payments — <strong>none built-in</strong>, requires opencv / libxlsxwriter / libharu etc. external libs</td>
+</tr>
+<tr>
+<td>Parsers</td>
+<td>All self-built (HTTP1/HTTP2/HPACK — no third parties)</td>
+<td>Self-built HTTP1 parser; drogon-master has no HTTP/2</td>
+</tr>
+<tr>
+<td>Certificate automation (ACME / OCSP)</td>
+<td><strong>Built-in ACME client</strong>: <code>acme_client.cpp</code> + <code>acme_run.cpp</code> + <code>acme_config.cpp</code> auto-issue/renew, paired with <code>acme.conf</code>/<code>ocsp_intv_time</code>; <strong>OCSP stapling</strong> auto-refreshed by <code>ocsp_check.cpp</code></td>
+<td><strong>No built-in ACME client</strong> (only allows <code>uri_prefix: /.well-known/acme-challenge/</code> in static <code>location</code> config to serve HTTP-01 challenge files). <code>lib/</code> has no OCSP stapling implementation (<code>ocsp</code> in <code>BotanTLSProvider</code> is only the OCSP response received during client-side cert validation, not server-side stapling). Certificate issuance/renewal relies on external tools</td>
+</tr>
+<tr>
+<td>TLS backend</td>
+<td>OpenSSL 3 only</td>
+<td>OpenSSL / <strong>Botan</strong> — pluggable with conditional compilation</td>
+</tr>
+<tr>
+<td>Compression</td>
+<td><strong>Both gzip + brotli built-in</strong> (<code>gzip.h</code> / <code>https_brotli.h</code>; both follow §2.1 static-file compression cache strategy: first-request lazy compress to disk, zero CPU on hit)</td>
+<td><strong>Both gzip + brotli supported</strong> (gzip static-file lookup enabled by default; brotli via <code>USE_BROTLI</code> conditional compilation; both follow pre-compressed file lookup — framework reads but never writes)</td>
+</tr>
+<tr>
+<td>Process supervision</td>
+<td><strong>Framework-level self-protection + daemonize</strong>: ① <strong>Deadlock detection</strong> <code>httpwatch_check_deadlock()</code> — core mechanism is <strong>two counter equilibrium</strong>. Accept is an <strong>independent blocking thread</strong> (not running on <code>io_context</code>): SSL accept increments <code>total_http2_count</code>, HTTP accept increments <code>total_http1_count</code>; <code>sslhandshake</code> coroutine decrements <code>total_http2_count</code>, <code>clientpeerfun</code> coroutine decrements <code>total_http1_count</code> (increment/decrement should balance). A separate <code>total_count</code> (increment-only, cumulative connections that ever reached <code>clientpeerfun</code> since boot). When handler deadlocks, accept still happily accepts new connections (<code>total_httpX_count</code> keeps incrementing, but coroutines queue on the deadlocked strand and never get a chance to decrement) → <code>total_httpX_count &gt; 4</code> and <code>total_count</code> freezes → watchdog thread checks every 5 seconds. After 3 consecutive checks (15 seconds), <code>isstop=true</code> → active exit. <strong>Covers all deadlock scenarios</strong> (including partial stalls: both accepts run, one protocol's count keeps growing but never decrements); ② <strong>Load-threshold restart</strong> <code>httpwatch_check_restart_threshold()</code> (configurable time window, auto-exit when sustained over-threshold); ③ <strong>Watchdog thread exit <code>std::terminate()</code> protection</strong> (watchdog thread crashing also triggers restart); ④ External restart files (<code>restart_file</code> / <code>restart_ssl_file</code>); ⑤ <code>init_daemon.hpp</code> for daemonize (fork→setsid→close fds)</td>
+<td><strong>No framework-level self-protection</strong>: no deadlock detection, no periodic health checks, no watchdog thread exit <code>terminate</code>; relies on <code>drogon::app().quit()</code> / <code>shutdown()</code> for active shutdown; daemonize needs external tools</td>
+</tr>
+<tr>
+<td>External restart chain</td>
+<td>Framework <strong>actively exits</strong> (<code>isstop=true</code> → main loop break → process normal exit), paired with systemd <code>Restart=on-failure</code> / Docker <code>--restart=always</code> pulling up a new process — forming a complete closed loop: <strong>internal deadlock detection (within 15s) → auto-exit → external restart</strong></td>
+<td>No active deadlock-exit mechanism; process crashes/stalls are passively killed and restarted by systemd <code>WatchdogSec=</code> (typically 30s+) / Docker health check timeout</td>
+</tr>
+</tbody>
+</table>
+<h3>10.1 Wrap-Up: Zero-Third-Party Built-in &quot;Big Family&quot; (Paozhu Engineering Mainline)</h3>
+<p>Consolidating all self-built points from previous sections into one statement: <strong>Paozhu has extremely thin mandatory external dependencies (only Asio + OpenSSL 3)</strong>. On top of that, almost the entire stack is self-built — the only exception is SQLite (embedded DB, no independent wire protocol to self-implement, uses official sqlite3 C API, linked when <code>ENABLE_SQLITE=ON</code>). Drogon's core is also thin (trantor + OpenSSL/Botan), but <strong>capabilities are assembled from an ecosystem</strong>.</p>
+<p><strong>Paozhu self-built coverage (no corresponding third-party lib pulled in)</strong></p>
+<ul>
+<li>Transport/app protocols: HTTP/1.1, HTTP/2 (HPACK/ALPN/h2c), WebSocket, MQTT (incl. broker), Redis client, RPC, raw Socket — wire protocol/frame codecs all hand-written; no libwebsockets / mosquitto / hiredis / self-built RPC frameworks.</li>
+<li><strong>DB wire protocols</strong>: MySQL (caching_sha2_password handshake) + PostgreSQL (SCRAM-SHA-256 handshake) <strong>fully self-implemented</strong>, do not link <code>libmysqlclient</code>/<code>libpq</code> (SQLite using official sqlite3 C API is the natural choice for an embedded DB with no wire protocol to self-implement).</li>
+<li>Identity/security: JWT (<code>jwt.cpp</code>, HS256/RS256/ES256, OpenSSL3, security-oriented self-implementation) + OAuth 2.0/OIDC authorization server (<code>libs/oauth</code> + full endpoints in <code>controller/src/oauth</code> + GitHub integration) built-in and self-implemented — self-host SSO without Keycloak/Auth0 external IdP (§6.7).</li>
+<li>ORM generation <strong>dual mode</strong>: live DB introspection (<code>vendor/httpcli/modelfun.hpp</code> runs <code>SHOW CREATE TABLE</code> / PG table list, database-first) + offline read <code>schema/*.sql</code>, the latter decoupled from runtime DB, CI-friendly (§4.1/§7.2).</li>
+<li>Certificate automation: built-in ACME client + OCSP stapling (<code>acme_client.cpp</code>/<code>acme_run.cpp</code>/<code>ocsp_check.cpp</code>), no certbot etc. external tools needed.</li>
+<li>Rate limiting: connection-admission overload protection self-implemented (§5), not a plugin.</li>
+<li>Unified abstraction: ws/mqtt/socket/redis share <code>subpub</code> registration kernel (§6.6), the thread connecting this big family together.</li>
+</ul>
+<p><strong>Drogon comparison (thin core + ecosystem assembly)</strong></p>
+<ul>
+<li>Redis uses <strong>hiredis</strong>, DB drivers wrap <strong>libmysqlclient/libpq/sqlite3</strong>, rate limiting is the <strong>Hodor plugin</strong>, ACME depends on external tooling — and MQTT broker, RPC framework, raw Socket server are all absent.</li>
+<li>Tradeoff: focus on HTTP web framework, push &quot;protocol big family&quot; to ecosystem / external libraries, in exchange for maturity, documentation completeness, and pluggable TLS (Botan/OpenSSL).</li>
+</ul>
+<blockquote>
+<p>Costs and benefits come from the same source: Paozhu's &quot;self-built big family&quot; brings <strong>simpler deployment (fewer external libs to install)</strong>, capability consistency, zero protocol authorization/version entanglement — but enormous code size, self-implemented correctness risk, and a small ecosystem/community (see §11). Drogon takes &quot;HTTP depth + easy assembly&quot; as its engineering mainline.</p>
+</blockquote>
+<hr />
+<h2>11. Design Tradeoffs Summary</h2>
+<p><strong>Paozhu strengths</strong></p>
+<ul>
+<li><strong>Exclusive Asio third-party ecosystem</strong>: bottom layer uses standalone Asio with <code>asio::io_context</code> exposed at the bottom. Any Asio library (<code>asio-grpc</code>, <code>boost::beast</code>, <code>async_mqtt</code>, <code>boost::redis</code>, <code>quiche</code>/<code>nghttp2_asio</code>, etc.) can be dropped in directly, with <code>co_spawn</code>/<code>co_await</code> ready to use immediately. <strong>Drogon is completely unusable</strong> (trantor EventLoop is a muduo-branch self-build, not <code>asio::io_context</code>).</li>
+<li><strong>Zero-third-party built-in big family</strong>: HTTP/2 + MySQL/PG/SQLite wire protocols + MQTT(broker) + WebSocket + Redis(self-implemented RESP) + RPC + raw Socket + JWT + OAuth 2.0/OIDC authorization server + ACME/OCSP + webpay(payments) + webpdf/pzexcel/pzword/pzimage/pzcharts(document processing) — all self-built, only mandatory deps are Asio + OpenSSL; unified <code>subpub</code> kernel spanning multiple protocols. Simple deployment, no protocol library version entanglement.</li>
+<li><strong>Four resident outbound clients</strong> (Redis subscription / WS / raw TCP / MQTT), spun up on framework boot, lifecycle managed by <code>client_context</code>, naturally enabling cross-process reporting / subscription.</li>
+<li><strong>Framework-level self-protection</strong>: accept independent thread + handler-layer naturally isolated deadlock detection (two-counter equilibrium, within 15 seconds finds and actively exits, covers all deadlock scenarios — faster than systemd WatchdogSec=30s) + watchdog thread exit <code>std::terminate</code> + ORM connection health check (<code>orm_connect_mar_t</code>).</li>
+<li>Full-stack C++20 coroutine unified mental model + HTTP/2 built-in + multi-tenant/theme views + ORM dual-mode generation (live DB introspection / offline SQL) + build-time auto codegen force-refreshing routes.</li>
+</ul>
+<p><strong>Paozhu costs</strong></p>
+<ul>
+<li>Dual thread-pool architecture (<code>io_context</code> coroutine pool + <code>clientrunpool</code> business thread pool), massive dialect ORM headers (~450KB/dialect), enormous code size and maintenance surface.</li>
+<li>Framework's own community scale, documentation completeness, and <strong>framework-exclusive</strong> plugin count are far smaller than Drogon (but <strong>Asio third-party library ecosystem is exclusive</strong>, not constrained by this).</li>
+<li>Everything self-built (HTTP/1.1/HTTP/2/HPACK/routing/DB wire protocols), correctness must be borne alone.</li>
+</ul>
+<p><strong>Drogon strengths</strong></p>
+<ul>
+<li>Mature industrial-grade reactor model (multiple independent EventLoops, MPSC cross-thread, epoll/kqueue).</li>
+<li>Reflection macro registration + compile-time static self-registration, zero runtime scanning, auto-derived registration paths.</li>
+<li><strong>Exclusive HTTP enhancements</strong>: RequestStream streaming request body, reverse proxy <code>forward()</code>, PostgreSQL LISTEN/NOTIFY (DbListener), plugin system (AOP Advice + dependency topological sort), static-file pre-compression lookup, <strong>HTTP/1.1 pipeline and its client counterpart</strong> (HTTP/1.1 only; TCP head-of-line blocking remains — HTTP/2 multiplexing + h2c solves this completely).</li>
+<li>Prometheus monitoring complete built-in (<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> plugin, JSON config to enable).</li>
+<li>Rich ecosystem (CSP templates, nosql, plugin, filter, ORM three dialects, complete examples), active community, thorough documentation.</li>
+</ul>
+<p><strong>Drogon costs (measured in drogon-master)</strong></p>
+<ul>
+<li><strong>No HTTP/2 server implementation</strong> (<code>lib/</code> 1.9.14: <code>HttpServer.cc</code> only outputs <code>HTTP/1.1</code>, no <code>Http2Server</code>/ALPN registration).</li>
+<li><strong>No Asio ecosystem compatibility</strong>: EventLoop self-built, not <code>asio::io_context</code>. All Asio third-party libraries (<code>asio-grpc</code>, <code>boost::beast</code>, <code>async_mqtt</code>, etc.) cannot directly connect.</li>
+<li><strong>No framework-level big family</strong>: MQTT broker, RPC, raw Socket server, JWT, OAuth, ACME/OCSP, webpay, document processing, resident outbound clients — none built-in, all require self-extension.</li>
+<li><strong>No framework-level self-protection</strong>: no deadlock detection, no watchdog thread exit terminate, no active stall-exit mechanism — process crashes/stalls can only rely on systemd <code>WatchdogSec=</code> / Docker health check passive timeout kill+restart.</li>
+<li><strong>No framework-level connection health check</strong> (ORM zombie cleanup relies on DB server <code>wait_timeout</code>).</li>
+<li>Handlers default to running on the ioLoop thread; heavy business logic needs manual offload; ORM generation depends on live DB, offline/CI requires spinning up a DB.</li>
+</ul>
+<hr />
+<h2>12. Selection Guide</h2>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Need HTTP/2 server support</td>
+<td><strong>Paozhu</strong> (drogon-master ships no HTTP/2 server; Paozhu has it built-in)</td>
+</tr>
+<tr>
+<td>Prioritize mature ecosystem, docs, community, quick onboarding</td>
+<td><strong>Drogon</strong></td>
+</tr>
+<tr>
+<td>Full-stack coroutine async, unified mental model</td>
+<td><strong>Paozhu</strong> (coroutine as primary paradigm)</td>
+</tr>
+<tr>
+<td>Multi-tenant SaaS / themed sites</td>
+<td><strong>Paozhu</strong> (framework built-in)</td>
+</tr>
+<tr>
+<td>Offline CI / ORM generation without runtime DB</td>
+<td><strong>Paozhu</strong> (SQL schema generation)</td>
+</tr>
+<tr>
+<td>Classic Reactor + reflection macros + compile-time registration</td>
+<td><strong>Drogon</strong></td>
+</tr>
+<tr>
+<td>One-stop zero-dep big family (multi-protocol + self-managed certs + self-built DB protocol, install fewer external libs)</td>
+<td><strong>Paozhu</strong></td>
+</tr>
+<tr>
+<td>Built-in auth/SSO needed (JWT + OAuth 2.0/OIDC authorization server, avoid external IdP)</td>
+<td><strong>Paozhu</strong></td>
+</tr>
+<tr>
+<td>Need HTTP/1.1 pipeline (HTTP/1.1 connection only; Paozhu has no HTTP/1.1 pipeline, but <strong>HTTP/2 multiplexing + h2c (plaintext)</strong> covers concurrent scenarios both inside and outside the network — equivalent and more thorough)</td>
+<td><strong>Drogon</strong> (<code>HttpServer.cc</code> pipeline queue + <code>HttpClient</code> <code>setPipeliningDepth()</code>)</td>
+</tr>
+<tr>
+<td>Need built-in Prometheus monitoring</td>
+<td><strong>Drogon</strong> (<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> plugin, JSON config to enable)</td>
+</tr>
+<tr>
+<td>Need HTTP/1.1 pipeline client (HTTP/1.1 connection only; HTTP/2 multiplexing already covers concurrent requests)</td>
+<td><strong>Drogon</strong> (<code>HttpClientImpl.h:62</code> exclusive capability)</td>
+</tr>
+<tr>
+<td>Connection-level protection preference &quot;hard reject&quot; vs &quot;queued slow admission&quot;</td>
+<td><strong>Drogon</strong> (<code>HttpConnectionLimit</code> hard-reject type) vs <strong>Paozhu</strong> (queued admission type, gentler)</td>
+</tr>
+<tr>
+<td>Need RequestStream streaming request body / low-memory large-file upload</td>
+<td><strong>Drogon</strong> (<code>RequestStreamReader</code> + <code>MultipartStreamParser</code> per-chunk callback)</td>
+</tr>
+<tr>
+<td>Need PostgreSQL LISTEN/NOTIFY event-driven</td>
+<td><strong>Drogon</strong> (<code>DbListener</code>, event-driven, no polling)</td>
+</tr>
+<tr>
+<td>Need framework-level reverse proxy</td>
+<td><strong>Drogon</strong> (<code>forward()</code> + plugin example <code>SimpleReverseProxy</code>)</td>
+</tr>
+<tr>
+<td>Need unified plugin system (AOP Advice + dependency topological sort)</td>
+<td><strong>Drogon</strong> (<code>registerSyncAdvice</code>/<code>registerPreHandlingCallback</code>/<code>registerPostHandlingCallback</code>)</td>
+</tr>
+<tr>
+<td>Static-file compression cache preference</td>
+<td><strong>Paozhu</strong> (lazy auto-compress to disk + mtime-aware; source file updates auto-recompress, zero ops cost) vs <strong>Drogon</strong> (pre-compressed <code>.gz</code>/<code>.br</code> files created <strong>at deploy/build time</strong>; framework only reads, never writes, <strong>no source-file mtime awareness</strong> — when source files are updated, ops must also update <code>.gz</code>/<code>.br</code>; memory cache (default 5s) won't refresh before expiry either)</td>
+</tr>
+<tr>
+<td><strong>E-commerce development</strong> (payment module)</td>
+<td><strong>Paozhu</strong>: built-in <code>vendor/webpay/</code> (Alipay + WeChat Pay + Mini Program Pay, with signing/verification/callback handling, <code>ENABLE_WEBPAY</code> switch) + <code>libs/oauth/</code> (own OAuth 2.0 authorization server) + full-coroutine async handling of payment callback high concurrency. Drogon side needs to self-integrate third-party SDKs, no OAuth server built-in</td>
+</tr>
+<tr>
+<td><strong>Enterprise development</strong> (WebPDF / office document processing)</td>
+<td><strong>Paozhu</strong>: built-in <code>vendor/webpdf/</code> (HTML→PDF) + <code>vendor/pzexcel/</code>/<code>pzword/</code> (Excel/Word read/write) + <code>pzimage/</code> (image processing) + <code>pzcharts/</code> (charts) — <strong>zero external deps</strong>, CI/CD one-line compile. Drogon side needs separate libharu/libxlsxwriter/opencv etc., complex build chain</td>
+</tr>
+<tr>
+<td><strong>IoT development</strong> (MQTT module)</td>
+<td><strong>Paozhu</strong>: <strong>built-in MQTT broker + client</strong> (MQTT5, retained messages, shared subscriptions, <code>subpub_reg</code> unified dispatch) — ready to use, no need to deploy extra EMQX/Mosquitto. Drogon has zero MQTT code across the whole repo, needs third-party plugin or external broker</td>
+</tr>
+<tr>
+<td>Need HTTP/2 + large-module one-stop</td>
+<td><strong>Paozhu</strong> (HTTP/2 + MQTT broker + JWT + OAuth + ACME/OCSP + webpay/webpdf/pzexcel/pzword/pzredis, all built-in with zero deps)</td>
+</tr>
+<tr>
+<td><strong>Certificate automation, zero ops</strong> (ACME auto-issue/renew + OCSP stapling auto-refresh)</td>
+<td><strong>Paozhu</strong>: framework-built <code>acme_client.cpp</code>/<code>acme_run.cpp</code>/<code>ocsp_check.cpp</code>, configure <code>acme.conf</code>/<code>ocsp_intv_time</code> and it's fully automatic (daily scheduled OCSP renewal). <strong>Drogon has zero built-in</strong>: ACME requires certbot/lego/openssl scripts + cron + manual nginx stapling; OCSP stapling is zero code across the whole repo</td>
+</tr>
+<tr>
+<td><strong>Need Asio third-party library ecosystem compatibility</strong></td>
+<td><strong>Paozhu</strong> (directly uses standalone Asio, <code>asio::io_context</code> exposed at the bottom. Any Asio library — <code>asio-grpc</code> / <code>beast</code> / <code>async_mqtt</code> / <code>boost::redis</code> / <code>quiche</code> / <code>nghttp2_asio</code> etc. — can be dropped in directly, <code>co_spawn</code>/<code>co_await</code> ready to use). <strong>Drogon unavailable</strong> (EventLoop is trantor's self-built muduo branch, <code>epoll_wait</code> + <code>timerfd</code> + min-heap, <strong>not <code>asio::io_context</code></strong>, Asio ecosystem libraries cannot directly connect)</td>
+</tr>
+<tr>
+<td><strong>Framework-level self-protection (deadlock detection + active exit restart closed loop)</strong></td>
+<td><strong>Paozhu</strong> (accept independent thread + handler-layer naturally isolated detection mechanism, covers all deadlock scenarios, actively exits within 15 seconds; faster than systemd WatchdogSec=30s)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Appendix: Key Source Evidence Index</h3>
+<ul>
+<li><strong>Paozhu</strong>: <code>vendor/httpserver/src/server.cpp</code>, <code>include/client_session.h:56-108</code> (per-connection <code>asio::strand</code> serialization), <code>src/pool_step.cpp:79-117</code> + <code>include/pool_step.h</code> (dual-pool concurrency: <code>co_pool_run_step</code> / <code>run_one_step_with_peer</code> / peer chained shared ownership / <code>rejected=true</code> in-place completion to prevent deadlock), <code>include/router.h:79</code>, <code>include/httppeer.h:41</code>, <code>src/http2_parse.cpp</code>, <code>vendor/httpcli/autopickmethod.cpp</code>, <code>vendor/httpcli/modelfun.hpp</code> (ORM dual-mode generation: live DB introspection + offline SQL), <code>autopickcontrolmethod.hpp:411</code>, <code>conf/server.conf</code>, <code>vendor/httpserver/include/orm_cache.hpp</code> (<code>model_meta_cache</code> + <code>orm_cache_deadline</code> TTL clamping).</li>
+<li><strong>Drogon (drogon-master)</strong>: <code>trantor/trantor/net/EventLoop.h</code>, <code>net/TcpServer.cc:65</code>, <code>net/inner/poller/EpollPoller.cc</code>, <code>lib/src/HttpRequestParser.cc</code>, <code>lib/src/HttpControllersRouter.cc:626</code>, <code>lib/inc/drogon/HttpController.h:31</code>, <code>orm_lib/inc/drogon/orm/Mapper.h:115</code>, <code>lib/inc/drogon/utils/coroutine.h:160</code>, <code>drogon_ctl/create_model.cc</code>, <code>drogon_ctl/create_view.cc</code>.</li>
+</ul>
+
+        <p><a href="index.html">Back to main docs →</a></p>
+      </div>
+  </body>
+</html>

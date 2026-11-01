@@ -1,0 +1,1504 @@
+<!doctype html>
+<html lang="zh-CN" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Paozhu vs Drogon —— 系统设计对比</title>
+     <style>
+        /* Light mode */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.45em;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        blockquote {
+            border-left: 4px solid #ccc;
+            margin: 1em 0;
+            padding: 0.2em 1em;
+            color: #555;
+            background-color: #f9f9f9;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #ddd;
+            margin: 2em 0;
+        }
+        h1, h2, h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        ul, ol {
+            padding-left: 1.5em;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        code{
+            background-color: #EEE;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        blockquote {
+            color: #555;
+            background-color: #f9f9f9;
+        }
+        hr {
+            border-top-color: #ddd;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent;
+            border: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        code{
+            background-color: #333;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        blockquote {
+            color: #aaa;
+            background-color: #1a1a1a;
+        }
+        hr {
+            border-top-color: #444;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+
+        /* Table styling */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+        table th, table td {
+            border: 1px solid;
+            padding: 6px 10px;
+            text-align: left;
+        }
+        table th { font-weight: bold; }
+        @media (prefers-color-scheme: light) {
+            table th, table td { border-color: #bbb; }
+            table th { background-color: #eef; }
+            table tr:nth-child(even) td { background-color: #f7f7f7; }
+        }
+        @media (prefers-color-scheme: dark) {
+            table th, table td { border-color: #555; }
+            table th { background-color: #224; }
+            table tr:nth-child(even) td { background-color: #1a1a1a; }
+        }
+    </style>
+  </head>
+  <body>
+     <div class="container">
+
+<h1>Paozhu vs Drogon —— 系统设计对比</h1>
+<blockquote>
+<p>基于源码实测（<code>paozhu(https://github.com/hggq/paozhu)</code>, <code>drogon(https://github.com/drogonframework/drogon)</code>，均取 2026-10 最新源码目录）。
+源码目录分析：drogon-master 为 master 分支检出（2026-10 时点，版本头文件 <code>version.h.in</code> 定义 MAJOR/MINOR/PATCH，<code>version.cc</code> 输出 DROGON_VERSION + Git commit）。其 <code>lib/</code> 与 <code>trantor/</code> 中<strong>不含 HTTP/2 服务器实现</strong>（无 <code>Http2Server</code>/<code>Http2Connection</code>；<code>lib/src/HttpServer.cc</code> 仅输出 <code>HTTP/1.1</code>，无 <code>h2</code>/ALPN 注册；trantor 只有 TLS 层的 ALPN 能力桩）。paozhu 则内置 HTTP/2（<code>http2_parse.cpp</code> 等）。故下文对 drogon 的 HTTP/2 描述以「drogon-master 实际代码」为准——drogon 主线截至当前检出时点尚未内置 HTTP/2 服务器实现，paozhu 的 HTTP/2 是两者间的实际差异化能力。</p>
+</blockquote>
+<hr />
+<h2>0. 一句话定位</h2>
+<ul>
+<li><strong>Drogon</strong>：典型「muduo 风格」+ 反射宏注册 + 编译期代码生成，偏工业级、生态完整、上层 API 友好。</li>
+<li><strong>Paozhu（炮竹）</strong>：单 <code>io_context</code> + Asio C++20 协程贯穿全栈（连 ORM 查询都是协程），HTTP/1.1 与 HTTP/2 均自研，偏「全异步协程 + 多租户」。</li>
+</ul>
+<hr />
+<h2>1. 并发 / IO 模型（核心差异）</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（本仓）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>底层库</td>
+<td>standalone <strong>Asio</strong>（<code>#include &lt;asio.hpp&gt;</code>，<code>asio::io_context</code> 暴露到底层，<strong>兼容 Asio 庞大生态</strong>）</td>
+<td><strong>trantor</strong> 自研网络库（muduo 分支，<code>epoll_wait</code> + <code>timerfd</code> + 最小堆，<strong>非 <code>asio::io_context</code></strong>，Asio 生态库不可直接对接）</td>
+</tr>
+<tr>
+<td>事件循环拓扑</td>
+<td><strong>单一共享 <code>io_context</code></strong>，N 个 worker 线程各跑 <code>io_context.run()</code></td>
+<td><strong>每线程一个 EventLoop</strong>（one loop per thread，muduo 风格），多 <code>ioLoop</code> 并行</td>
+</tr>
+<tr>
+<td>连接分发</td>
+<td>连接挂在 <code>asio::strand</code>（<code>client_session.h:194</code>）保证协议次序</td>
+<td><code>TcpServer</code> 用 <code>nextLoopIdx_</code> <strong>轮询</strong>把新连接分给某个 ioLoop（<code>TcpServer.cc:65</code>）</td>
+</tr>
+<tr>
+<td>跨线程通信</td>
+<td>协程 <code>co_await</code> + strand 串行化</td>
+<td>无锁 <strong>MPSC 队列</strong> <code>funcs_</code> + <code>wakeupFd_</code>（<code>EventLoop.h:311-321</code>）</td>
+</tr>
+<tr>
+<td>业务线程</td>
+<td><strong>独立业务线程池</strong> <code>clientrunpool</code>（<code>server.h:487</code>，<code>hardware*2+2</code>，可动态扩缩），同步 handler 进池跑</td>
+<td>handler 默认跑在所属 ioLoop 线程，可手动 offload / 协程切线程</td>
+</tr>
+<tr>
+<td>线程配置</td>
+<td><code>cothreadnum</code>、<code>threadmax</code>（conf/server.conf）</td>
+<td><code>numThreads</code> / EventLoopThreadPool 大小</td>
+</tr>
+</tbody>
+</table>
+<p><strong>设计哲学差异</strong>：</p>
+<ul>
+<li>Drogon 的「多独立循环」更贴合 Reactor 经典模型，单连接全程绑定一个线程，无锁、缓存亲和好。</li>
+<li>Paozhu 的「单 io_context 多 worker」是 Asio 经典模型，协程帧在堆上、不占 io 线程；业务与 IO <strong>显式分层</strong>（io 协程 vs 业务 <code>clientrunpool</code>），<code>router::co_resolve</code> 会逐步派单：协程步就地 <code>co_await</code>，同步步进业务池（<code>server.cpp:2351</code> 注释）。</li>
+</ul>
+<hr />
+<h2>2. HTTP 协议层</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（本仓）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP/1.1</td>
+<td>自研解析 <code>http_parse.cpp</code>(122KB) + <code>request.cpp</code>/<code>httppeer.cpp</code>；<strong>无 HTTP/1.1 pipeline</strong>（请求-响应串行；但 HTTP/2 多路复用已覆盖此场景——现代客户端普遍协商 HTTP/2，且 Paozhu 支持 <strong>h2c 明文 HTTP/2</strong>，内网代理、微服务间调用无需 TLS 协商就能直接享多路复用，队头阻塞天然解决）</td>
+<td>自研状态机 <code>HttpRequestParser.cc</code>（<code>kExpectMethod</code>→…），<strong>完整支持 HTTP/1.1 pipeline</strong>（服务端 <code>pushResponseToPipelining</code>/<code>popReadyResponses</code> 按接收顺序排队响应，可配置 <code>pipeliningRequestsNumber</code> 最大深度；客户端 <code>setPipeliningDepth()</code> 批量发送；仅在 HTTP/1.1 连接下生效，TCP 队头阻塞仍在）</td>
+</tr>
+<tr>
+<td>HTTP/2</td>
+<td><strong>内置</strong>：<code>http2_parse.cpp</code>(192KB) + <code>http2_frame/huffman/ring_queue/send_queue</code>，含 <strong>HPACK</strong>、ALPN、h2c，<code>http2_enable=1</code></td>
+<td><strong>drogon-master 的 <code>lib/</code> 无 HTTP/2 服务器实现</strong>（无 <code>Http2Server</code>/<code>Http2Connection</code>；<code>HttpServer.cc</code> 仅输出 <code>HTTP/1.1</code>，无 <code>h2</code>/ALPN 注册）；trantor 仅含 TLS 层 ALPN 能力桩。</td>
+</tr>
+<tr>
+<td>请求/响应模型</td>
+<td><code>httppeer</code>（<code>httppeer.h:41</code>，<code>enable_shared_from_this</code>）持有 urlpath/get/post/output/session</td>
+<td>抽象类 <code>HttpRequest</code>/<code>HttpResponse</code> + <code>Impl</code>（<code>HttpRequestImpl</code>/<code>HttpResponseImpl</code>，<code>renderToBuffer</code> 序列化）</td>
+</tr>
+<tr>
+<td>注意点</td>
+<td><code>request.h</code> 实为内置 JSON 微对象 <code>obj_val</code>，<strong>不是</strong> HTTP 请求体</td>
+<td>通过 <code>HttpRequestPtr</code> 智能指针传递；<code>fromRequest&lt;T&gt;/toRequest&lt;T&gt;</code> 隐式转换</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>说明：<code>request.h</code> 命名易误导——paozhu 真正的 HTTP 请求模型是 <code>httppeer</code>。</p>
+</blockquote>
+<h3>2.1 静态文件服务 + 压缩缓存（两边都有，策略相反）</h3>
+<blockquote>
+<p>两者<strong>都不是</strong>&quot;每次请求实时压缩&quot;——首次之后都走缓存。但缓存策略方向完全相反：Paozhu 懒压缩自动落盘，Drogon 要求预压缩文件提前存在。</p>
+</blockquote>
+<p><strong>Paozhu —— 懒缓存 + 自动回收</strong>（<code>server.cpp:395-518</code>）：</p>
+<ul>
+<li><strong>首次请求时压缩</strong>：检测 Accept-Encoding → brotli / gzip → 临时文件 → <code>rename</code> 原子落盘（并发首访安全）。</li>
+<li><strong>缓存文件名</strong>：<code>{原路径}.{hash(host+&quot;\n&quot;+urlpath)}.br</code> 或 <code>.gzip</code>。后续请求命中直接 <code>fopen</code> 发送，零 CPU 开销。</li>
+<li><strong>大文件保护</strong>：<code>content_length &gt; 16MB</code> 跳过压缩（省内存）。</li>
+<li><strong>坏缓存防护</strong>：压缩失败时回退原文、不写缓存；检测到 0 字节缓存文件自动删除重生成。</li>
+<li><strong>缓存回收</strong>：大文件命中时推 <code>mtime</code>，后台按 <code>CONST_HTTP_STATIC_CACHE_REFRESH_AGE</code> 回收冷条目。</li>
+</ul>
+<p><strong>Drogon —— 预压缩文件查找</strong>（<code>config.example.json:296-301</code> + <code>StaticFileRouter.cc</code>）：</p>
+<ul>
+<li><strong>框架只读不写</strong>：<code>gzip_static: true</code>（默认）、<code>brotli_static: false</code>。请求到来时框架<strong>直接找同目录下预压缩好的 <code>.gz</code> / <code>.br</code> 文件</strong>，不存在就发原文。</li>
+<li>要求<strong>部署前用 <code>gzip -k</code> / <code>brotli</code> 预压缩</strong>静态资源，压缩缓存管理交给 CI/CD 流程，框架自身不负责压缩计算。</li>
+<li>额外：<code>IOThreadStorage</code> 隔离的静态文件内容缓存（<code>StaticFileRouter.h:150-153</code>，按 EventLoop 隔离免锁）。</li>
+</ul>
+<p><strong>差异本质</strong>：Paozhu 把压缩缓存做成<strong>框架内自动管理</strong>（懒压缩 + 原子落盘 + 坏缓存防护 + 回收），开发者零成本；Drogon 把压缩缓存做成<strong>部署阶段责任</strong>，框架只读不写，换取框架自身更轻。两者运行时性能等价（命中后都零 CPU），但首次访问路径和运维模型不同。</p>
+<hr />
+<h2>3. 路由系统（深度）</h2>
+<blockquote>
+<p>两者都是「声明式路由注册」，但机制分叉：Drogon 走<strong>编译期反射 + 宏 + 静态自注册</strong>；Paozhu 走<strong>源码注解 + 构建期 codegen 生成 <code>reg_raw</code> 表</strong>。此外 <strong>Paozhu 额外内置了基于 <code>httppeer::flow_method</code> 的简单任务编排</strong>（见 §3.4），Drogon 无对等机制。</p>
+</blockquote>
+<h3>3.1 注册方式与代码生成</h3>
+<p><strong>Paozhu</strong>（<code>controller/src/*.cpp</code> 写 <code>//@urlpath(pre,urlpath):mask</code>，构建期 <code>paozhu_pre</code> 扫描）：</p>
+<ul>
+<li>生成产物 <code>common/autocontrolmethod.hpp</code> 中是一张 <code>reg_raw</code> 调用表（<code>autocontrolmethod.hpp:127-141</code>）：<code>reg_raw(site, path, pre_sync, co_pre, reg_sync, co_reg, mask_code)</code>。每个路由登记 5 个槽位：同步 pre、<code>co_await</code> 版 pre、同步 handler、协程 handler、以及 <code>//@urlpath</code> 注解里的数字 <code>mask_code</code>（区分 HTTP method）。</li>
+<li>带 <code>:param</code> 段的路径紧随其后用 <code>reg_urlpath(site, path, {param_names...})</code> 单独登记参数名表（<code>autocontrolmethod.hpp:139-140</code>）。</li>
+<li>注册期还生成 <code>common/autorestfulpaths.hpp</code>、<code>common/reghttpmethod.hpp</code> 等辅助表。</li>
+</ul>
+<p><strong>Drogon</strong>（<code>HttpController.h</code> 宏，编译期）：</p>
+<ul>
+<li><code>METHOD_ADD(method, pattern, ...)</code> / <code>ADD_METHOD_TO(method, path, ...)</code>（<code>HttpController.h:31-34</code>）→ <code>registerMethod(&amp;method, pattern, {...}, ...)</code>；还支持 <code>ADD_METHOD_VIA_REGEX</code>（<code>:35</code>）写正则。</li>
+<li><strong>静态自注册</strong>：每个 controller 含 <code>class methodRegistrator</code> + <code>static methodRegistrator registrator_</code>（<code>HttpController.h:127-139</code>），构造函数里把方法名 + 参数包登记进框架——<strong>在 <code>main</code> 之前</strong>由 CRT 静态初始化完成，零运行时扫描。类名到路径的映射由 <code>DrClassMap::demangle(typeid(T).name())</code> 自动推导（<code>HttpBinder.h:235</code>），<code>::</code> 转 <code>/</code>。</li>
+</ul>
+<h3>3.2 匹配结构</h3>
+<p><strong>Paozhu</strong>：核心 <code>router</code> 类（<code>router.h:32</code>），运行时把 <code>reg_raw</code> 填进 <code>_handlers</code> / <code>_urlpath_map</code> / <code>_site_to_slot</code>（全局 slot 0，多租户见 §3.5）；<code>co_resolve(peer, known_idx)</code>（<code>router.h:79</code>）协程驱动整条匹配+pre+handler 链，并带 <code>route_exact_checked</code> 优化（<code>httppeer.h:298-299</code>，rpc/同步链跳过重复精确查找）。</p>
+<ul>
+<li>找不到精确匹配时<strong>前缀回退最多 6 段</strong>（<code>router.cpp</code> 两级查表：<code>lookup_exact</code> → <code>lookup_registered</code> → <code>lookup_key_in_slots</code>，<code>router.cpp:180-185</code>），未注册的跳转名在编排排空时被跳过（<code>router.cpp:350-363</code>）。</li>
+</ul>
+<p><strong>Drogon</strong>：<code>HttpControllersRouter</code> + <code>StaticFileRouter</code>。三套结构（<code>HttpControllersRouter.cc</code>）：</p>
+<ul>
+<li><code>simpleCtrlMap_</code>：无参数精确匹配（小写 key 的 <code>std::unordered_map</code>）。</li>
+<li><code>ctrlMap_</code>：带参数但<strong>结构固定</strong>的精确路由，<code>ctrlMap_.find(loweredPath)</code> 直接哈希命中（<code>HttpControllersRouter.cc:626</code>）。</li>
+<li><code>ctrlVector_</code>：含 <code>:param</code> / 正则的路由，编译期把 <code>{param}</code> 占位符换成 <code>([^/]*)</code>（<code>regex_replace</code>，<code>:564</code>），运行时 <code>std::regex_match</code> 线性匹配（<code>:635-640</code>）。</li>
+<li>每路由 <code>binders_[req-&gt;method()]</code> 按 <code>HttpMethod</code> 分桶；<code>initMiddlewaresAndCorsMethods</code> 自动注入中间件并开 <code>OPTIONS</code>/CORS（<code>:58/63/75</code>）。</li>
+</ul>
+<h3>3.3 预处理链（pre handler）与同步/协程混编</h3>
+<p><strong>Paozhu —— 每条路由拆成 4 个独立槽位，同步与协程是「路由层一等公民」</strong>：<code>reg_raw(site, path, pre_sync, co_pre, reg_sync, co_reg, mask_code)</code>（<code>common/autocontrolmethod.hpp</code>）把一条路由注册为 <strong>同步 pre / 协程 pre / 同步 handler / 协程 handler</strong> 四个独立入口。主驱动 <code>co_resolve</code>（<code>router.cpp:694</code>）<strong>透明交织</strong>二者：协程步就地 <code>co_await</code>（pre <code>co_await h.co_pre(peer)</code>；handler <code>co_await h.co_regfun(peer)</code>），同步步交给业务线程池执行。</p>
+<ul>
+<li><strong>同步/协程混编是内置能力</strong>：同一请求里「同步 pre 鉴权 → 协程 handler 查库」「协程 pre → 同步 handler」都可直接声明，框架按各入口的 <code>pre_kind</code>/<code>reg_kind</code> 自动分流，开发者无需自己切线程或包 <code>std::async</code>。这与 Drogon「handler 选一种形态、CoroMapper 是另一个类型」的设计<strong>思想不同</strong>——Paozhu 把「是否协程」下沉为每个注册入口的属性，而非整条 handler 的类型。</li>
+<li><strong>自带的 urlpath pre 拦截</strong>：每个路由的 <code>pre_sync</code>/<code>co_pre</code> 按声明顺序串成<strong>串行 pre 链</strong>；<code>classify_step()</code> 据返回值判定走向——<code>@ok</code>（放行）、同名（继续）、<code>@exit</code>（显式终止）、跳转名（<code>router.cpp:76-87</code>），首个非空即短路，空串是唯一放行信号（<code>router.cpp:458-461</code>）。此外还有<strong>站点级 pre/after hooks</strong>：<code>run_site_hooks</code>（同步 <code>:462</code>）与 <code>co_run_site_hooks</code>（协程 <code>:478</code>）批量跑 <code>action_pre_lists</code>/<code>action_after_lists</code>，超限时截断到前 <code>site_hook_limit</code> 条而非整条丢弃（避免鉴权静默失效）。</li>
+<li>flow 栈排空：编排栈排空时（<code>pop_flow_index</code>），若驱动是同步链却弹到协程条目则停止排空（<code>:364-368</code>），协程驱动则就地 <code>co_await</code> 继续（<code>:865-873</code>）。</li>
+</ul>
+<p><strong>Drogon</strong>：pre 逻辑由 <strong>Filters</strong>（<code>HttpFilter</code> + <code>ADD_FILTER_TO</code> / <code>GlobalFilters.cc</code>）与 <strong>Middlewares</strong>（<code>HttpMiddleware</code>，<code>MiddlewaresFunction.cc</code> + <code>HttpAppFramework.h:718</code>）承载，框架在 handler 前按 <code>path</code>/全局顺序执行，与路由表解耦、可复用、可排序。同步/异步的选择落在<strong>单个方法形态</strong>上（<code>binder</code> 的 Blocking/Callback/future 三态，或协程用独立的 <code>CoroMapper</code>），没有「一条路由同时声明同步 pre + 协程 handler」这种按入口拆分的混编槽位。</p>
+<h3>3.4 简单任务编排（Paozhu <code>flow_method</code>）—— 是，Paozhu 支持</h3>
+<p><strong>结论：是的，Paozhu 在 <code>httppeer</code> 上内置了简单任务编排</strong>，通过 <code>httppeer::flow_method</code> 实现「单请求内多 handler 顺序编排」。</p>
+<ul>
+<li>结构：<code>httppeer</code> 持有一个懒分配的栈 <code>std::unique_ptr&lt;std::list&lt;std::string&gt;&gt; flow_method</code>（<code>httppeer.h:300-301</code>）——存的是<strong>后续要执行的 handler 名</strong>。</li>
+<li>入栈 API（<code>httppeer.cpp:2135-2155</code>）：
+<ul>
+<li><code>push_next(name)</code>：<code>push_back</code>（<strong>栈顶，LIFO，后压先出</strong>）。</li>
+<li><code>push_last(name)</code>：<code>push_front</code>（<strong>栈底，FIFO，先压先出</strong>——顺序拆解的默认推荐）。</li>
+<li><code>push_steps({...})</code>：批量压入。</li>
+</ul>
+</li>
+<li>出栈/消费（<code>httppeer.cpp:2156-2169</code> <code>pop_flow()</code> 取 <code>back</code> 弹出；<code>router.cpp:340-368</code> <code>pop_flow_index</code>）：一个 handler <strong>正常完成（返回空串）后</strong>，路由器从栈弹下一个已注册 handler 名并接着执行；<strong>一个 handler 只弹一个</strong>，剩余等它自己「返回空串」再弹，直到栈空或整链触顶（<code>router.cpp:651-657</code> 同步链、<code>834-839</code> 协程链）。</li>
+<li>流程控制指令：<code>kFlowOk</code> / <code>kFlowExit</code>（显式终止、不弹栈）/ <code>kFlowTimeloop</code>（转事件循环）由 <code>classify_step</code> 解释（<code>router.cpp:76-87</code>）。</li>
+<li>健壮性：弹出未注册名时<strong>跳过继续弹下一个</strong>（不吞掉整条编排，<code>:350-363</code>）；协程条目压到同步链上按设计停下（<code>:364-368</code>）。</li>
+</ul>
+<blockquote>
+<p>这意味着一个请求可以「handler A → 压 B、C、D → A 返回空串后依次跑 B→C→D」，构成轻量<strong>顺序工作流 / pipeline</strong>。Drogon <strong>没有对等的内建机制</strong>：它的组合原语是 Filters/Middlewares（横切关注，非顺序步骤编排）与 handler 自身逻辑；若要在 Drogon 里串多个 handler，需 handler 内手动调用或重定向，框架层不提供编排栈。</p>
+</blockquote>
+<h3>3.5 多租户 / 站点 slot</h3>
+<p><strong>Paozhu</strong>：路由天然挂在<strong>站点 slot</strong> 上——<code>host_index → slot</code>，<code>_site_to_slot</code> 每站点一条 slot，路由表按 slot 隔离（<code>router.cpp:337</code> <code>find_name_in_slots(peer_slot(peer), ...)</code>）；<code>reg_raw</code> 第一个参数就是 <code>site</code>（域名，空串=全局 slot 0）。配合 §9 的主题视图，是框架级多租户。
+<strong>Drogon</strong>：路由本身不带租户概念；多租户靠「多 app / 多 controller 分组 + <code>DrObject</code> 命名」在业务层实现，无一站式 slot 隔离。</p>
+<h3>3.6 小结对照表</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（drogon-master 1.9.14）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>注册机制</td>
+<td>源码 <code>//@urlpath</code> 注解 + 构建期 codegen 生成 <code>reg_raw</code> 表</td>
+<td>反射宏 <code>METHOD_ADD</code>/<code>ADD_METHOD_TO</code> + 静态自注册（<code>methodRegistrator</code>，<code>main</code> 前）</td>
+</tr>
+<tr>
+<td>路径参数</td>
+<td><code>:param</code> 占位 + <code>reg_urlpath</code> 参数名表</td>
+<td><code>{param}</code> 占位，编译期转 <code>([^/]*)</code> 正则</td>
+</tr>
+<tr>
+<td>精确匹配</td>
+<td><code>_urlpath_map</code> + 前缀回退（最多 6 段）</td>
+<td><code>simpleCtrlMap_</code>/<code>ctrlMap_</code> 哈希；<code>ctrlVector_</code> 正则</td>
+</tr>
+<tr>
+<td>Pre/横切</td>
+<td>每路由 <code>pre_sync</code>/<code>co_pre</code> 串行链（<code>@ok/@exit</code>/跳转）+ 站点级 pre/after hooks</td>
+<td>Filters + Middlewares（可排序、可复用、与路由解耦）</td>
+</tr>
+<tr>
+<td>同步/协程混编</td>
+<td><strong>路由层一等公民</strong>：<code>reg_raw</code> 拆同步 pre/协程 pre/同步 handler/协程 handler 四槽位，<code>co_resolve</code> 透明交织</td>
+<td>同步/异步落在单方法形态（Callback/future/<code>CoroMapper</code>），无按入口拆分的混编槽位</td>
+</tr>
+<tr>
+<td>简单任务编排</td>
+<td><strong>有</strong>：<code>httppeer::flow_method</code> 栈（<code>push_next/push_last/pop_flow</code>），单请求多 handler 顺序执行</td>
+<td><strong>无</strong>内建；靠手动调用/重定向</td>
+</tr>
+<tr>
+<td>多租户路由</td>
+<td>站点 slot 隔离（<code>_site_to_slot</code>）</td>
+<td>无；业务层分组</td>
+</tr>
+</tbody>
+</table>
+<p><strong>核心差异</strong>：Drogon 的路由是「宏反射 + 静态注册 + Filters/Middlewares」的工业级经典范式，关注点分离干净；Paozhu 是「注解 + codegen + 站点 slot + <code>flow_method</code> 编排」的一体化范式，额外给了请求内顺序任务编排这一轻量工作流能力，且多租户在路由层即内建。</p>
+<hr />
+<h2>4. ORM 深度对比</h2>
+<blockquote>
+<p>二者均支持 MySQL / PostgreSQL / SQLite 三方言，且 ORM 查询都支持 C++20 协程异步。但在<strong>生成时机、代码组织、查询风格、缓存、事务、关系表达</strong>上差异显著。</p>
+</blockquote>
+<h3>4.1 生成代码结构</h3>
+<p><strong>Paozhu</strong>（<code>paozhu_cli orm &lt;dbtag&gt;</code>，生成器 <code>vendor/httpcli/modelfun.hpp</code>）每张表产出<strong>三层</strong>：</p>
+<ul>
+<li><code>&lt;table&gt;_base.h</code>：纯数据/反射层——<code>namespace &lt;table&gt;_info</code> 含 <code>col_count</code>、<code>enum cols</code>、<code>struct meta</code>（字段定义）、<code>type::</code> 类型别名、<code>col_names</code>、<code>null_col</code> 位图、<code>assign_field_value</code>（<code>world_base.h:41-45</code>、<code>L76-80</code>），以及<strong>脏字段位图</strong> <code>__dirty_bits</code> + <code>get_dirty_indices()</code>/<code>clear_dirty()</code>/<code>make_update_dirty_sql()</code>。</li>
+<li><code>&lt;table&gt;_opsql.h</code>：<code>template&lt;M_MODEL,B_BASE&gt; class &lt;table&gt;_opsql : public B_BASE</code>（含<strong>全部查询/缓存/脏更新方法</strong>，构造时按 dbtag 从 <code>get_orm_conn_pool_obj()</code> 取 <code>orm_conn_pool</code>）。
+<ul>
+<li><strong>脏更新机制</strong>：<code>setXxx()</code> 写字段时标记对应脏位；<code>update_dirty()</code>（文本协议）/ <code>exec_update_dirty()</code>（预编译）/ <code>async_update_dirty()</code> / <code>async_exec_update_dirty()</code> / <code>commit_update_dirty()</code> 仅对脏位字段拼 <code>UPDATE</code>，执行成功后 <code>clear_dirty()</code>；脏位为空时短路、不发出全字段误更新，且缺 WHERE 时拒绝执行（<code>article_opsql.h:9866/15248/10319/15323/13120</code>）。这与 Drogon 的 <code>dirtyFlag_[]</code> <strong>机制等价</strong>，都是「只写变化列」的增量更新。</li>
+</ul>
+</li>
+<li><code>models/include/&lt;Model&gt;.h</code>：薄壳 <code>class &lt;Model&gt; : public &lt;table&gt;_opsql&lt;&lt;Model&gt;,&lt;table&gt;_base&gt;</code>（<code>models/include/World.h:11</code>）。</li>
+<li>FK 关系在<strong>外联 .cpp</strong>：<code>orm/fk_child_opsql.cpp</code>、<code>orm/fk_parent_opsql.cpp</code>（见 §4.6）。</li>
+</ul>
+<p><strong>Drogon</strong>（<code>drogon_ctl create_model</code>，复用 CSP 模板 <code>model_h.csp</code>/<code>model_cc.csp</code>）每张表生成一个模型类（示例 <code>orm_lib/tests/mysql/Users.h</code>）：</p>
+<ul>
+<li><code>struct Cols</code>（列名常量）、表元数据（<code>tableName</code>/<code>primaryKeyName</code>/<code>PrimaryKeyType</code>：单主键为具体类型，复合为 <code>std::tuple</code>，无主键为 <code>void</code>）。</li>
+<li>每字段三件套：<code>getValueOfXxx()</code> / <code>getXxx()</code> / <code>setXxx()</code>+<code>setXxxToNull()</code>（nullable）。</li>
+<li>JSON 互转与校验：<code>toJson()</code>/<code>updateByJson()</code>/<code>validateJsonForCreation/Update</code>。</li>
+<li><strong>私有持久化友元方法</strong>：<code>outputArgs</code>/<code>updateColumns</code>/<code>updateArgs</code>/<code>insertColumns</code>，由 <code>Mapper</code> 内部调用。</li>
+<li><strong>脏标记</strong> <code>dirtyFlag_[]</code>：决定 <code>insert</code>/<code>update</code> 只写变化列（<code>Users.h:252-274</code>）。</li>
+<li>静态 SQL 字符串：<code>sqlForFindingByPrimaryKey()</code>、<code>sqlForDeletingByPrimaryKey()</code>、<code>sqlForInserting(bool&amp; needSelection)</code>（按 <code>dirtyFlag_[]</code> 动态拼装列；PG 追加 <code>returning *</code>，MySQL/SQLite 依赖 <code>LAST_INSERT_ID</code>/<code>insertId()</code>）。</li>
+</ul>
+<blockquote>
+<p>关键差异：Paozhu 把「数据定义(base)」与「SQL 操作(opsql)」<strong>分离成两个文件</strong>并支持外联关系 .cpp；Drogon 把所有东西塞进<strong>一个模型类</strong>，持久化细节用 <code>private</code> + <code>friend</code> 封装，更面向对象。</p>
+</blockquote>
+<h3>4.2 查询 API 风格</h3>
+<p><strong>Paozhu —— 链式 builder（返回 <code>M_MODEL&amp;</code>）</strong>，方法名偏「直接 SQL 动词」：</p>
+<ul>
+<li>读：<code>count()</code> / <code>page()</code> / <code>fetch()</code> / <code>fetch_one()</code> / <code>fetch_to&lt;T&gt;()</code> / <code>fetch_one_to()</code>。</li>
+<li>写：<code>update_col</code> / <code>exec_update_col</code> / <code>replace_col</code>。</li>
+<li>条件：<code>where()</code> / <code>whereIn</code> / <code>whereNull</code> / <code>whereEQ</code> / 每列快捷式 <code>eqId()</code>；条件运算符 <code>orm::wq::eq/nq/bt/be/lt/le</code>。</li>
+<li>JOIN：<code>leftJoin()</code>。</li>
+<li>异步：<code>async_fetch</code> / <code>async_count</code> / <code>async_page</code>，及带 <code>_prepared</code> 的 <code>exec_*</code>。</li>
+<li><strong>分页自动复用已有条件</strong>：<code>page()</code> 内部先调 <code>count()</code>，<code>count()</code> 读取模型上已用 <code>.where()</code> 设好的筛选；随后 <code>fetch()</code> 也走同一 <code>build_text_where</code>——<strong>COUNT 与数据查询共用同一 <code>where</code>，条件只设一次</strong>。<code>page()</code> 还直接返回 <code>(minpage,maxpage,page,total_page)</code> 导航四元组，无需手写分页数学。</li>
+</ul>
+<p><strong>Drogon —— 流式 <code>Mapper&lt;T&gt;</code> + <code>Criteria</code></strong>（模板 <code>Mapper</code> 在 <code>orm/Mapper.h:115</code>，构造收 <code>DbClientPtr</code>）：</p>
+<ul>
+<li>读：<code>findByPrimaryKey</code> / <code>findAll</code> / <code>count</code> / <code>findOne</code> / <code>findBy</code>，各方法三种形态（同步/回调/future）。</li>
+<li>写：<code>insert</code> / <code>update</code> / <code>updateBy</code> / <code>increment</code> / <code>deleteOne</code> / <code>deleteBy</code> / <code>deleteByPrimaryKey</code>。</li>
+<li>条件 <code>Criteria</code>（<code>Criteria.h:73</code>）：<code>CompareOperator</code> 含 <code>EQ/NE/GT/GE/LT/LE/Like/In/IsNull/IsNotNull</code>；支持 <code>operator&amp;&amp;</code>/<code>||</code> 组合、<code>CustomSql</code>+<code>_sql</code> 字面量、<code>Criteria(Json::Value)</code>。</li>
+<li>流式 builder：<code>limit</code> / <code>offset</code> / <code>orderBy</code> / <code>paginate</code> / <code>forUpdate</code> / <code>innerJoin</code> / <code>leftJoin</code> / <code>rightJoin</code>，占位符 <code>$?</code> 按 DB 替换为 <code>$1,..</code>（PG）或 <code>?</code>（MySQL/SQLite）。</li>
+</ul>
+<blockquote>
+<p>风格差异：Paozhu 偏向「熟悉的链式动词 + 每列快捷方法」，上手成本低；Drogon 用 <code>Criteria</code> 表达式对象 + <code>Mapper</code> 流式设置，类型安全更强、但需理解 <code>Criteria</code>/<code>SqlBinder</code> 体系。
+分页对比：Paozhu 的 <code>page()</code> <strong>自动复用已设 <code>where</code></strong>，一次调用完成「计数 + 取数 + 返回导航四元组」；Drogon 的 <code>paginate(page,perPage)</code>（<code>Mapper.h:173/2013</code>）<strong>仅设 offset/limit</strong>，<code>count()</code> 默认 <code>Criteria()</code> 空条件（<code>Mapper.h:459</code>），需把同一 <code>Criteria</code> 分别传给 <code>count(criteria)</code> 与查询，分页导航（总页数/窗口）要自己算。</p>
+</blockquote>
+<h3>4.3 查询结果缓存（<strong>最大功能差异</strong>）</h3>
+<p><strong>Paozhu —— 模型对象可选能力，开箱即用</strong>：缓存是模型对象上的可选功能，无需额外引入第三方库。核心 API：</p>
+<ul>
+<li>开启：<code>use_cache()</code> 查询前调用，后续自动走缓存；<code>save_cache(exptime)</code> 写回</li>
+<li>读取：<code>try_get_cache(name)</code> 返回 <code>std::optional</code>（miss 为 <code>nullopt</code>），<strong>非抛</strong>；<code>is_hit_cache</code> 标记本次结果是否来自缓存</li>
+<li>键：<code>std::hash&lt;std::string&gt;{}(sqlstring)</code> 或自定义 <code>cache_key_name</code></li>
+<li>TTL 钳制与后台回收：<code>orm_cache_deadline()</code> 钳制到 <code>ORM_CACHE_DEFAULT_TTL</code>(120s) ~ <code>ORM_CACHE_MAX_TTL</code>(3600s)；后台单 daemon 每 <code>ORM_CACHE_SCAN_INTERVAL</code>(30s) 扫描过期条目。三者均可编译期 <code>-D</code> 覆盖。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Paozhu</th>
+<th>Drogon（本仓）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>查询结果缓存</td>
+<td><strong>有</strong>（<code>orm_cache.hpp</code> 的 <code>model_meta_cache&lt;BASE_T&gt;</code>，<code>std::map&lt;size_t,data_cache_t&gt;</code> + mutex）</td>
+<td><strong>无</strong>（ORM 层零缓存，每次查询都打连接池）</td>
+</tr>
+<tr>
+<td>接入</td>
+<td><code>use_cache()</code> / <code>save_cache()</code> / <code>try_get_cache()</code> / <code>remove_cache()</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>回收</td>
+<td>后台 daemon 周期扫过期条目</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3>4.4 异步与协程模型</h3>
+<p><strong>Paozhu —— 同步 + 协程双形态，协程是主范式</strong>：</p>
+<ul>
+<li>每个查询方法都有同步版和协程版：同步 <code>fetch()</code> / <code>count()</code> / <code>page()</code> / <code>exec_fetch()</code> / <code>exec_count()</code>；协程 <code>async_fetch()</code> / <code>async_count()</code> / <code>async_page()</code> / <code>async_exec_fetch()</code>。</li>
+<li>协程版内部 <code>co_await select_conn-&gt;async_fetch_directly(...)</code>；DML <code>co_await edit_conn-&gt;async_exec_dml</code>。</li>
+<li>连接池 <code>orm_conn_pool.cpp</code>：协程 <code>async_get_mysql_select_conn</code> / <code>async_get_mysql_edit_conn</code> 用 <code>co_await async_add_*_connect</code> 取/建连接；同步 <code>get_mysql_*_conn</code>。</li>
+<li>后端：<code>pg_conn.cpp</code> <code>async_read_loop</code> <code>co_await</code>；<code>sqlite_conn.cpp</code> 经 <code>run_on_worker</code> 队列。</li>
+<li>业务 handler 层面：路由 <code>reg_raw</code> 同时提供同步槽（<code>reg_sync</code> / <code>pre_sync</code>）和协程槽（<code>co_reg</code> / <code>co_pre</code>），<code>co_resolve</code> 透明交织，开发者按签名选形态（见 §3.3）。</li>
+</ul>
+<p><strong>Drogon —— 三形态（同步 / 回调 / future）+ 协程叠加</strong>：</p>
+<ul>
+<li>每个 <code>Mapper</code> 方法都提供三套：<code>binder &lt;&lt; Mode::Blocking</code>（同步抛异常）/ <code>binder &gt;&gt; rcb &gt;&gt; ecb</code>（回调）/ <code>std::promise</code>+<code>get_future</code>（future）。</li>
+<li>底层 <code>DbClient::operator&lt;&lt;(sql)</code> 返回 <code>SqlBinder</code>（<code>DbClient.h:256</code>），<code>&lt;&lt;</code> 绑参、<code>&gt;&gt;</code> 注册回调、<code>exec()</code> 执行。</li>
+<li>协程：<code>CoroMapper</code>（<code>CoroMapper.h:67</code>，继承 <code>Mapper&lt;T&gt;</code>）返回 <code>MapperAwaiter</code>，<code>await_suspend</code> 把 callback 接入 <code>CallbackAwaiter</code> 并 <code>resume()</code>；另有 <code>execSqlCoro</code>、<code>newTransactionCoro</code>。</li>
+<li>结果抽象：<code>Result</code>（<code>Result.h:57</code>，引用计数，含 <code>size()/affectedRows()/insertId()</code> 等多态实现）/ <code>Row</code>（<code>Row.h:46</code>，<code>operator[]</code> 返回 <code>Field</code>）。</li>
+</ul>
+<h4>4.4.1 双池并发架构（io_context 协程池 + 独立 ThreadPool）</h4>
+<p>Paozhu 执行层是<strong>两个线程池并存</strong>，并发靠「strand 串行化 + 业务池 dispatch 回 strand + peer 链式共享所有权」拆成三层，无 GC 也安全：</p>
+<ul>
+<li><strong>池一：Asio <code>io_context</code> 协程池</strong>（<code>server.h:381</code> 单 <code>io_context</code> + <code>runthreads</code>，跑所有 <code>co_spawn</code> 协程——HTTP/1.1·HTTP/2·WS·MQTT·RPC）。</li>
+<li><strong>池二：独立 <code>ThreadPool clientrunpool</code></strong>（<code>server.h:487</code>，初值 <code>hardware_concurrency()*2+2</code> 线程，<code>threadpool.h</code>），承接从协程循环卸下的同步/阻塞活（路由 <code>sync pre/regfun</code>、定时器、<code>ws</code> 数据消息）；支持动态扩缩（<code>addthread</code>/<code>fixthread</code>，上限 32）与 503 背压（<code>force_reject_*</code> → <code>add_sync_task</code>/<code>add_conn_task</code> 返回 false）。</li>
+<li><strong>I/O 层</strong>：每 <code>client_session</code>（<code>client_session.h:76</code>，<code>enable_shared_from_this</code>）绑定 <code>asio::strand</code>，单连接内收发串行化、免锁；发送走 <code>post_write</code>（:81-91）入本连接发送环，由消费者协程串行写出。</li>
+<li><strong>业务层</strong>：阻塞代码（router sync handler、MQTT/socket 同步钩子）经 <code>co_pool_run_step</code>（<code>pool_step.h:41</code>）投到 clientrunpool；<code>fn()</code> 在池线程跑完，由 <code>finish</code> 经 <code>asio::dispatch</code> 把续体投回会话 strand——业务线程只跑 <code>fn()</code>，响应发送永远落 strand（<code>pool_step.cpp:18-20</code>）。</li>
+<li><strong>生命周期 / 防死锁</strong>：<code>peer</code> 作一等参数贯穿「任务闭包 → finish → 唤醒 op → strand 恢复」，顺次各持一份强引用（<code>pool_step.cpp:91-117</code>），释放点固定在 strand 线程，发送线程不会拿到已释放对象；池未接单时<strong>不丢任务</strong>而是就地 <code>rejected=true</code> 完成 awaitable（<code>pool_step.cpp:79-86</code>），杜绝协程永久挂起。</li>
+</ul>
+<p><strong>对照 Drogon</strong>：Drogon 是「多独立 EventLoop」模型（每 worker 一 <code>EventLoop</code>，MPSC 跨线程，epoll/kqueue），handler 跑在所属 <code>ioLoop</code>、重阻塞需自 offload；它<strong>没有</strong> Paozhu 这种「共享 io_context + 独立通用 ThreadPool + strand 闭环」的跨池模型，故也回避了跨池交还对象的所有权问题。</p>
+<h3>4.5 事务</h3>
+<p>Paozhu 事务有<strong>两层 API</strong>，业务代码里两种都有实例（<code>controller/src/test_sql_commit.cpp</code>）：</p>
+<p><strong>① 原生 SQL 层（<code>orm::db_conn</code> 直接持事务连接）</strong>：</p>
+<pre><code class="language-cpp">auto ulink = std::make_unique&lt;orm::db_conn&gt;(&quot;cms&quot;);
+ulink-&gt;begin_commit();                 // BEGIN / BEGIN IMMEDIATE
+ulink-&gt;edit_query(&quot;UPDATE sysuser set ...&quot;);  // 写
+ulink-&gt;edit_query(&quot;INSERT INTO sysuser ...&quot;); // 写
+// 查询也走同一条写连接（读自己刚写的，无读写分离的主从延迟）
+orm::cms::LocalusersqlStruct row;
+ulink-&gt;edit_query(&quot;SELECT * FROM sysuser WHERE ...&quot;, row);
+if (ulink-&gt;iserror) ulink-&gt;rollback();
+else                ulink-&gt;commit();    // COMMIT / ROLLBACK + 归还连接
+</code></pre>
+<ul>
+<li>单条 <code>db_conn</code> 实例持有一条 <code>mysql_edit_conn</code>，事务里<strong>读写都走这一条写连接</strong>（<code>edit_query(sql)</code> 写、<code>edit_query(sql, struct&amp;)</code> 读，第二个参数是输出），保证事务内读一致性、无主从复制延迟。</li>
+<li>协程版：<code>async_begin_commit()</code> / <code>async_commit()</code> / <code>async_rollback()</code> / <code>async_edit_query()</code>。</li>
+<li><strong>跨对象</strong>：原生 SQL 无模型概念，天然跨表/跨对象。</li>
+</ul>
+<p><strong>② ORM 层（<code>lock_conn</code> 把事务连接挂到模型）</strong>：</p>
+<pre><code class="language-cpp">auto txnlink = std::make_unique&lt;orm::db_conn&gt;(&quot;cms&quot;);
+txnlink-&gt;begin_commit();
+
+// 多个不同模型对象都锁到同一条事务连接——跨对象事务
+orm::cms::Sysuser user_m;
+user_m.lock_conn(txnlink-&gt;mysql_edit_conn);
+user_m.where(&quot;adminid&quot;, 10000);
+user_m.update(&quot;nickname&quot;);
+
+orm::cms::Sysroles role_m;              // 不同表、不同模型类
+role_m.lock_conn(txnlink-&gt;mysql_edit_conn);  // 也锁到同一条
+role_m.where(&quot;roleid&quot;, 50);
+role_m.update(&quot;remark&quot;);
+
+user_m.unlock_conn();
+role_m.unlock_conn();
+txnlink-&gt;commit();                      // 统一提交或回滚
+</code></pre>
+<ul>
+<li>模型自己从池借连接（读写分离），直接在 <code>db_conn</code> 事务里跑 ORM 操作会落在<strong>另一条自动提交的会话</strong>上——<code>lock_conn()</code> 把模型绑定到 <code>db_conn</code> 开的那条写连接上，事务内所有模型的读写都走同一条。</li>
+<li><strong>跨对象</strong>：多个不同模型对象（不同表、不同生成的 opsql 类）都可以 <code>lock_conn</code> 到同一个 <code>db_conn</code> 的写连接，构成跨表事务。</li>
+<li><code>unlock_conn()</code> 只解绑、<strong>不归还池</strong>（防未提交会话泄漏），最终由 <code>db_conn</code> 的 <code>commit()</code>/<code>rollback()</code> 统一归还。</li>
+</ul>
+<p><strong>Drogon —— 一等 <code>Transaction</code> 对象</strong>：</p>
+<ul>
+<li><code>Transaction</code> 继承 <code>DbClient</code>，<code>Mapper&lt;T&gt;(transactionPtr)</code> 让后续读写在同事务连接上。</li>
+<li><code>newTransaction</code> / <code>newTransactionAsync</code> / <code>newTransactionCoro</code>；<code>TransactionImpl</code> 从 <code>readyConnections_</code> 借出单连接移入 <code>busyConnections_</code>，自动发 <code>BEGIN</code> / <code>BEGIN IMMEDIATE</code> / <code>BEGIN EXCLUSIVE</code>；提交/回滚后经 <code>usedUpCallback</code> 归还。</li>
+<li>支持隔离级别选择：<code>TransactionType::{Deferred, Immediate, Exclusive}</code>。</li>
+</ul>
+<p><strong>对比</strong>：Drogon 用一等 <code>Transaction</code> 对象塞进 <code>Mapper</code>，API 干净、模型不用知道自己在不在事务里；Paozhu 是<strong>显式手动</strong>——要么用 <code>db_conn</code> 跑原生 SQL，要么 <code>lock_conn</code> 把 ORM 模型绑到事务连接上（模型需要感知事务状态）。两种都够用，但 Drogon 更优雅。</p>
+<h3>4.6 关系 / 外键</h3>
+<p><strong>Paozhu</strong>：<code>oneXXX/manyXXX</code> 在<strong>外联 .cpp</strong>（<code>orm/fk_child_opsql.cpp</code> / <code>orm/fk_parent_opsql.cpp</code>），实现即用本表外键值对关联模型 <code>where()</code>/<code>whereIn()</code>；另提供通用 <code>leftJoin()</code> 做显式 JOIN。</p>
+<p><strong>Drogon</strong>：关系是「<strong>生成期配置 + 运行时每模型方法</strong>」，无 <code>hasMany</code>/<code>hasOne</code> 风格的通用 <code>Mapper</code> 关系 API。</p>
+<ul>
+<li>配置结构 <code>Relationship</code>（<code>create_model.h:211</code>，<code>Type{HasOne,HasMany,ManyToMany}</code> + <code>PivotTable</code> 多对多中间表）。</li>
+<li><strong>FK 自动探测</strong>：<code>tryAddAutoRelationship</code>（<code>create_model.cc:181</code>）；PG 查 <code>information_schema</code> 外键视图、MySQL 查 <code>KEY_COLUMN_USAGE</code>、SQLite 查 <code>PRAGMA foreign_key_list</code>。</li>
+<li>生成方法体（<code>model_cc.csp:1580-1789</code>）：按类型生成 <code>getXxx(clientPtr)</code> 同步/异步两版——HasOne 拼 <code>select * from &lt;target&gt; where &lt;key&gt; = ?</code>，HasMany 返回 <code>vector&lt;Target&gt;</code>，ManyToMany 联表 + pivot 返回 <code>vector&lt;pair&lt;Target,Pivot&gt;&gt;</code>。关系查询即 <code>user.getWallet(client)</code>，内部仍走 <code>DbClient</code>/<code>SqlBinder</code>，可传事务 client。</li>
+</ul>
+<h3>4.7 类型映射与参数绑定</h3>
+<p><strong>Paozhu</strong>：生成期 <code>modelfun.hpp</code> 用 <code>pg_type_to_mysql_type()</code> 与 SQLite 亲和性映射把 SQL 类型转 <strong>MySQL 二进制类型码</strong>，再 <code>get_field_type()</code> 按码映射 C++（整数/日期/字符串等），最终由 <code>_base.h</code> <code>struct meta</code> + <code>type::</code> 落地。</p>
+<p><strong>Drogon</strong>：生成期 <code>create_model.cc</code> 直接按库写死映射（PG / MySQL / SQLite 各分支）。参数绑定 <code>SqlBinder::operator&lt;&lt;</code> 按 <code>ClientType</code> 分支：</p>
+<ul>
+<li>PG：2/4/8 字节整数 <code>htons/htonl/htonll</code> 转网络序、<code>format=1</code>（二进制）；</li>
+<li>MySQL：<code>getMysqlType&lt;ParaType&gt;()</code> 映射（含 <code>static_assert</code> 拒绝不支持类型）；</li>
+<li>SQLite：按 <code>sizeof(T)</code> 选类型；另支持 <code>trantor::Date</code>/<code>vector&lt;char&gt;</code>/<code>optional&lt;T&gt;</code>/<code>Json::Value</code>。</li>
+<li>DB 行→C++ 字段：<code>Field::as&lt;T&gt;()</code>（<code>Field.h:70-107</code>，带大量特化）+ 模型构造 <code>T(const Row&amp;, indexOffset)</code>，对 date/bytea 做特殊解析，并据 <code>dirtyFlag_[]</code> 控制增量写列。</li>
+</ul>
+<h3>4.8 连接池</h3>
+<p><strong>Paozhu</strong>：<code>orm_conn_pool.cpp</code> 按 dbtag 维护<strong>读写分离</strong>连接池（<code>async_get_mysql_select_conn</code> 读 / <code>async_get_mysql_edit_conn</code> 写），协程取/建连接（<code>co_await async_add_*_connect</code>）；后端 <code>pg_conn</code>/<code>mysql_conn</code>/<code>sqlite_conn</code> 各自实现 <code>async_*</code> 非阻塞 I/O，由 <code>init_orm_conn_pool(io_context,...)</code>（<code>server.cpp:9269</code>）启动。</p>
+<ul>
+<li><strong>框架级连接健康检查</strong> <code>orm_connect_mar_t</code>（<code>orm_connect_mar.h/cpp</code>）：借出连接时 <code>watch_mysql_connect(conn)</code> 登记 weak_ptr + <code>time_begin</code>；server 主循环<strong>每 320 拍</strong>调 <code>clear_connect()</code> 扫描——<code>weak_ptr</code> 失效自动摘出、异步连接跳过、同步连接超过 <code>CONST_ORM_QUERY_CONNECT_TIMEOUT</code> 硬踢（<code>hard_close()</code>）。限流：每轮最多扫 10 个，分多轮扫完，每轮 sleep 200ns 让出 CPU。</li>
+<li><strong>ORM 查询日志</strong>：debug 模式下 <code>push_log(sql_string, duration_ms)</code> 记录慢查询，每 <code>CONST_ORM_QUERY_LOG_TIME</code> 拍数 <code>save_log()</code> 落盘。</li>
+</ul>
+<p><strong>Drogon</strong>：<code>DbClientLockFree</code>（<code>orm_lib/src/DbClientLockFree.cc</code>）三态集合 <code>connections_</code>/<code>readyConnections_</code>/<code>busyConnections_</code>（互斥保护）；<code>execSql</code> 有空闲则取用，否则压入 <code>sqlCmdBuffer_</code>（上限 <strong>20000</strong>，超限报 &quot;Too many queries in buffer&quot;，<code>DbClientLockFree.cc:203</code>）；按 <code>connNum</code> 决定事件循环数（SQLite 固定 1 个，PG/MySQL 取 <code>hardware_concurrency()</code> 与 <code>connNum</code> 较小值）。各库连接类 <code>PgConnection</code>/<code>MysqlConnection</code>/<code>Sqlite3Connection</code> 仅负责单连接非阻塞 I/O；支持 <code>execSqlWithTimeout</code> 超时抛 <code>TimeoutError</code>。</p>
+<p><strong>底层协议实现差异（架构级）</strong>：</p>
+<ul>
+<li><strong>Paozhu 自研 MySQL / PostgreSQL 线层协议；SQLite 用官方库</strong>：
+<ul>
+<li><strong>MySQL</strong>：<code>mysql_conn.cpp</code> 手写 <code>read_server_hello</code>（解析 <code>capability_flags</code>、<code>auth_plugin_salt_data</code>）、<code>caching_sha2_password</code> 认证握手、<code>mysqlnd_xor_string</code> 加密、<code>seq_next_id</code> 包序号。</li>
+<li><strong>PostgreSQL</strong>：<code>pg_conn.cpp</code> 手写 <code>build_startup_message</code>、SCRAM-SHA-256 握手（<code>sasl_scram_sha256</code>、<code>int32_to_buf</code> 消息帧）。</li>
+<li><strong>SQLite</strong>：<code>sqlite_conn.cpp</code> / <code>sqlite_conn.h</code>（L45）<strong>直接用官方 sqlite3 C API</strong>（<code>sqlite3_open</code>/<code>sqlite3_prepare_v2</code>/<code>sqlite3_step</code>/<code>sqlite3_stmt*</code>），<code>#ifdef ENABLE_SQLITE</code> 守护，CMake <code>find_package(SQLite3 REQUIRED)</code> 链接。SQLite 是嵌入式数据库，无独立线层协议可自研。</li>
+<li>全仓 <code>CMakeLists.txt</code> 不链 <code>libmysqlclient</code>/<code>libpq</code>（MySQL/PG 自研协议的代价），但 SQLite 需链 <code>SQLite::SQLite3</code>。</li>
+</ul>
+</li>
+<li><strong>Drogon 封装所有官方客户端库</strong>：<code>MysqlConnection</code> 直接 <code>#include &lt;mysql.h&gt;</code>（链 <code>unofficial::libmariadb</code>）；<code>PgConnection</code> 用 <code>libpq</code>（<code>find_package(pg)</code>）；SQLite 用 <code>SQLite3_lib</code>。<strong>线层协议全部交给第三方库</strong>，Drogon 只做异步封装（基于 <code>mysql_real_connect_start/cont</code> 等非阻塞 API）。</li>
+</ul>
+<h3>4.9 业务代码风格（实际写法）</h3>
+<blockquote>
+<p>§4.2 讲的是 API 形态，这里给出<strong>真实业务代码长什么样</strong>（均取自两侧源码示例）。</p>
+</blockquote>
+<p><strong>Paozhu —— 模型对象即查询构建器，链式动词 + 协程/同步双形态</strong>（示例 <code>controller/src/testormcache.cpp</code> / <code>testcrud.cpp</code>）：</p>
+<pre><code class="language-cpp">// 模型对象本身就是 builder；条件、缓存、查询一气呵成
+Article art;
+art.where(&quot;isopen&quot;, 1).whereEQ(art.Alias::aid, aid).use_cache();  // 链式条件 + 查询缓存
+co_await art.fetch_one();                          // 协程查询，结果回填 art
+client &lt;&lt; &quot;&lt;br/&gt;title:&quot; &lt;&lt; art.getTitle();
+if (art.is_hit_cache()) { /* 命中缓存分支 */ }
+
+// 分页：直接返回 (bar_min, bar_max, current_page, total_page)
+unsigned int page = client.get[&quot;page&quot;].to_int();
+auto [nav_min, nav_max, cur_page, total_page] = art.page(page, 10, 5); // page, per_page, 导航栏宽度
+</code></pre>
+<p>风格要点：拿到模型实例 → 在其上 <code>.where()/.whereEQ()/.use_cache()/.fetch_one()/.page()</code> 链式拼装 → 协程 <code>co_await</code> 或同步 <code>fetch_one()</code>；<strong>没有独立的 Mapper 层</strong>，模型即 DAO。</p>
+<p><strong>Drogon —— 泛型 <code>Mapper&lt;T&gt;</code> + <code>Criteria</code> 表达式，按模型类型 CRUD</strong>（示例 <code>orm_lib/tests/db_test.cc</code>）：</p>
+<pre><code class="language-cpp">using namespace drogon_model::postgres;
+Mapper&lt;Users&gt; mapper(clientPtr);          // clientPtr = app().getDbClient()
+Users user;
+user.setUserId(&quot;pg&quot;); user.setUserName(&quot;alice&quot;);
+mapper.insert(user);                      // 同步写入
+auto u = mapper.findByPrimaryKey(2);      // 按主键查
+
+// 协程形态
+CoroMapper&lt;Users&gt; cmapper(clientPtr);
+auto cu  = co_await cmapper.findByPrimaryKey(2);
+auto us  = co_await cmapper.orderBy(Users::Cols::_user_id).limit(2).findAll();
+auto one = co_await cmapper.findOne(
+    Criteria(Users::Cols::_id, CompareOperator::EQ, 1));
+</code></pre>
+<p>风格要点：<code>Mapper&lt;Model&gt;</code> 是独立于模型对象的通用 CRUD 门面，条件用 <code>Criteria(列, 比较符, 值)</code> 表达式构造；<strong>模型对象只承载数据 + setter/getter</strong>，所有持久化操作经 <code>Mapper</code> 发起。</p>
+<blockquote>
+<p>一句话：Paozhu 是「<strong>模型自己会查自己</strong>」（builder 内聚在模型上，动词式、上手快）；Drogon 是「<strong>Mapper 代理模型 CRUD</strong>」（泛型门面 + Criteria 表达式，类型安全、关注点分离更清晰）。</p>
+</blockquote>
+<h3>4.10 小结对照表</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（本仓）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>支持的 DB</td>
+<td>MySQL / PostgreSQL / SQLite（<code>dbtype</code> 配置）</td>
+<td>PostgreSQL / MySQL(MariaDB) / SQLite3</td>
+</tr>
+<tr>
+<td>生成来源</td>
+<td><strong>双模式</strong>：连活库 introspection（<code>modelfun.hpp</code> 跑 <code>SHOW CREATE TABLE</code>/PG 表列表，<strong>database-first</strong>）+ 也能纯离线读 <code>schema/&lt;dbtag&gt;/tables/*.sql</code>（<strong>CI 友好、与库解耦</strong>）</td>
+<td><strong>连活库</strong>读 <code>information_schema</code>/PRAGMA（<code>create_model</code>，database-first）</td>
+</tr>
+<tr>
+<td>产物组织</td>
+<td>base(opsql 分离) + 外联 FK .cpp</td>
+<td>单模型类 + private/friend 封装 + dirtyFlag</td>
+</tr>
+<tr>
+<td>查询风格</td>
+<td>链式动词 builder（<code>where/page/fetch</code>）</td>
+<td><code>Mapper&lt;T&gt;</code> + <code>Criteria</code> 流式表达式</td>
+</tr>
+<tr>
+<td>查询结果缓存</td>
+<td><strong>内建</strong> <code>orm_cache.hpp</code>/<code>model_meta_cache</code></td>
+<td><strong>无</strong>（缓存交给上层/Redis）</td>
+</tr>
+<tr>
+<td>异步范式</td>
+<td><strong>同步 + 协程双形态</strong>：同步 <code>count()</code>/<code>fetch()</code>/<code>page()</code> + 协程 <code>async_count()</code>/<code>async_fetch()</code>/<code>async_page()</code>（<code>asio::awaitable</code>）</td>
+<td>同步/回调/future 三套 + <code>CoroMapper</code> 协程叠加（四形态）</td>
+</tr>
+<tr>
+<td>事务</td>
+<td><strong>两层 API</strong>：<code>orm::db_conn</code> 原生 SQL 事务 + 模型 <code>lock_conn(txn_conn)</code> 挂事务连接（手动解绑+由 db_conn 生命周期归还）</td>
+<td>一等 <code>Transaction</code> 对象塞进 <code>Mapper</code>，模型无感知，API 更优雅</td>
+</tr>
+<tr>
+<td>关系/FK</td>
+<td><code>oneXXX/manyXXX</code> 外联 .cpp</td>
+<td>生成期 <code>Relationship</code> + 模型 <code>getXxx(client)</code> 方法</td>
+</tr>
+<tr>
+<td>连接池</td>
+<td>dbtag 读写分离协程池 + <strong>框架级健康检查</strong>（<code>orm_connect_mar</code> 定时扫描僵尸连接、超时硬踢）+ ORM 查询日志</td>
+<td><code>DbClientLockFree</code> 三态池 + 缓冲上限 20000；<strong>无框架级连接健康检查</strong>（僵尸清理靠数据库服务端 <code>wait_timeout</code>）</td>
+</tr>
+<tr>
+<td>类型映射</td>
+<td>SQL→MySQL 二进制码→C++</td>
+<td>按库写死映射 + <code>SqlBinder</code> 二进制绑定</td>
+</tr>
+<tr>
+<td><strong>底层协议/客户端依赖</strong></td>
+<td><strong>自研 MySQL/PG 线层协议</strong>（<code>mysql_conn.cpp</code>/<code>pg_conn.cpp</code> 手写握手与认证）；<strong>SQLite 用官方 sqlite3 C API</strong>（<code>sqlite3_open</code>/<code>sqlite3_prepare_v2</code>），不链 <code>libmysqlclient</code>/<code>libpq</code>，链 <code>SQLite3</code></td>
+<td><strong>封装所有官方客户端库</strong>（<code>MysqlConnection</code>→<code>libmariadb</code>、<code>PgConnection</code>→<code>libpq</code>、SQLite→<code>sqlite3</code>），线层协议交给第三方</td>
+</tr>
+</tbody>
+</table>
+<p><strong>核心差异要点</strong>：</p>
+<ul>
+<li>生成时机：两者都支持<strong>连活库反向工程</strong>（Drogon <code>create_model</code>；Paozhu <code>modelfun.hpp</code> 连 <code>mysql_conn_base</code>/<code>pg_conn_base</code>/<code>sqlite_db_conn</code> 跑 <code>SHOW CREATE TABLE</code>/PG 表列表，并能把活库 dump 成 <code>schema/*.sql</code>）；Paozhu 额外支持<strong>纯离线</strong>读 <code>schema/*.sql</code> 生成（与库解耦，CI 友好、可离线）。</li>
+<li>抽象风格：Drogon 是模板 <code>Mapper&lt;T&gt;</code> + <code>Criteria</code> 统一 CRUD（面向对象、类型安全）；Paozhu 每个表生成独立 <code>_opsql.h</code> 操作类（动词式 builder、上手快）。</li>
+<li><strong>缓存是分水岭</strong>：Paozhu 自带查询级结果缓存；Drogon ORM 无内建缓存。</li>
+<li>事务 API：Drogon 更优雅（Transaction 对象），Paozhu 更手动（lock_conn）。</li>
+<li><strong>脏更新（增量写列）两者都支持</strong>：Paozhu 用 <code>__dirty_bits</code> 位图 + <code>update_dirty()</code>/<code>exec_update_dirty()</code>（脏位为空短路、缺 WHERE 拒绝执行）；Drogon 用 <code>dirtyFlag_[]</code> 控制 <code>insertColumns</code>/<code>updateColumns</code>。机制等价。</li>
+<li>一致点：两者 ORM 查询<strong>都支持 C++20 协程异步</strong>，三方言均覆盖。</li>
+</ul>
+<hr />
+<h2>5. 流量限制对比</h2>
+<blockquote>
+<p>两者限流<strong>定位层次不同，但并非完全不重叠</strong>：Drogon 既有<strong>连接数硬闸门</strong>（<code>HttpConnectionLimit</code>，全局+单 IP 硬上限），又有<strong>请求级</strong>（per-IP / per-user / per-route，令牌桶/滑窗/固定窗，插件开箱即用）；Paozhu 是<strong>连接接纳级</strong>过载保护（60 秒连接数窗口 + 负载自适应放行率 + 排队慢放）+ 站点上传限额 + IP 封锁。两者在连接级保护上思路不同（硬上限 vs 排队放行），请求级配额则是 Drogon 独有的业务能力。</p>
+</blockquote>
+<h3>5.1 Drogon —— 请求级 RateLimiter + Hodor 插件</h3>
+<p><strong>核心类</strong>（<code>lib/inc/drogon/RateLimiter.h</code>）：</p>
+<ul>
+<li><code>RateLimiterType</code> 三算法：<code>kFixedWindow</code> / <code>kSlidingWindow</code> / <code>kTokenBucket</code>（<code>RateLimiter.h:10-15</code>）。</li>
+<li>工厂 <code>RateLimiter::newRateLimiter(type, capacity, timeUnit=60s)</code>（<code>RateLimiter.h:42-45</code>），接口 <code>isAllowed()→bool</code>（<code>:52</code>）；<code>SafeRateLimiter</code> 包 mutex 做线程安全（<code>:56-74</code>）。</li>
+<li>三实现：<code>TokenBucketRateLimiter</code> / <code>SlidingWindowRateLimiter</code> / <code>FixedWindowRateLimiter</code>（<code>lib/src/</code> 下 .cc/.h）。</li>
+</ul>
+<p><strong>Hodor 插件</strong>（<code>lib/inc/drogon/plugins/Hodor.h</code>，Drogon 官方限流插件）：</p>
+<ul>
+<li>JSON 配置即启用，拦截走 AOP <code>onHttpRequest</code>（<code>Hodor.h:144</code>）<code>AdviceCallback</code> 前置建议，超限回 <code>rejection_message</code>（默认 <code>&quot;Too many requests&quot;</code>）。</li>
+<li>维度齐全（<code>Hodor.h:36-77</code>）：<code>algorithm</code>（默认 token_bucket）、<code>urls</code> 正则（空=全部）、<code>time_unit</code>、<code>capacity</code>（全局）、<code>ip_capacity</code>（<strong>单 IP</strong>）、<code>user_capacity</code>（<strong>单用户</strong>，配 <code>setUserIdGetter</code>）、<code>sub_limits</code>（按 URL 分组子策略）、<code>trust_ips</code>/<code>use_real_ip_resolver</code>（XFF/真实 IP）、<code>limiter_expire_time</code>（默认 600s，用 <code>CacheMap</code> 存各 IP/user 的 limiter）。</li>
+</ul>
+<blockquote>
+<p>Drogon 的请求级限流是<strong>生产级、细粒度、声明式</strong>：配一段 JSON 即可对 <code>/api/.*</code> 做「全局 1000/s + 单 IP 100/s + 单用户 50/s」的组合策略，算法可换。</p>
+</blockquote>
+<p><strong>连接数硬闸门</strong>（<code>lib/src/HttpConnectionLimit.h:26</code>，accept 阶段原子计数）：</p>
+<ul>
+<li><code>HttpConnectionLimit::setMaxConnectionNum(num)</code> — 全局连接数硬上限；<code>setMaxConnectionNumPerIP(num)</code> — 单 IP 连接数硬上限。</li>
+<li><code>HttpServer.cc:L121</code> accept 时调 <code>tryAddConnection()</code>，超限直接拒绝；连接关闭时 <code>releaseConnection()</code> 原子减计数。</li>
+<li>性质：<strong>硬拒绝型</strong>——超限立即关掉新连接，不等、不排队。与 Paozhu §5.2 的「排队慢放」是同一问题的不同解法。</li>
+</ul>
+<h3>5.2 Paozhu —— 连接接纳级过载保护 + 上传限额 + IP 封锁</h3>
+<p><strong>连接接纳限速</strong>（内建在 <code>httpserver</code> 核心，<code>server.h:247</code> <code>ratelimiter()</code> 线程驱动）：</p>
+<ul>
+<li><strong>60 秒流量窗口</strong>：<code>update_minute_count()</code>（<code>server.cpp:8583-8632</code>）——每个 accept 线程各持一份 60 桶 thread-local 环形，快照全局 <code>total_count</code>（连接计数），算出「最近约 60 秒进来的连接数」。</li>
+<li><strong>负载自适应放行率</strong>：<code>compute_rate_from_load(has_save_link_count)</code>（<code>server.cpp:8636-8647</code>）——把活跃连接数映射到 <code>[lo,hi]</code> 区间成百分比，再线性折成放行率 <code>[num1,num2]</code>；阈值由 <code>rate_limit_new_wait_num</code>/<code>rate_limit_accept_wait_num</code>/<code>rate_limit_second_num1</code>/<code>rate_limit_second_num2</code> 控制。</li>
+<li><strong>排队与慢放</strong>：超过阈值时（<code>has_save_link_count &gt; rate_limit_new_wait_num &amp;&amp; live_link_count &gt; rate_limit_new_wait_num</code>，<code>server.cpp:9014-9022</code> / <code>9197-9204</code>）调 <code>enqueue_rate_limited()</code>（<code>:8650</code>）把连接压入 <code>socket_session_wait_rate</code>，限速线程被 <code>rate_limit_condition</code> 唤醒后按 <code>rate_limit_second_time_num</code> 个/秒<strong>逐拍慢放</strong>（<code>:8749-8758</code> 的 slot 循环）。</li>
+<li>性质：<strong>按连接数（而非请求数）的总量闸门</strong>，是「过载时平滑接纳新连接」的保护，不是「单 IP/单用户每秒 N 请求」的配额。</li>
+</ul>
+<p><strong>上传限额</strong>：<code>httppeer::check_upload_limit()</code>（<code>httppeer.cpp:789</code>，站点级 <code>host_index</code> 守卫）——按站点限制上传体大小。</p>
+<p><strong>IP 封锁</strong>：<code>check_blockip(peer_session)</code>（<code>server.cpp:5757</code>，TLS 握手失败连接不计入流量），配合黑名单/白名单做接入层拦截。</p>
+<blockquote>
+<p>Paozhu 没有<strong>内建的</strong>「per-IP / per-user / per-route 请求配额」层，但用框架已有能力即可实现：在 <code>router</code> 的 site pre hooks（<code>action_pre_lists</code>，<code>router.cpp:462</code>）里加一个 IP 滑动窗口计数器（自己维护 <code>std::unordered_map&lt;ip, deque&lt;timestamp&gt;&gt;</code>），超限返回 <code>httppeer::kFlowExit</code>（<code>@exit</code>）拒掉请求即可——pre 链会在第一个非空返回值处短路。实现思路在框架内闭环，无需扩展核心。</p>
+</blockquote>
+<h3>5.3 小结对照表</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（drogon-master 1.9.14）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>限流层级</td>
+<td><strong>连接接纳级</strong>（过载保护）+ 上传限额 + IP 封锁</td>
+<td><strong>连接级硬闸门</strong> + <strong>请求级配额</strong>（per-IP / per-user / per-route）</td>
+</tr>
+<tr>
+<td>连接数硬闸门</td>
+<td><strong>无硬上限</strong>；超过阈值后<strong>排队慢放</strong>（逐拍放行）</td>
+<td><strong>全局 + 单 IP 硬上限</strong>（<code>HttpConnectionLimit</code>，accept 阶段原子计数），超限立即拒绝</td>
+</tr>
+<tr>
+<td>算法</td>
+<td>固定放行率 + 负载自适应（<code>compute_rate_from_load</code>）</td>
+<td>令牌桶 / 滑窗 / 固定窗（三选一），Hodor 插件</td>
+</tr>
+<tr>
+<td>度量窗口</td>
+<td>60 秒连接数窗口 + 活跃连接负载</td>
+<td>可配 <code>time_unit</code>（默认 60s），按请求计数</td>
+</tr>
+<tr>
+<td>单 IP/单用户请求配额</td>
+<td><strong>无内建</strong>；可用 site pre hooks + IP 滑动窗口计数器自行实现（框架内闭环）</td>
+<td><strong>内建</strong>（<code>ip_capacity</code> / <code>user_capacity</code>）</td>
+</tr>
+<tr>
+<td>按路由细分</td>
+<td>无（全站总闸门）</td>
+<td><code>urls</code> 正则 + <code>sub_limits</code> 分组</td>
+</tr>
+<tr>
+<td>启用方式</td>
+<td>编译进 <code>httpserver</code>，调阈值参数</td>
+<td>连接闸门在 <code>HttpAppFrameworkImpl.cc</code> 硬编码 + Hodor 插件 JSON 配置</td>
+</tr>
+<tr>
+<td>超限响应</td>
+<td>连接排队慢放 / IP 直接 stop</td>
+<td>连接超限直接关掉；请求超限返回 <code>rejection_message</code>（默认 429 文本）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>核心差异</strong>：Drogon 限流是<strong>两层</strong>——底层 <code>HttpConnectionLimit</code> 硬闸门（防过载，超限即拒绝）+ 上层 Hodor 请求级配额（业务友好，per-IP/user/route，可换算法、插件化）。Paozhu 是<strong>单层</strong>连接接纳级保护——超过阈值不拒绝、而是排队慢放（更温和、防瞬时拒绝冲击），但请求级配额需自行用 site pre hooks 实现。两者在连接级保护上是同一问题的不同策略（硬拒绝 vs 排队放行），并非完全不重叠。</p>
+<hr />
+<h2>6. 协议与中间件支持（WebSocket / MQTT / Redis / RPC / Socket）</h2>
+<blockquote>
+<p>这一维差异极大：<strong>Paozhu 把五类协议全部内置</strong>到 <code>httpserver</code> 核心（且用统一的 <code>subpub</code> 注册模型贯穿 ws/mqtt/socket）；<strong>Drogon 仅内置 WebSocket 与 Redis</strong>，MQTT / RPC / 裸 Socket 服务器均无框架级支持。</p>
+</blockquote>
+<h3>6.1 WebSocket</h3>
+<ul>
+<li><strong>Paozhu（内置 server + client）</strong>：<code>websockets.h</code> + <code>ws_conn.cpp</code>（连接）/<code>ws_handshake.cpp</code>（握手）/<code>ws_parser.cpp</code> + <code>ws_wire.h</code>（帧编解码）/<code>http_websocket_client.cpp</code>（65KB 客户端）；<code>websockets_callback.cpp</code> + <code>websockets.conf</code> 配置；控制器层还提供 <code>websockets/loopwebsockets.hpp</code> / <code>loopwebsockets_co.hpp</code>（协程循环）/ <code>wssleepwebsockets.hpp</code> 等循环抽象。</li>
+<li><strong>Drogon（内置 server + client）</strong>：<code>WebSocketController.h</code>（服务端控制器）/ <code>WebSocketConnection.h</code>（连接）/ <code>WebSocketClient.h</code>（客户端），对应 <code>*Impl.cc</code>；<code>tests/</code> 下有完整 coro/keepalive/upgrade 测试。两者能力对等。</li>
+</ul>
+<h3>6.2 Redis</h3>
+<ul>
+<li><strong>Paozhu（内置，<code>vendor/pzredis/</code>）</strong>：完整客户端 <code>redis_client.h</code> + <code>redis_conn.h</code>（连接）+ <code>redis_pool.h</code>（<strong>按 section 多实例连接池</strong>）+ <code>redis_pubsub.h</code>/<code>redis_subpub.h</code>（发布订阅）+ <code>redis_reply.h</code>（回复解析）+ <code>redis_types.h</code>；同步版裸名 / 协程版 <code>async_</code> 前缀（<code>redis_client.h:294-296</code> <code>asio::awaitable</code>），配置 <code>redis.conf</code>。<strong>不依赖 hiredis</strong>，自研 RESP 解析。</li>
+<li><strong>Drogon（内置，<code>nosql_lib/redis/</code>）</strong>：<code>RedisClient</code> + <code>RedisConnection</code> + <code>RedisSubscriber</code> + <code>RedisTransaction</code> + <code>RedisClientManager</code>；底层用 <strong>hiredis</strong>（<code>cmake_modules/FindHiredis.cmake</code>）。能力与 paozhu 对等，但借力第三方库。</li>
+</ul>
+<h3>6.3 MQTT</h3>
+<ul>
+<li><strong>Paozhu（内置 broker + client，完整实现）</strong>：<code>mqtt_broker.h</code> 是<strong>单例 broker</strong>（<code>mqtt_broker::instance()</code>），含订阅表 <code>subscribe()</code>/<code>unsubscribe()</code>/<code>unsubscribe_all</code>、retained 消息、topic 过滤匹配、<code>publish()</code> 投递、<code>prune_expired()</code> 过期清理，并带全局配额 <code>kMaxSubscriptionsTotal=100000</code>（<code>:84-198</code>）；<code>mqtt_session.cpp</code> + <code>mqtt_frame.cpp</code>（35KB，MQTT 帧编解码，含 MQTT5 的 No Local / Retain As Published / Retain Handling / 共享订阅 group+device）；<code>http_mqtt_client.cpp</code> 客户端 + <code>mqtt.conf</code>，控制器 <code>mqtt/echo_mqtt_client.hpp</code>/<code>my_test_mqtt.hpp</code>。<strong>即开即用的 MQTT 服务</strong>。</li>
+<li><strong>Drogon（无）</strong>：<code>drogon-master</code> 全仓 <strong>0 个 MQTT 文件</strong>，框架不提供 broker 也不提供 client；需引入第三方插件（如社区 <code>drogon-mqtt</code>）或自行基于 WebSocket/TCP 实现。</li>
+</ul>
+<h3>6.4 RPC</h3>
+<ul>
+<li><strong>Paozhu（内置自定义 RPC 协议）</strong>：<code>rpc_parse.h</code>/<code>rpc_parse.cpp</code> 解析专属 <code>rpc </code> 线格式（请求行 + KV 头 + 二进制 body，含大小限制 <code>CONST_RPC_*</code>），<code>http_rpcclient.cpp</code>（73KB）承载客户端与连接逻辑，并按自身路由分发；控制器 <code>test_rpc_handle.cpp</code> 演示 handler。即在同一个连接层上提供 RPC 语义。</li>
+<li><strong>Drogon（无内置）</strong>：<code>lib/</code> 中唯一 <code>rpc</code> 命中是 Windows 平台的 <code>#include &lt;rpc.h&gt;</code>（<code>Utilities.cc:24</code>，与 RPC 框架无关）；无 protobuf / thrift / gRPC 封装。要做 RPC 需自行叠加（如基于 JSON + 自定义 controller，或外接 gRPC 进程）。</li>
+</ul>
+<h3>6.5 裸 Socket / TCP 服务器</h3>
+<ul>
+<li><strong>Paozhu（内置）</strong>：<code>http_socket.h</code> + <code>http_socket_client.cpp</code> 提供裸 TCP 连接承载；<code>sock_subpub_reg.h/.cpp</code> + <code>sock_subpub_client.h</code> 把 socket 接入统一的 <code>subpub</code> 注册/订阅模型，<code>sockets_config.cpp</code> 配置。即框架可同时作为 HTTP/WS/MQTT/Socket 多协议服务器。</li>
+<li><strong>Drogon（无）</strong>：<code>HttpAppFramework</code> 仅 <code>addListener()</code> 启 <strong>HTTP</strong> 监听器（<code>:864</code>），无 <code>createTcpServer</code>/<code>UdpServer</code>/裸 socket 服务器 API；要裸 TCP 需直接基于 trantor 的 <code>TcpServer</code> 或自管 asio，框架不替你做协议分派。</li>
+</ul>
+<h3>6.6 架构主题：统一的 <code>subpub</code> 注册模型</h3>
+<p>Paozhu 在 ws/mqtt/socket 三处都使用 <code>*_subpub_reg</code>（<code>ws_subpub_reg</code> / <code>mqtt_subpub_reg</code> / <code>sock_subpub_reg</code>）——<strong>同一套「订阅注册 + 发布分发」内核</strong>贯穿多协议；Redis 也走 <code>redis_subpub</code>。这是 paozhu「协议全家桶」背后的统一抽象。Drogon 各能力彼此独立（WebSocket 控制器、Redis nosql 库、无 MQTT/socket），<strong>没有框架层跨协议的统一 pub/sub 内核</strong>；但业务层有 <code>PubSubService&lt;MessageType&gt;</code> 模板类（<code>lib/inc/drogon/PubSubService.h</code>）可用——提供命名 topic + subscribe/publish/unsubscribe，<code>shared_mutex</code> + copy-on-write，是给业务代码用的进程内工具，而非框架内部的协议分发机制。</p>
+<h3>6.7 JWT 与 OAuth 2.0 / OIDC</h3>
+<ul>
+<li><strong>Paozhu（内置 JWT + 完整 OAuth 2.0 / OIDC 服务端 + 客户端）</strong>：
+<ul>
+<li><strong>JWT</strong>：<code>jwt.cpp</code>/<code>jwt.h</code> 是自研完整实现，依赖 OpenSSL 3；支持 <code>HS256</code>、<code>RS256</code>/<code>RS384</code>/<code>RS512</code>（PKCS1 + PSS）、<code>ES256</code>（<code>:523 es256_verify</code>），含 <code>alg:none</code> 防护（签名段可空但有明确错误态）、<code>exp/iat/nbf</code> claim 严格扫描、整令牌长度界 <code>CONST_JWT_TOKEN_MAX_LEN</code>、分离 <code>decode_without_verify</code> 与 <code>verify</code>（未验签令牌不会被判为合法）——<strong>安全取向自研</strong>。</li>
+<li><strong>OAuth 2.0 / OIDC 授权服务器</strong>：<code>libs/oauth/oauth_store.cpp</code>（35KB，授权码/令牌/刷新存储）+ <code>controller/src/oauth/</code> 全端点：<code>oauth_authorize</code> / <code>oauth_token</code> / <code>oauth_introspect</code> / <code>oauth_jwks</code> / <code>oauth_userinfo</code> / <code>oauth_revoke</code> / <code>oauth_metadata</code> / <code>oauth_purge</code>；配套 <code>conf/oauth.conf</code> + RSA 密钥对；<code>schema/cms/tables/oauth_*.sql</code> 生成 <code>OauthClient</code>/<code>OauthCode</code>/<code>OauthRefresh</code> ORM 模型。即开即用的授权服务器。</li>
+<li><strong>OAuth 客户端 + 第三方集成</strong>：<code>libs/oauth_client/oauth_client.cpp</code> + <code>controller/src/oauth_client/oauth_client_demo.cpp</code>；<code>libs/github/github_oauth.cpp</code> 内置 GitHub OAuth 登录。</li>
+</ul>
+</li>
+<li><strong>Drogon（无内置）</strong>：<code>drogon-master</code> 全仓 <strong>0 个 JWT / OAuth 文件</strong>（<code>lib/</code> 仅 <code>HttpResponse.h</code>/<code>HttpHeaderTest.cc</code> 顺带出现 Bearer 字样的 HTTP 头类型，非实现）。JWT 需引入第三方库（如 <code>jwt-cpp</code>）或社区插件；OAuth 2.0 服务端/客户端需自行实现或外接（社区 <code>drogon-oauth</code> 等）。</li>
+</ul>
+<h3>6.8 Session 管理</h3>
+<ul>
+<li><strong>Paozhu（内置，弱类型）</strong>：<code>httppeer</code> 上直接持有 <code>http::obj_val session</code>（<code>httppeer.h:228</code>）——就是那个 JSON 微对象，天然嵌套、弱类型；<code>parse_session()</code>/<code>save_session()</code>/<code>clear_session()</code>/<code>get_session_id()</code> 生命周期方法；<strong>两种持久化</strong>——文件存储 <code>save_session_file</code>/<code>parse_session_file</code> + 内存存储 <code>save_session_memory</code>/<code>parse_session_memory</code>；<strong>SameSite 自动处理</strong>——<code>session_samesite()</code>：站点配了 <code>cors_credentials</code> 且当前是 HTTPS 时自动给 <code>&quot;None&quot;</code>，其余情况空串（不发该属性）。</li>
+<li><strong>Drogon（内置，强类型）</strong>：<code>Session</code> 类（<code>lib/inc/drogon/Session.h</code>，<code>map&lt;string, std::any&gt;</code> + mutex）由框架级 <code>SessionManager</code> 统一管理生命周期、可配置超时；<code>any</code> + <code>any_cast&lt;T&gt;</code> 强类型访问，比 Paozhu <code>obj_val</code> 更安全但略重；需手动配置 SameSite。</li>
+</ul>
+<h3>6.9 HTTP Client</h3>
+<ul>
+<li><strong>Paozhu（内置，全协程风格）</strong>：<code>httpclient</code> + <code>http_websocket_client.h</code> 客户端，同步和协程（<code>asio::awaitable</code>）双形态——<code>co_await httpclient(peer, &quot;GET https://...&quot;)</code> 直接拿响应；支持 <code>add_client_task_loop</code> 让 client_context 托管；示例 <code>controller/src/testcowaitclient.cpp</code> 演示协程 HTTP client。<strong>无 HTTP/1.1 pipeline 客户端</strong>——但 HTTP/2 多路复用在单连接上并行交错发多个请求，效果等价且更彻底（天然解决队头阻塞）；加上 Paozhu 支持 <strong>h2c 明文 HTTP/2</strong>，内网微服务调用、代理转发场景无需 TLS 协商开销，也能直接享多路复用。绝大多数现代场景走 HTTP/2 即可覆盖。</li>
+<li><strong>Drogon（内置，四形态 + HTTP/1.1 pipeline 客户端）</strong>：<code>HttpClient.h</code> + <code>HttpClientImpl.cc</code>，同步/回调/future 三形态 + 协程 <code>Task</code> 叠加层；<strong>独有 HTTP/1.1 pipeline 客户端</strong>——<code>setPipeliningDepth()</code> 在单 HTTP/1.1 连接上批量发送，<code>pipeliningCallbacks_</code> 队列按序回调（<code>HttpClientImpl.h:62/185</code>）。<code>examples/client_example/</code> 与 <code>tests/integration_test/client/</code> 有完整测试。该能力仅在 HTTP/1.1 连接下生效，TCP 队头阻塞仍在。</li>
+</ul>
+<h3>6.10 监控与可观测性</h3>
+<ul>
+<li><strong>Paozhu（基础内建 + 业务层扩展）</strong>：框架核心提供<strong>基础自检能力</strong>：<code>controller/src/serverwatch.cpp</code> 注册 <code>paozhu_status</code> 路由（返回版本号、当前在线连接数 <code>total_count</code>、协程池 <code>clientrunpool</code> 线程状态）；<code>frametasks_timeloop</code> 是框架级间隔任务注册口（router 按 <code>run_timeloop</code> 链名定时触发）；Access log 内嵌 server.cpp（<code>access_loglist</code> + <code>httpwatch_flush_access_log</code>）。但<strong>无 Prometheus 风格的 Collector/Registry/Counter/Gauge/Histogram 抽象</strong>——业务层如需 Prometheus 指标，需自行用 prometheus-cpp 埋点（<code>docs/qiyedev.txt</code> 有说明）。</li>
+<li><strong>Drogon（内置完整 Prometheus 体系）</strong>：<code>lib/inc/drogon/utils/monitoring/</code> — <code>Collector</code>/<code>Counter</code>/<code>Gauge</code>/<code>Histogram</code>/<code>Metric</code>/<code>Registry</code> 全套抽象 + <code>PromExporter</code> 插件（<code>plugins/PromExporter.h</code>），JSON 配置即启用，默认暴露 <code>/metrics</code> 端点，可配置 collectors + labels（如 <code>http_requests_total{method, status}</code>）；<code>version.cc</code> 也明确列出 Prometheus 相关依赖。生产可观测性开箱即用。</li>
+</ul>
+<h3>6.11 定时器与定时任务</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（trantor EventLoop Timer）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>底层机制</td>
+<td><strong>帧拍驱动</strong>：server.cpp 主循环的 <code>fps</code> 计数器（<code>server.cpp:7656</code> <code>clientloop_ticks += 1</code>），<code>fps % timeloop_num == 0</code> 时触发</td>
+<td><strong>timerfd + 最小堆</strong>（<code>trantor/net/inner/TimerQueue.h</code>），内核级高精度定时器</td>
+</tr>
+<tr>
+<td>注册口</td>
+<td>业务层<strong>零样板插拔</strong>：controller 写 <code>//@urlpath(null, 任务名)</code> 注解自动注册为路由 + 定时任务目标；<strong>任意 handler</strong>（URL 触发、pre hook、启动 init）里调 <code>peer-&gt;add_timeloop_task(&quot;任务名&quot;, 间隔拍数)</code> + return <code>&quot;@timeloop&quot;</code> 即可挂入调度</td>
+<td><code>EventLoop::runAt(Date)</code> / <code>runAfter(delay)</code> / <code>runEvery(interval)</code> — <strong>框架不提供 interval task 到路由 handler 的自动映射</strong>，业务代码需自己拿 EventLoop + 管理回调生命周期</td>
+</tr>
+<tr>
+<td>任务载体</td>
+<td>路由 handler（controller 函数），触发时走 <code>router.run_timeloop_task()</code> → <code>call_sync_regfun(taskname)</code> — <strong>和 HTTP 路由共用一套注册体系</strong>；但只接受<strong>同步注解函数</strong>（<code>fn_kind::sync</code>），协程 handler 被跳过（timeloop 跑在同步线程池，没有 strand 可 co_spawn）</td>
+<td><code>std::function&lt;void()&gt;</code> 任意回调</td>
+</tr>
+<tr>
+<td>业务层插拔成本</td>
+<td><strong>极低</strong>：新增定时任务 = 写一个<strong>同步</strong> controller 函数 + 一个 arm 路由。删除定时任务 = 删掉 controller 文件，任务表自动清掉。<strong>所有用 <code>//@urlpath</code> 注解注册的同步函数</strong>都能被 timeloop 调（名字匹配即可）</td>
+<td><strong>较高</strong>：拿 EventLoop → 写 lambda → 管理 TimerId → 生命周期随 EventLoop 绑定。<strong>无 controller 注解自动注册口</strong></td>
+</tr>
+<tr>
+<td>运行线程</td>
+<td><strong><code>clientrunpool</code> 线程池</strong>（同步-only，已在 §3.3 说明）</td>
+<td><strong>EventLoop 所在 IO 线程</strong>（单线程串行，无跨线程交还问题）</td>
+</tr>
+<tr>
+<td>时间精度</td>
+<td>依赖 server 主循环帧率（通常 ~ms 级）</td>
+<td>亚毫秒级（timerfd）</td>
+</tr>
+<tr>
+<td>周期调度</td>
+<td>✅ 每 N 拍触发</td>
+<td>✅ <code>runEvery(interval)</code> 每 interval 秒</td>
+</tr>
+<tr>
+<td>一次性任务</td>
+<td>✅ 通过<strong>计数</strong>实现：<code>timecount_num</code> 初始 1，handler 里调 <code>peer-&gt;add_timeloop_count()</code> 累加，够 N 次后 <code>add_timeloop_count(0)</code> 清零 → 下一拍 server 发现 <code>timecount_num==0</code> 自动移除任务</td>
+<td>✅ <code>runAfter(delay)</code> 延迟执行一次（框架自动一次性）</td>
+</tr>
+<tr>
+<td>指定时间点</td>
+<td>❌ 无</td>
+<td>✅ <code>runAt(Date)</code> 在指定时间点触发</td>
+</tr>
+<tr>
+<td>取消</td>
+<td><code>clear_timeloop_task()</code> 设 <code>timeloop_num=0</code></td>
+<td><code>cancel(TimerId)</code></td>
+</tr>
+<tr>
+<td>单飞保护</td>
+<td>✅ <code>timeloop_inflight</code> atomic CAS：上一拍还在跑就跳过当前拍，<strong>不积压</strong></td>
+<td>回调自己负责幂等；TimerQueue 本身不做单飞</td>
+</tr>
+<tr>
+<td>Cron 表达式</td>
+<td>❌ 无</td>
+<td>❌ 无</td>
+</tr>
+<tr>
+<td>跨 EventLoop</td>
+<td><strong>全局统一调度</strong>（主循环一个 fps 计数器管所有 task）</td>
+<td>每个 EventLoop 独立一套 TimerQueue，跨线程需自己协调</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Paozhu timeloop 工作流</strong>（以 <code>frametasks_timeloop</code> 为例）：</p>
+<pre><code>1. 业务代码调 httppeer.add_timeloop_task(&quot;frametasks_timeloop&quot;, 100)
+   → peer.linktype = 7, timeloop_num = 100
+2. server.cpp 主循环每帧 fps++
+3. fps % 100 == 0 且 timeloop_inflight == false 时：
+   → CAS 置位 timeloop_inflight
+   → 投递给 clientrunpool 线程池（linktype==7 → timetasks_run）
+4. 线程池里执行 threadpool.cpp:603
+   → router.run_timeloop_task(peer, &quot;frametasks_timeloop&quot;)
+   → call_sync_regfun 找到同名 controller 函数（serverwatch.cpp:67 注册）
+   → 执行后 inflight_release() 重置 timeloop_inflight
+</code></pre>
+<p><strong>Drogon EventLoop Timer 用法</strong>：</p>
+<pre><code class="language-cpp">auto loop = drogon::app().getMainEventLoop();
+// 每 5 秒跑一次
+auto tid = loop-&gt;runEvery(5.0, [] { doSomething(); });
+// 取消
+loop-&gt;cancel(tid);
+</code></pre>
+<p><strong>总结</strong>：两者都没有 cron 表达式支持，都是 interval-based 定时器，但<strong>业务层插拔成本天差地别</strong>。Paozhu 把定时任务<strong>绑定到路由 handler + 线程池执行</strong>，和框架路由体系完全融合——写一个带 <code>//@urlpath(null, taskname)</code> 注解的<strong>同步</strong> controller 函数，再写一个 arm 路由（URL 触发/启动时注册），定时任务就挂进调度了；删掉 controller 文件任务表自动清掉。<strong>零样板、零框架 API 学习成本、路由和任务共用一套注册</strong>，但只接受<strong>同步注解函数</strong>（<code>fn_kind::sync</code>），协程 handler 被跳过（timeloop 跑在同步线程池，没有 strand 可 co_spawn）。Drogon 是 <strong>EventLoop 级别的基础原语</strong>（精度更高、API 更全，有 <code>runAt</code>/<code>runAfter</code>），但 interval task 到业务 handler 的映射、EventLoop 归属管理、TimerId 生命周期全得业务自己处理，没有 controller 注解自动注册口。</p>
+<h3>6.12 小结对照表</h3>
+<table>
+<thead>
+<tr>
+<th>协议 / 中间件</th>
+<th>Paozhu</th>
+<th>Drogon（drogon-master 1.9.14）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WebSocket</td>
+<td><strong>内置</strong> server + client</td>
+<td><strong>内置</strong> server + client</td>
+</tr>
+<tr>
+<td>Redis</td>
+<td><strong>内置</strong>（<code>pzredis</code>，自研 RESP，按 section 池，sync/async）</td>
+<td><strong>内置</strong>（<code>nosql_lib/redis</code>，基于 hiredis）</td>
+</tr>
+<tr>
+<td>MQTT</td>
+<td><strong>内置 broker + client</strong>（MQTT5，含 retained/共享订阅）</td>
+<td><strong>无</strong>（需第三方插件）</td>
+</tr>
+<tr>
+<td>RPC</td>
+<td><strong>内置</strong> 自定义 <code>rpc </code> 协议（<code>rpc_parse</code>/<code>http_rpcclient</code>）</td>
+<td><strong>无内置</strong>（无 protobuf/thrift/gRPC）</td>
+</tr>
+<tr>
+<td>裸 Socket / TCP</td>
+<td><strong>内置</strong>（<code>http_socket</code> + <code>sock_subpub_reg</code>）</td>
+<td><strong>无</strong>（仅 HTTP <code>addListener</code>，裸 TCP 需自管 trantor/asio）</td>
+</tr>
+<tr>
+<td>JWT</td>
+<td><strong>内置</strong>（<code>jwt.cpp</code>，HS256/RS256/ES256，OpenSSL3，安全取向自研）</td>
+<td><strong>无内置</strong>（需第三方库如 <code>jwt-cpp</code> / 社区插件）</td>
+</tr>
+<tr>
+<td>OAuth 2.0 / OIDC</td>
+<td><strong>内置</strong> 授权服务器 + 客户端（完整端点 + ORM 模型 + GitHub 集成）</td>
+<td><strong>无内置</strong>（需自行实现 / 社区插件）</td>
+</tr>
+<tr>
+<td>Session</td>
+<td><strong>内置</strong>（<code>httppeer.session</code> 即 <code>obj_val</code>，弱类型，文件/内存双存储，SameSite 自动处理）</td>
+<td><strong>内置</strong>（<code>Session</code> 类 + <code>SessionManager</code>，强类型 <code>std::any</code>，手动配 SameSite）</td>
+</tr>
+<tr>
+<td>HTTP Client</td>
+<td><strong>内置</strong>（同步/协程双形态；无 HTTP/1.1 pipeline 客户端，但 HTTP/2 多路复用覆盖并发场景）</td>
+<td><strong>内置</strong>（同步/回调/future/协程四形态 + HTTP/1.1 pipeline 客户端 <code>setPipeliningDepth</code>，仅 HTTP/1.1 生效）</td>
+</tr>
+<tr>
+<td>监控 / Prometheus</td>
+<td><strong>基础内建</strong>：<code>serverwatch.cpp</code> 状态路由 + Access log + 间隔任务注册；无 Collector/Registry 抽象，Prometheus 指标需业务层自行埋点</td>
+<td><strong>内置完整体系</strong>（<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> 插件 JSON 配置即用）</td>
+</tr>
+<tr>
+<td>定时任务</td>
+<td><strong>帧拍驱动</strong>：<code>add_timeloop_task(taskname, 间隔拍数)</code> → 路由 handler + <code>clientrunpool</code> 线程池执行；全局统一调度、天然单飞保护；但精度受主循环帧率限制、只能&quot;每 N 拍&quot;</td>
+<td><strong>EventLoop 级</strong>：<code>runAt</code>/<code>runAfter</code>/<code>runEvery</code> + timerfd；精度亚毫秒、支持指定时间点和一次性任务；但每 EventLoop 独立一套 TimerQueue，无全局调度</td>
+</tr>
+<tr>
+<td>跨协议统一抽象</td>
+<td><strong>有</strong>：ws/mqtt/socket/redis 共用 <code>subpub</code> 注册模型</td>
+<td>框架层无（各能力独立）；业务层有 <code>PubSubService&lt;&gt;</code> 模板工具</td>
+</tr>
+<tr>
+<td>RequestStream 流式请求体</td>
+<td><strong>部分有</strong>：multipart 上传 3MB 阈值自动落盘（内存保护）+ HTTP client <code>save()</code> 流式写文件；但无 handler 逐块回调的流式 API</td>
+<td><strong>完整有</strong>：<code>RequestStreamReader</code> + <code>MultipartStreamParser</code>，handler 逐块回调处理</td>
+</tr>
+<tr>
+<td>反向代理</td>
+<td><strong>无</strong>（自行写 HTTP client）</td>
+<td><strong>有</strong>（框架级 <code>forward()</code> + 插件示例 <code>SimpleReverseProxy</code>）</td>
+</tr>
+<tr>
+<td>PostgreSQL LISTEN/NOTIFY</td>
+<td><strong>无</strong>（仅同步/协程查询）</td>
+<td><strong>有</strong>（<code>DbListener</code>，事件驱动、无需轮询）</td>
+</tr>
+<tr>
+<td>常驻出站客户端</td>
+<td><strong>有</strong>：Redis 订阅 / WS / 裸 TCP / MQTT 四种常驻长连接（框架启动即拉起，<code>client_context</code> 托管生命周期，<code>resident_stop</code> 自检路由）</td>
+<td><strong>无</strong>（DbListener 仅数据库层；HttpClient 按需调用）</td>
+</tr>
+<tr>
+<td>插件体系</td>
+<td><strong>无统一机制</strong>（AccessLog/静态文件重定向内嵌 server.cpp）</td>
+<td><strong>完整 AOP Advice</strong>（<code>registerSyncAdvice</code>/<code>registerPreHandlingCallback</code>/<code>registerPostHandlingCallback</code> + 依赖拓扑排序）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>核心差异</strong>：Paozhu 是「<strong>多协议 + 内生身份全家桶 + 常驻出站</strong>」——一个框架同时是 HTTP/2、WebSocket、MQTT(broker)、Redis、RPC、裸 Socket 服务器，内置 JWT 与 OAuth 2.0/OIDC 授权服务器，还有 Session、HTTP Client 以及<strong>四种常驻出站客户端</strong>（Redis 订阅 / WS / TCP / MQTT）；但<strong>监控需业务自行接入</strong>、无 HTTP pipeline、无 handler 逐块回调的流式请求体（只有解析层自动落盘的内存保护）、无反向代理、无 LISTEN/NOTIFY。Drogon 是「<strong>专注 HTTP 的生产级 Web 框架</strong>」——WebSocket 与 Redis 一等公民、HTTP Client 能力更强（含 pipeline）、Session/监控/Prometheus/RequestStream/反向代理/DbListener 全链路内建，并有统一插件体系；但 JWT/OAuth/MQTT/RPC/TCP/常驻出站交由外部库或自行扩展，框架本身不内建。</p>
+<h3>6.13 Drogon 独有的 HTTP 增强能力（§6.12 表中标记为 Drogon 独占的 4 项）</h3>
+<p>以下能力 Drogon 框架层<strong>直接提供</strong>，Paozhu 无对等 API：</p>
+<p><strong>RequestStream 流式请求体</strong>（<code>RequestStream.h</code> + <code>MultipartStreamParser.h</code>）：分块回调，不等待整个 body 收完才处理；multipart 流式解析边收边拆。入口 <code>enableRequestStream(true)</code>，handler 接收 <code>RequestStreamPtr</code>。官方示例 <code>examples/async_stream/RequestStreamExampleCtrl.cc</code>。</p>
+<blockquote>
+<p><strong>注：Paozhu 也有大文件内存保护，但机制不同</strong>。multipart 上传有 <strong>3MB 阈值自动落盘</strong>（<code>http_parse.cpp</code>：超过阈值开启 <code>fp</code> 后，<code>post_multipart_itemcontent_append()</code> 每攒一块 <code>fwrite</code> 清 buffer）；HTTP client 有 <code>save(path)</code> → <code>respreadtofile()</code> 流式写文件接口——两者都不会把大文件攒在内存，但<strong>没有 Drogon 的 <code>RequestStream</code> 那种&quot;handler 逐块回调处理&quot;的框架级流式 API</strong>：Paozhu 是框架解析层自动落盘，业务 handler 拿到的是已落好的临时文件路径（<code>httppeer::upload_file.tempfile</code>），业务层看不到字节流本身。</p>
+</blockquote>
+<p><strong>反向代理 / <code>forward()</code></strong>（<code>HttpAppFramework.h:732-764</code>）：框架级内置反向代理，<code>forward(req, targetHost)</code> 转发请求到指定后端。插件示例 <code>examples/simple_reverse_proxy/</code> 用 <code>IOThreadStorage&lt;vector&lt;HttpClientPtr&gt;&gt;</code> 做连接池，按 EventLoop 隔离免锁。</p>
+<p><strong>DbListener —— PostgreSQL LISTEN/NOTIFY</strong>（<code>DbListener.h</code>）：基于 PostgreSQL 原生 LISTEN/NOTIFY，事件驱动、无需轮询。<code>DbListener::newPgListener(connectionInfo)</code> → <code>listen(chan, cb)</code> / <code>unlisten(chan)</code>。有完整 <code>db_listener_test.cc</code>。</p>
+<p><strong>插件体系（AOP Advice）</strong>：框架统一插件机制，三个钩子 <code>registerSyncAdvice</code> / <code>registerPreHandlingCallback</code> / <code>registerPostHandlingCallback</code>。Redirector、SlashRemover、AccessLogger、GlobalFilters、PromExporter、Hodor 全部走这套体系；插件间可声明依赖，启动顺序自动拓扑排序。</p>
+<h3>6.14 Paozhu 独有的常驻出站客户端（§6.12 表中标记为 Paozhu 独占）</h3>
+<p>框架启动时可以拉起<strong>四种常驻出站客户端</strong>，走和 HTTP handler 同一条协程池跑，用于跨进程上报/订阅：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>启用宏</th>
+<th>注册容器</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Redis 订阅常驻</strong></td>
+<td><code>ENABLE_REDIS_CLIENT</code></td>
+<td><code>server.redis_subpub_tasks</code></td>
+<td>订阅 Redis channel，接收其他服务的消息</td>
+</tr>
+<tr>
+<td><strong>WebSocket 出站常驻</strong></td>
+<td><code>ENABLE_WEBSOCKETS_CLIENT</code></td>
+<td><code>server.ws_subpub_tasks</code></td>
+<td>连到另一个 WS 服务做上报/双向订阅</td>
+</tr>
+<tr>
+<td><strong>裸 TCP 出站常驻</strong></td>
+<td><code>ENABLE_SOCKETS_CLIENT</code></td>
+<td><code>server.sockets_clients</code></td>
+<td>连到任意 TCP 服务（如私有协议推送）</td>
+</tr>
+<tr>
+<td><strong>MQTT 出站常驻</strong></td>
+<td><code>ENABLE_MQTT_CLIENT</code></td>
+<td><code>server.mqtt_clients</code></td>
+<td>连到外部 MQTT broker 做设备上报</td>
+</tr>
+</tbody>
+</table>
+<p><strong>统一管理基础设施</strong>：</p>
+<ul>
+<li><strong><code>client_context</code></strong>（<code>client_context.h/cpp</code>）—— 托管常驻客户端生命周期，超时自动 shutdown 底层连接，唤醒阻塞中的 <code>poll/recv</code>（防止僵尸协程）</li>
+<li><strong><code>resident_stop</code> 自检路由</strong>（<code>resident_stop.cpp</code>）—— GET <code>/resident_stop?kind=redis|ws|sock|mqtt&amp;name=&lt;conf 段名&gt;</code>：调 <code>stop()</code> 后等待连接句柄清空，验证常驻协程是否正确退出</li>
+<li><strong>框架级协程注册口</strong> —— 业务代码在初始化时调 <code>add_client_task_loop(peer)</code> 把常驻协程挂到 <code>client_context</code> 托管，无需自己写心跳/重连循环</li>
+<li><strong>与 subpub 体系打通</strong> —— 四种常驻客户端共用 §6.6 的 <code>subpub_reg</code> 注册模型，和框架内 WS/MQTT/Socket 服务器端天然互联互通</li>
+</ul>
+<p><strong>Drogon 对比</strong>：框架级没有常驻客户端注册体系。<code>DbListener</code>（PostgreSQL LISTEN/NOTIFY）是数据库层的事，<code>HttpClient</code> 是按需调用——都不是&quot;进程启动即拉起、长期存活的出站长连接&quot;。</p>
+<hr />
+<h2>7. 控制器与代码生成</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（本仓）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>代码生成器</td>
+<td>构建期 <code>paozhu_pre</code>（CMake target <code>paozhu_codegen</code>，<code>CMakeLists.txt:466-492</code>），扫描 <code>controller/src</code></td>
+<td><code>drogon_ctl</code> 命令行工具</td>
+</tr>
+<tr>
+<td>输入</td>
+<td><code>controller/src/*.cpp</code> 里的 <code>//@urlpath(pre,urlpath)</code> 注解</td>
+<td>命令行手工/半自动生成骨架</td>
+</tr>
+<tr>
+<td>增量</td>
+<td><code>cache/method_notes.data</code>(md5+mtime) 跳过未变文件（<code>autopickmethod.cpp:170-288</code>）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>生成产物</td>
+<td><code>controller/include/&lt;name&gt;.h</code>（前向声明）+ <code>common/autocontrolmethod.hpp</code>（<code>reg_raw</code> 路由表）</td>
+<td><code>create_controller</code> 骨架、<code>create_view</code> 把 <code>.csp</code>→<code>DrTemplate</code> 子类</td>
+</tr>
+<tr>
+<td>模板引擎</td>
+<td><code>view/</code> HTML 编译为 <code>viewsrc/</code> C++ 源码（<code>viewsrc/view/</code>）</td>
+<td><strong>CSP</strong>（C++ Server Pages）：<code>.csp</code> 编译成 <code>DrTemplateBase</code> 子类 <code>genText()</code></td>
+</tr>
+<tr>
+<td>视图机制</td>
+<td><code>view()</code> / <code>theme_view()</code>（多主题前缀）</td>
+<td><code>DrTemplate&lt;ClassName&gt;</code> + <code>newTemplate()</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>差异要点</strong>：</p>
+<ul>
+<li>Paozhu 的 codegen 是<strong>构建流水线的一环</strong>（每次编译主程序前自动跑，强制刷新路由表）；Drogon 的 <code>drogon_ctl</code> 是<strong>开发者手动执行的 CLI</strong>，产物常驻仓库。</li>
+<li>视图：Paozhu 自研 HTML→C++ 编译；Drogon 用 CSP（C++ 内嵌模板），两者思路都是「模板编译进二进制」，但语法/机制不同。</li>
+</ul>
+<h3>7.1 最小可运行示例（注解函数 vs 注册宏）</h3>
+<p><strong>Paozhu —— 注解函数（取自 <code>controller/src/testrand.cpp</code>，真实最简写法）</strong>：</p>
+<pre><code class="language-cpp">#include &quot;httppeer.h&quot;
+namespace http
+{
+//@urlpath(null,testrand)        // 站点(null=全局 slot) + URL 路径；无前置过滤器
+std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    httppeer &amp;client = peer-&gt;get_peer();
+    client &lt;&lt; &quot;&lt;p&gt;随机数: &quot; &lt;&lt; rand_range(100, 999) &lt;&lt; &quot;&lt;/p&gt;&quot;;
+    return &quot;&quot;;   // 空串 = 正常完成/放行；非空串为跳转或终止
+}
+}//namespace http
+</code></pre>
+<ul>
+<li>函数签名 <code>std::string handler(shared_ptr&lt;httppeer&gt;)</code> 即注册为<strong>同步 handler</strong>（<code>reg_raw</code> 的 <code>reg_sync</code> 槽）；返回 <code>asio::awaitable&lt;std::string&gt;</code> 即落入 <code>co_reg</code> 协程槽——<strong>同步/协程由签名决定，无需额外宏</strong>。</li>
+<li>构建期 <code>paozhu_pre</code> 扫描 <code>//@urlpath</code> 自动生成 <code>reg_raw</code> 路由表，开发者不写任何注册语句。</li>
+</ul>
+<p><strong>Drogon —— 注册宏（HttpController + 反射，类名自动转路径）</strong>：</p>
+<pre><code class="language-cpp">class TestCtrl : public drogon::HttpController&lt;TestCtrl&gt;
+{
+  public:
+    METHOD_LIST_BEGIN
+    // 路径 &quot;/testrand&quot;，GET 方法，绑定 testrand 方法
+    ADD_METHOD_TO(TestCtrl::testrand, &quot;/testrand&quot;, Get);
+    METHOD_LIST_END
+
+    void testrand(const HttpRequestPtr &amp;req,
+                  std::function&lt;void(const HttpResponsePtr &amp;)&gt; &amp;&amp;cb) const
+    {
+        auto resp = HttpResponse::newHttpResponse();
+        resp-&gt;setBody(&quot;&lt;p&gt;随机数&lt;/p&gt;&quot;);
+        cb(resp);   // 回调式返回
+    }
+};
+</code></pre>
+<ul>
+<li>方法挂在 <code>HttpController&lt;Derived&gt;</code> 子类上，靠 <code>DrObject</code> 反射在 <code>main</code> 前静态自注册；类名 <code>TestCtrl</code> 默认映射为 <code>/testctrl</code>（可用 <code>ADD_METHOD_TO</code> 显式覆盖路径）。</li>
+<li>同步/异步的选择落在<strong>单个方法形态</strong>上（回调 / <code>std::future</code> / <code>CoroMapper</code>/<code>Task</code> 协程），与 Paozhu「签名即槽位」不同。</li>
+</ul>
+<blockquote>
+<p>一句话：Paozhu 是「<strong>在业务代码里写一行 <code>//@urlpath</code> 注解就完成注册</strong>」，回归式、零样板；Drogon 是「<strong>在类里用 <code>METHOD_LIST_BEGIN/ADD_METHOD_TO</code> 宏声明路由</strong>」，宏反射、需继承 <code>HttpController</code> 基类。</p>
+</blockquote>
+<h3>7.2 代码生成引擎（<code>vendor/httpcli</code>）与数据库迁移工具</h3>
+<p><strong>澄清</strong>：Paozhu 的 <code>vendor/httpcli/</code> <strong>不是数据库迁移工具</strong>，而是其<strong>构建期代码生成 / ORM schema 解析引擎</strong>——即 <code>paozhu_pre</code>（CMake target <code>paozhu_codegen</code>）背后的实现，等价于 Drogon 的 <code>drogon_ctl</code>。它做三件事：</p>
+<ul>
+<li><strong>控制器方法抽取</strong>：<code>autopickmethod.cpp</code>（<code>@dest controller method pick file</code>）扫描 <code>//@urlpath</code> 注解生成 <code>reg_raw</code> 路由表；<code>autopickcontrolmethod.hpp</code> / <code>controllerparse.hpp</code> 解析控制器。</li>
+<li><strong>SQL schema → ORM 模型</strong>：<code>dbtypes.hpp</code>（<code>parse_pg_ddl</code>/<code>parse_sqlite_ddl</code>/<code>parse_mysql_show_create</code>/<code>gen_ddl</code>）+ <code>dbconvert.hpp</code>/<code>dbcreate.hpp</code>/<code>modelfun.hpp</code>，把 <code>schema/&lt;tag&gt;/tables/*.sql</code> 编译成 <code>orm/*/include/*_opsql.h</code> 等模型头。</li>
+<li><strong>结构体反射 / 模板</strong>：<code>struct_reflectfile.cpp</code>、<code>templateparse.hpp</code>、<code>dbdump_all.hpp</code>/<code>dbdump_schema.hpp</code>/<code>dbschema_check.hpp</code>（后者是「<code>schema/&lt;tag&gt;/tables/*.sql</code> 管理工具」——校验 SQL 完整性、用 <code>gen_ddl()</code> 重写规范化 SQL，<strong>管理 schema 文件本身，而非运行时迁移</strong>）。</li>
+</ul>
+<p><strong>迁移工具对比</strong>：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Paozhu（<code>httpcli</code> 引擎）</th>
+<th>Drogon（<code>drogon_ctl</code>）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本质</td>
+<td>构建期 codegen：<strong>双模式</strong>——连活库 introspection（<code>modelfun.hpp</code> 的 <code>SHOW CREATE TABLE</code>/PG 表列表）或离线读 <code>schema/*.sql</code>，二者都生成 ORM 模型 + 控制器抽取 + 结构体反射</td>
+<td>CLI：连<strong>活库</strong>（<code>create_model</code>）→ ORM 模型 / 生成 controller/view/plugin 骨架</td>
+</tr>
+<tr>
+<td>Schema 来源</td>
+<td><strong>双模式</strong>：database-first（活库 introspection）+ 离线 SQL 文件（可手写或由活库 dump）</td>
+<td><strong>database-first</strong>（连活库 <code>create_model</code>）</td>
+</tr>
+<tr>
+<td>运行时迁移器（版本化 up/down）</td>
+<td><strong>无</strong>；<code>dbschema_check</code> 仅校验/规范化 SQL 文件</td>
+<td><strong>无</strong>；<code>create_model</code> 仅反向生成模型</td>
+</tr>
+<tr>
+<td>等价性</td>
+<td><code>httpcli</code> ≈ <code>drogon_ctl</code>（都是代码生成器，<strong>都不是迁移工具</strong>）</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>结论</strong>：两者都<strong>没有 Flyway/Liquibase 式的版本化迁移执行器</strong>，且<strong>都支持 database-first</strong>（连活库反向生成模型：Drogon <code>create_model</code>；Paozhu <code>modelfun.hpp</code> 跑 <code>SHOW CREATE TABLE</code>/PG 表列表）。差异在于 Paozhu 额外支持<strong>纯离线</strong>读 <code>schema/*.sql</code> 生成（CI 友好、与库解耦），而 Drogon 的 <code>create_model</code> 必须连活库。若项目需要真正的 DB 迁移流水线，两边都要外接工具或自管 SQL 脚本——这正是「全家桶自研」在 DB 工程化上<strong>未覆盖</strong>的一块。</p>
+</blockquote>
+<hr />
+<h2>8. C++20 协程</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（本仓）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>支持</td>
+<td><strong>全栈协程</strong>：<code>asio::awaitable&lt;T&gt;</code> + <code>co_await</code> + <code>co_spawn(..., detached)</code>，遍布 server/router/httppeer/ORM/客户端</td>
+<td><strong>完整 C++20 协程</strong>：<code>Task&lt;T&gt;</code>（<code>coroutine.h:160</code>）、<code>AsyncTask</code>、<code>CallbackAwaiter</code>、<code>when_all</code>、<code>Mutex</code> 协程锁</td>
+</tr>
+<tr>
+<td>触发点</td>
+<td>每连接 <code>http1loop</code>/<code>http2loop</code> 协程；路由 <code>co_resolve</code>；DB 查询</td>
+<td>ORM <code>CoroMapper</code>；<code>co_future</code>/<code>sync_wait</code> 桥接 future</td>
+</tr>
+<tr>
+<td>定位</td>
+<td>协程是<strong>主范式</strong>（连 ORM 都是），回调极少</td>
+<td>协程是<strong>可选范式</strong>，默认仍是回调 / future，协程为增强</td>
+</tr>
+</tbody>
+</table>
+<p><strong>关键差异</strong>：Paozhu 把协程作为<strong>唯一一等公民</strong>（IO、业务、DB 全链路 awaitable）；Drogon 是「回调/future 为基础 + 协程叠加」的混合模型。Paozhu 用 Asio 的标准 <code>co_await</code>；Drogon 自研 <code>Task</code>/<code>Awaiter</code> 体系。</p>
+<hr />
+<h2>9. 多租户 / 主题</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（本仓）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>机制</td>
+<td>站点 slot 模型：<code>host_index → slot</code>，<code>_site_to_slot</code> 每站点一条 slot，目录即命名空间（<code>split_domain_path</code>）</td>
+<td>多 app / 多 controller 分组；依赖 <code>DrObject</code> 命名</td>
+</tr>
+<tr>
+<td>主题</td>
+<td><code>theme_view()</code> 自动加 <code>themes=</code> 前缀；<code>get_theme()</code>（<code>httppeer.h</code>）</td>
+<td>无内建 theme_view 等价机制（需自行实现）</td>
+</tr>
+</tbody>
+</table>
+<p>Paozhu 的多租户是<strong>框架级内建</strong>（域名→slot→路由表隔离 + 主题视图），Drogon 本仓无对等的一站式多租户抽象。</p>
+<hr />
+<h2>10. 依赖与工程化</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu</th>
+<th>Drogon（本仓）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第三方核心</td>
+<td><strong>Asio</strong>（可切 boost::asio）、<strong>OpenSSL 3</strong>；SQLite 可选链 <code>SQLite::SQLite3</code>（<code>ENABLE_SQLITE=ON</code>）；MySQL/PG 无库依赖（协议自研）</td>
+<td><strong>trantor</strong>（自研网络库）、OpenSSL / Botan（TLS 可插拔）</td>
+</tr>
+<tr>
+<td>构建</td>
+<td>CMake，构建期 codegen（<code>paozhu_pre</code>），<code>controller/include</code> 自动生成</td>
+<td>CMake，<code>drogon_ctl</code> 外部 CLI 生成</td>
+</tr>
+<tr>
+<td>附加模块</td>
+<td><strong>vendor/ 绝大部分自研/零外部依赖</strong>：<code>pzimage</code>(图片) / <code>pzexcel</code>(Excel) / <code>pzword</code>(Word) / <code>webpdf</code>(PDF) / <code>pzcharts</code>(图表) / <code>sms</code>(短信) / <code>webpay</code>(支付) / <code>pzzip</code>(压缩) / <code>pzredis</code>(Redis 客户端) / <code>httpcli</code>(codegen)。仅 SQLite 需链 <code>sqlite3</code>、HTTP client 支持 brotli 可选链 <code>brotlienc/brotlidec</code></td>
+<td><strong>数据层库</strong>：<code>nosql_lib/redis</code>（Redis 客户端，基于 hiredis）+ <code>orm_lib</code>（ORM，MySQL/MariaDB/PG/SQLite 全链官方客户端库）。注：<code>nosql_lib/</code> 在 drogon-master 仅含 <code>redis/</code>（无 MongoDB/Cassandra 等）；图片/Excel/Word/PDF/图表/SMS/支付等<strong>均无内置</strong>，需 opencv / libxlsxwriter / libharu 等外部库</td>
+</tr>
+<tr>
+<td>解析器</td>
+<td>全自研（HTTP1/HTTP2/HPACK 无第三方）</td>
+<td>自研 HTTP1 解析；drogon-master 无 HTTP/2</td>
+</tr>
+<tr>
+<td>证书自动化（ACME / OCSP）</td>
+<td><strong>内置 ACME 客户端</strong>：<code>acme_client.cpp</code> + <code>acme_run.cpp</code> + <code>acme_config.cpp</code> 自动签发/续期，配合 <code>acme.conf</code>/<code>ocsp_intv_time</code>；<strong>OCSP stapling</strong> 由 <code>ocsp_check.cpp</code> 自动刷新装订</td>
+<td><strong>无内置 ACME 客户端</strong>（仅可在静态 <code>location</code> 配置 <code>uri_prefix: /.well-known/acme-challenge/</code> 来提供 HTTP-01 挑战文件）；<code>lib/</code> 无 OCSP stapling 实现（BotanTLSProvider 中的 <code>ocsp</code> 仅是客户端校验证书链时接收的 OCSP 响应，非服务端装订）；证书获取/续期依赖外部工具</td>
+</tr>
+<tr>
+<td>TLS 后端</td>
+<td>仅 OpenSSL 3 支持</td>
+<td>OpenSSL / <strong>Botan</strong> 可插拔条件编译</td>
+</tr>
+<tr>
+<td>压缩</td>
+<td><strong>gzip + brotli 都内置</strong>（<code>gzip.h</code> / <code>https_brotli.h</code>；两者都走 §2.1 静态文件压缩缓存策略：首次懒压缩落盘，命中零 CPU）</td>
+<td><strong>gzip + brotli 都支持</strong>（gzip 静态文件查找默认开，brotli 通过 <code>USE_BROTLI</code> 条件编译；两者都走预压缩文件查找，框架只读不写）</td>
+</tr>
+<tr>
+<td>进程守护</td>
+<td><strong>框架级自保护 + daemonize</strong>：① <strong>死锁检测</strong> <code>httpwatch_check_deadlock()</code> — 核心机制靠<strong>两个计数器的平衡矛盾</strong>。accept 是<strong>独立阻塞线程</strong>（不跑在 io_context 上）：SSL accept 加 <code>total_http2_count</code>，HTTP accept 加 <code>total_http1_count</code>；sslhandshake 协程层减 <code>total_http2_count</code>，clientpeerfun 协程层减 <code>total_http1_count</code>（加/减应平衡）；另有 <code>total_count</code>（只增不减，累计自启动以来进入过 clientpeerfun 的连接数）。handler 死锁时 accept 仍能高速接新连接（<code>total_httpX_count</code> 持续 ++，但协程排队在死锁 strand 上永远没机会 --）→ <code>total_httpX_count &gt; 4</code> 且 <code>total_count</code> 冻结 → 看护线程每 5 秒检查一次，连续 3 次（15 秒）检测到矛盾 → <code>isstop=true</code> 主动退出。<strong>所有死锁场景都能覆盖</strong>（包括部分卡死：accept 两边都接，卡死的那个协议 count 持续增长但 -- 不掉）；② <strong>负载阈值重启</strong> <code>httpwatch_check_restart_threshold()</code>（可配置时段，持续超阈值主动退出）；③ <strong>看护线程退出</strong> <code>std::terminate()</code> 保护（看护线程自己挂了也触发重启）；④ 外部重启文件（<code>restart_file</code> / <code>restart_ssl_file</code>）；⑤ <code>init_daemon.hpp</code> 可 daemonize（fork→setsid→关 fd）</td>
+<td><strong>无框架级自保护</strong>：无死锁检测、无周期性体检、无看护线程退出 terminate；依赖 <code>drogon::app().quit()</code> / <code>shutdown()</code> 主动关停；daemonize 需外部工具</td>
+</tr>
+<tr>
+<td>外部重启链路</td>
+<td>框架<strong>主动退出</strong>（<code>isstop=true</code> → 主循环 break → 进程正常结束），配合 systemd <code>Restart=on-failure</code> / Docker <code>--restart=always</code> 拉起新进程——形成完整闭环：<strong>内部检测卡死（15 秒内）→ 自动退出 → 外部重启</strong></td>
+<td>无主动卡死退出机制；进程挂掉/卡死由 systemd <code>WatchdogSec=</code>（通常 30 秒+）/ Docker health check 被动超时 kill+重启</td>
+</tr>
+</tbody>
+</table>
+<h3>10.1 收口：零第三方依赖的内置「全家桶」（Paozhu 工程化主线）</h3>
+<p>把前面各节的自研点收拢成一句话：<strong>Paozhu 的强制外部依赖极薄（仅 Asio + OpenSSL 3），其上是几乎全栈自研</strong>——唯一的例外是 SQLite（嵌入式数据库，无独立协议，用官方 sqlite3 C API，<code>ENABLE_SQLITE=ON</code> 时链入）；Drogon 核心同样薄（trantor + OpenSSL/Botan），但<strong>能力靠组合生态</strong>。</p>
+<p><strong>Paozhu 自研覆盖（不引入对应第三方库）</strong></p>
+<ul>
+<li>传输/应用协议：HTTP/1.1、HTTP/2（HPACK/ALPN/h2c）、WebSocket、MQTT（含 broker）、Redis 客户端、RPC、裸 Socket——线层/帧编解码全手写，无 libwebsockets / mosquitto / hiredis / 自研 RPC 框架等外部依赖。</li>
+<li><strong>数据库线层协议</strong>：MySQL（caching_sha2_password 握手）+ PostgreSQL（SCRAM-SHA-256 握手）<strong>完全自研</strong>，不链 <code>libmysqlclient</code>/<code>libpq</code>（SQLite 用官方 sqlite3 C API 是嵌入式数据库的自然选择，无线层协议可自研）。</li>
+<li>身份/安全：JWT（<code>jwt.cpp</code>，HS256/RS256/ES256，OpenSSL3，安全取向自研）与 OAuth 2.0/OIDC 授权服务器（<code>libs/oauth</code> + <code>controller/src/oauth</code> 全端点 + GitHub 集成）自研内置，无需 Keycloak/Auth0 等外部 IdP 即可自建 SSO（§6.7）。</li>
+<li>ORM 生成<strong>双模式</strong>：连活库 introspection（<code>vendor/httpcli/modelfun.hpp</code> 跑 <code>SHOW CREATE TABLE</code>/PG 表列表，database-first）与离线读 <code>schema/*.sql</code> 均可，后者与运行库解耦、CI 友好（§4.1/§7.2）。</li>
+<li>证书自动化：内置 ACME 客户端 + OCSP stapling（<code>acme_client.cpp</code>/<code>acme_run.cpp</code>/<code>ocsp_check.cpp</code>），无需 certbot 等外部工具。</li>
+<li>限流：连接接纳级过载保护自研（§5），非插件。</li>
+<li>统一抽象：ws/mqtt/socket/redis 共用 <code>subpub</code> 注册内核（§6.6），是这套全家桶的串联线索。</li>
+</ul>
+<p><strong>Drogon 对照（薄核心 + 生态组合）</strong></p>
+<ul>
+<li>Redis 用 <strong>hiredis</strong>、DB 用 <strong>libmysqlclient/libpq/sqlite3</strong>、限流用 <strong>Hodor 插件</strong>、ACME 靠外部工具；<strong>不内置</strong> MQTT/RPC/裸 Socket 服务器。</li>
+<li>取舍：聚焦 HTTP Web 框架，把「协议全家桶」交给生态/外部库，换取成熟、文档完善、TLS 可插拔（Botan/OpenSSL）。</li>
+</ul>
+<blockquote>
+<p>代价与收益同源：Paozhu 的「全家桶自研」带来<strong>部署简单（少装外部库）、能力一致、零协议授权/版本纠缠</strong>，但代码体量巨大、自研一切正确性自担、生态/社区小（见 §11）；Drogon 则把「做透 HTTP + 易组合」作为工程主线。</p>
+</blockquote>
+<hr />
+<h2>11. 设计取舍总结</h2>
+<p><strong>Paozhu 强项</strong></p>
+<ul>
+<li><strong>Asio 第三方生态独享</strong>：底层 standalone Asio + <code>asio::io_context</code> 暴露到底层，<code>asio-grpc</code>/<code>boost::beast</code>/<code>async_mqtt</code>/<code>boost::redis</code>/<code>quiche</code>/<code>nghttp2_asio</code> 等任何 Asio 库直接 drop in，<code>co_spawn</code>/<code>co_await</code> 即插即用。<strong>Drogon 完全不可用</strong>（trantor EventLoop 是 muduo 分支自研，非 <code>asio::io_context</code>）。</li>
+<li><strong>零第三方依赖的内置全家桶</strong>：HTTP/2 + MySQL/PG/SQLite 线层协议 + MQTT(broker) + WebSocket + Redis(自研 RESP) + RPC + 裸 Socket + JWT + OAuth 2.0/OIDC 授权服务器 + ACME/OCSP + webpay(支付) + webpdf/pzexcel/pzword/pzimage/pzcharts(文档处理)——全部自研，仅强制依赖 Asio + OpenSSL；统一 <code>subpub</code> 内核串联多协议，部署简单、无协议库版本纠缠。</li>
+<li><strong>四种常驻出站客户端</strong>（Redis 订阅 / WS / 裸 TCP / MQTT），框架启动即拉起，<code>client_context</code> 托管生命周期，天然打通跨进程上报/订阅。</li>
+<li><strong>框架级自保护</strong>：accept 独立线程 + handler 层天然隔离的死锁检测（两个计数器平衡矛盾，15 秒内发现并主动退出，覆盖所有死锁场景，比 systemd WatchdogSec=30s 还快）+ 看护线程退出 <code>std::terminate</code> + ORM 连接健康检查（<code>orm_connect_mar_t</code>）。</li>
+<li>全栈 C++20 协程统一心智模型 + HTTP/2 内置 + 多租户/主题视图 + ORM 双模式生成（活库 introspection / 离线 SQL）+ 构建期自动 codegen 强制刷新路由。</li>
+</ul>
+<p><strong>Paozhu 代价</strong></p>
+<ul>
+<li>双线程池架构（<code>io_context</code> 协程池 + <code>clientrunpool</code> 业务线程池）、巨量方言 ORM 头文件（~450KB/方言），代码体量与维护面大。</li>
+<li>框架自身的社区规模、文档完善度、<strong>框架专属</strong>插件数量远小于 Drogon（但 <strong>Asio 第三方库生态独享</strong>，不受此限制）。</li>
+<li>自研一切（HTTP/1.1/HTTP/2/HPACK/路由/数据库线层协议），正确性需自担。</li>
+</ul>
+<p><strong>Drogon 强项</strong></p>
+<ul>
+<li>成熟工业级 reactor 模型（多独立 EventLoop、MPSC 跨线程、epoll/kqueue）。</li>
+<li>反射宏注册 + 编译期静态自注册，零运行时扫描，注册路径自动推导。</li>
+<li><strong>独有 HTTP 增强</strong>：RequestStream 流式请求体、反向代理 <code>forward()</code>、PostgreSQL LISTEN/NOTIFY（DbListener）、插件体系（AOP Advice + 依赖拓扑排序）、静态文件预压缩查找、<strong>HTTP/1.1 pipeline 及其客户端</strong>（仅在 HTTP/1.1 连接下生效，TCP 队头阻塞仍在；HTTP/2 多路复用 + h2c 明文可彻底解决）。</li>
+<li>Prometheus 监控完整内建（<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> 插件 JSON 配置即用）。</li>
+<li>生态丰富（CSP 模板、nosql、plugin、filter、ORM 三方言、示例齐全），社区活跃、文档完善。</li>
+</ul>
+<p><strong>Drogon 代价（drogon-master 实测）</strong></p>
+<ul>
+<li><strong>无 HTTP/2 服务器实现</strong>（<code>lib/</code> 1.9.14：<code>HttpServer.cc</code> 仅输出 <code>HTTP/1.1</code>，无 <code>Http2Server</code>/ALPN 注册）。</li>
+<li><strong>无 Asio 生态兼容</strong>：EventLoop 自研非 <code>asio::io_context</code>，所有 Asio 第三方库（<code>asio-grpc</code>、<code>boost::beast</code>、<code>async_mqtt</code> 等）无法直接对接。</li>
+<li><strong>无框架级全家桶</strong>：MQTT broker、RPC、裸 Socket 服务器、JWT、OAuth、ACME/OCSP、webpay、文档处理、常驻出站客户端——全部无内置，需自行扩展。</li>
+<li><strong>无框架级自保护</strong>：无死锁检测、无看护线程退出 terminate、无主动卡死退出机制——进程挂掉只能靠 systemd <code>WatchdogSec=</code> / Docker health check 被动超时 kill+重启。</li>
+<li><strong>无框架级连接健康检查</strong>（ORM 僵尸清理靠数据库服务端 <code>wait_timeout</code>）。</li>
+<li>handler 默认跑在 ioLoop 线程，重业务需手动 offload；ORM 依赖连活库生成，离线/CI 需起库。</li>
+</ul>
+<hr />
+<h2>12. 选型建议</h2>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>需要 HTTP/2 服务器支持</td>
+<td><strong>Paozhu</strong>（drogon-master 无 HTTP/2 服务器实现；Paozhu 内置）</td>
+</tr>
+<tr>
+<td>追求成熟生态、文档、社区、快速上手</td>
+<td><strong>Drogon</strong></td>
+</tr>
+<tr>
+<td>全链路协程异步、统一心智模型</td>
+<td><strong>Paozhu</strong>（协程为主范式）</td>
+</tr>
+<tr>
+<td>多租户 SaaS / 主题化站点</td>
+<td><strong>Paozhu</strong>（框架内建）</td>
+</tr>
+<tr>
+<td>离线 CI / 不依赖运行库生成 ORM</td>
+<td><strong>Paozhu</strong>（SQL schema 生成）</td>
+</tr>
+<tr>
+<td>经典 Reactor + 反射宏 + 编译期注册</td>
+<td><strong>Drogon</strong></td>
+</tr>
+<tr>
+<td>一站式零依赖全家桶（多协议 + 自管证书 + 自研 DB 协议，少装外部库）</td>
+<td><strong>Paozhu</strong></td>
+</tr>
+<tr>
+<td>需要内置鉴权/SSO（JWT + OAuth 2.0/OIDC 授权服务器，少接外部 IdP）</td>
+<td><strong>Paozhu</strong></td>
+</tr>
+<tr>
+<td>需要 HTTP/1.1 Pipeline（仅 HTTP/1.1 连接且需单连接并发；Paozhu 无 HTTP/1.1 pipeline，但 <strong>HTTP/2 多路复用 + h2c 明文</strong>内外网都能覆盖并发场景，效果等价且更彻底）</td>
+<td><strong>Drogon</strong>（<code>HttpServer.cc</code> pipeline 队列 + <code>HttpClient</code> <code>setPipeliningDepth()</code>）</td>
+</tr>
+<tr>
+<td>需要内置 Prometheus 监控</td>
+<td><strong>Drogon</strong>（<code>Collector</code>/<code>Counter</code>/<code>Histogram</code> + <code>PromExporter</code> 插件 JSON 配置即用）</td>
+</tr>
+<tr>
+<td>需要 HTTP/1.1 pipeline 客户端（仅 HTTP/1.1 连接；HTTP/2 多路复用已覆盖并发请求）</td>
+<td><strong>Drogon</strong>（<code>HttpClientImpl.h:62</code> 独有能力）</td>
+</tr>
+<tr>
+<td>连接级保护偏好「硬拒绝」 vs 「排队慢放」</td>
+<td><strong>Drogon</strong>（<code>HttpConnectionLimit</code> 硬拒绝型）vs <strong>Paozhu</strong>（排队放行型，更温和）</td>
+</tr>
+<tr>
+<td>需要 RequestStream 流式请求体 / 大文件低内存上传</td>
+<td><strong>Drogon</strong>（<code>RequestStreamReader</code> + <code>MultipartStreamParser</code> 分块回调）</td>
+</tr>
+<tr>
+<td>需要 PostgreSQL LISTEN/NOTIFY 事件驱动</td>
+<td><strong>Drogon</strong>（<code>DbListener</code>，事件驱动、无需轮询）</td>
+</tr>
+<tr>
+<td>需要框架级反向代理</td>
+<td><strong>Drogon</strong>（<code>forward()</code> + 插件示例 <code>SimpleReverseProxy</code>）</td>
+</tr>
+<tr>
+<td>需要统一插件体系（AOP Advice + 依赖拓扑排序）</td>
+<td><strong>Drogon</strong>（<code>registerSyncAdvice</code>/<code>registerPreHandlingCallback</code>/<code>registerPostHandlingCallback</code>）</td>
+</tr>
+<tr>
+<td>静态文件压缩缓存偏好</td>
+<td><strong>Paozhu</strong>（懒压缩自动落盘 + mtime 感知，更新源文件自动重新压缩，零运维成本）vs <strong>Drogon</strong>（预压缩 <code>.gz</code>/<code>.br</code> 文件<strong>部署时手动/构建时生成</strong>，框架只读不写、<strong>无源文件 mtime 感知</strong>——源文件更新时运维必须同步更新 <code>.gz</code>/<code>.br</code>，否则浏览器拿到过期压缩内容；内存缓存（默认 5 秒）过期前也不会刷新）</td>
+</tr>
+<tr>
+<td><strong>电商开发</strong>（支付模块）</td>
+<td><strong>Paozhu</strong>：内置 <code>vendor/webpay/</code>（支付宝 + 微信支付 + 小程序支付，封装签名/验签/回调处理，<code>ENABLE_WEBPAY</code> 开关）+ <code>libs/oauth/</code>（自有 OAuth 2.0 授权服务器）+ 全协程异步处理支付回调高并发。Drogon 侧支付需自行集成第三方 SDK，无 OAuth 服务端内建</td>
+</tr>
+<tr>
+<td><strong>企业开发</strong>（WebPDF 等文档处理）</td>
+<td><strong>Paozhu</strong>：内置 <code>vendor/webpdf/</code>（HTML→PDF 生成）+ <code>vendor/pzexcel/</code>/<code>pzword/</code>（Excel/Word 读写）+ <code>pzimage/</code>（图片处理）+ <code>pzcharts/</code>（图表）——<strong>零外部依赖</strong>，CI/CD 一条命令编过。Drogon 侧需分别装 libharu/libxlsxwriter/opencv 等，构建链复杂</td>
+</tr>
+<tr>
+<td><strong>物联网开发</strong>（MQTT 模块）</td>
+<td><strong>Paozhu</strong>：<strong>内置 MQTT broker + client</strong>（MQTT5，retained 消息、共享订阅、<code>subpub_reg</code> 统一分发）——即开即用，无需部署额外 EMQX/Mosquitto。Drogon 全仓零 MQTT 代码，需引入第三方插件或外接 broker</td>
+</tr>
+<tr>
+<td><strong>需要 HTTP/2 + 大量模块一把梭</strong></td>
+<td><strong>Paozhu</strong>（HTTP/2 + MQTT broker + JWT + OAuth + ACME/OCSP + webpay/webpdf/pzexcel/pzword/pzredis，全内置零依赖）</td>
+</tr>
+<tr>
+<td><strong>证书自动化免运维</strong>（ACME 自动签发/续期 + OCSP stapling 自动刷新）</td>
+<td><strong>Paozhu</strong>：框架内建 <code>acme_client.cpp</code>/<code>acme_run.cpp</code>/<code>ocsp_check.cpp</code>，配 <code>acme.conf</code>/<code>ocsp_intv_time</code> 就全自动（每天指定时段自动续签 OCSP）。<strong>Drogon 完全没有内置</strong>：ACME 需外接 certbot/lego/openssl 脚本 + cron + nginx stapling 手动配，OCSP stapling 全仓零代码</td>
+</tr>
+<tr>
+<td><strong>需要兼容 Asio 第三方库生态</strong></td>
+<td><strong>Paozhu</strong>（直接用 standalone Asio，<code>asio::io_context</code> 暴露到底层，任何 Asio 库——<code>asio-grpc</code> / <code>beast</code> / <code>async_mqtt</code> / <code>boost::redis</code> / <code>quiche</code> / <code>nghttp2_asio</code> 等——都能直接 drop in，<code>co_spawn</code>/<code>co_await</code> 即插即用）。<strong>Drogon 不可用</strong>（EventLoop 是 trantor 自研的 muduo 分支，<code>epoll_wait</code> + <code>timerfd</code> + 最小堆，<strong>不是 <code>asio::io_context</code></strong>，Asio 生态库无法直接对接）</td>
+</tr>
+<tr>
+<td><strong>框架级自保护（死锁检测 + 主动退出重启闭环）</strong></td>
+<td><strong>Paozhu</strong>（accept 独立线程 + handler 层天然隔离的检测机制，所有死锁场景都能覆盖，15 秒内主动退出；比 systemd WatchdogSec=30s 还快）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>附：关键源码证据索引</h3>
+<ul>
+<li>Paozhu：<code>vendor/httpserver/src/server.cpp</code>、<code>include/client_session.h:56-108</code>（每连接 <code>asio::strand</code> 串行化）、<code>src/pool_step.cpp:79-117</code> + <code>include/pool_step.h</code>（双池并发：<code>co_pool_run_step</code> / <code>run_one_step_with_peer</code> / peer 链式共享所有权 / <code>rejected=true</code> 就地完成防死锁）、<code>include/router.h:79</code>、<code>include/httppeer.h:41</code>、<code>src/http2_parse.cpp</code>、<code>vendor/httpcli/autopickmethod.cpp</code>、<code>vendor/httpcli/modelfun.hpp</code>（ORM 双模式生成：活库 introspection + 离线 SQL）、<code>autopickcontrolmethod.hpp:411</code>、<code>conf/server.conf</code>、<code>vendor/httpserver/include/orm_cache.hpp</code>（<code>model_meta_cache</code> + <code>orm_cache_deadline</code> TTL 钳制）。</li>
+<li>Drogon（drogon-master）：<code>trantor/trantor/net/EventLoop.h</code>、<code>net/TcpServer.cc:65</code>、<code>net/inner/poller/EpollPoller.cc</code>、<code>lib/src/HttpRequestParser.cc</code>、<code>lib/src/HttpControllersRouter.cc:626</code>、<code>lib/inc/drogon/HttpController.h:31</code>、<code>orm_lib/inc/drogon/orm/Mapper.h:115</code>、<code>lib/inc/drogon/utils/coroutine.h:160</code>、<code>drogon_ctl/create_model.cc</code>、<code>drogon_ctl/create_view.cc</code>。</li>
+</ul>
+
+        <p><a href="index.html">← 返回主文档</a></p>
+      </div>
+  </body>
+</html>
