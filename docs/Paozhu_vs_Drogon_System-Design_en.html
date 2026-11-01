@@ -218,6 +218,87 @@
 <li>Drogon's &quot;multiple independent loops&quot; fits the classic Reactor model more cleanly — a single connection binds to one thread for its full lifetime, lock-free, good cache locality.</li>
 <li>Paozhu's &quot;single <code>io_context</code>, multiple workers&quot; is the classic Asio model. Coroutine frames live on the heap and don't occupy I/O threads. I/O and business are <strong>explicitly layered</strong> (I/O coroutines vs. business <code>clientrunpool</code>). <code>router::co_resolve</code> dispatches incrementally: coroutine steps <code>co_await</code> in place; synchronous steps go to the business pool (<code>server.cpp:2351</code> comment).</li>
 </ul>
+
+<h3>Blocking Scenario: 4 Slow Handlers Arrive Simultaneously</h3>
+<p>This is the most concrete illustration of the two architectures' core difference. Suppose four blocking handlers (slow SQL, heavy computation, file I/O) arrive at the same time — what happens?</p>
+<table>
+<thead>
+<tr>
+<th>Framework</th>
+<th>Thread model</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Drogon</strong></td>
+<td>Handlers run on the owning <code>ioLoop</code> thread by default. 4 threads = 4 <code>ioLoop</code>s</td>
+<td><strong>Clogs</strong>. All 4 <code>ioLoop</code>s are pinned by blocking handlers, <code>epoll_wait</code> is never called, every other connection's read/write events on those threads queue up — <strong>4 threads all blocked = the whole service freezes</strong></td>
+</tr>
+<tr>
+<td><strong>Paozhu</strong></td>
+<td>I/O thread pool handles accept/read/write only; blocking work goes to <code>clientrunpool</code></td>
+<td><strong>Doesn't clog</strong>. I/O threads never run business logic. Even if the business pool is fully saturated (queue buildup), I/O threads keep accepting new connections, reading requests, and returning overload responses (e.g. 503) — <strong>the service stays alive</strong></td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Drogon's mitigation paths</strong> (but there is no built-in business thread pool):</p>
+<p>Drogon's architecture simply <strong>has no such thing as a business thread pool</strong> — handlers run directly on their owning <code>ioLoop</code> thread. So a blocking handler can avoid pinning the ioLoop in only three ways:</p>
+
+<p><strong>Option 1: CoroMapper (the only built-in offload, but DB-only)</strong><br />
+Drogon ships with a coroutine ORM called <code>CoroMapper</code>. Under the hood it uses futures/callbacks, so <code>co_await</code> suspends rather than blocking the ioLoop. But this is <strong>limited to database operations</strong> — file I/O, heavy computation, outbound HTTP calls, and anything else get zero help.</p>
+<pre><code>METHOD_ADD(MyController::slowQuery, "/query", Get) {
+    auto result = co_await drogon::orm::CoroMapper<User>(drogon::app().getDbClient()).filter(...).exec();
+    // co_await yields, ioLoop is free to serve other connections
+    // resumes when DB result arrives
+}</code></pre>
+
+<p><strong>Option 2: User-built business thread pool</strong><br />
+For non-DB blocking work (file I/O, heavy computation, outbound HTTP calls, etc.), Drogon's architecture has zero built-in business thread pool or offload mechanism. Developers must design and implement this themselves — custom <code>std::thread</code> pools, task queues, inter-thread communication. There is no generic offload solution in the Drogon ecosystem to pull off the shelf.</p>
+
+<p><strong>Option 3: Multi-instance + Nginx load balancing</strong><br />
+Spread load across instances at the architecture level — if one clogs, others keep serving.</p>
+
+<p>But every option above is <strong>opt-in, developer-initiated</strong>. <strong>By default</strong>, a handler runs straight on its ioLoop thread. No manual offload = blocking = every other connection on that ioLoop queueing up = production incident.</p>
+
+<hr />
+<p><strong>Paozhu's advantage</strong> (architectural safety net — no developer action required): I/O and business are <strong>inherently separated</strong>. Handlers run on a dedicated <code>clientrunpool</code> business thread pool. Even if a synchronous handler contains blocking code, it only queues the business pool — I/O threads keep accepting connections, reading requests, and returning overload responses. Coroutine handlers go further: <code>co_await</code> suspends rather than blocks, making thread occupation very rare.</p>
+
+<hr />
+<p><strong>Bottom-line divergence</strong>:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Paozhu</th>
+<th>Drogon</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Default behavior</strong></td>
+<td>Blocking handler → clogs business pool only → I/O layer unaffected</td>
+<td>Blocking handler → clogs ioLoop → every connection on that thread freezes</td>
+</tr>
+<tr>
+<td><strong>Offload</strong></td>
+<td>Built-in via architecture — no manual work needed</td>
+<td>DB only (<code>CoroMapper</code>) or self-managed threading</td>
+</tr>
+<tr>
+<td><strong>Developer mindset</strong></td>
+<td>Blocking code won't take the service down</td>
+<td><strong>Must</strong> offload intentionally to be safe</td>
+</tr>
+<tr>
+<td><strong>Tradeoff</strong></td>
+<td>Higher architectural complexity (dual thread pools, strand/coroutine scheduling)</td>
+<td>Single-thread Reactor — simpler model, easier to reason about</td>
+</tr>
+</tbody>
+</table>
+
 <hr />
 <h2>2. HTTP Protocol Layer</h2>
 <table>
