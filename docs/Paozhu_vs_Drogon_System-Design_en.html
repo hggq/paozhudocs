@@ -307,6 +307,42 @@ Spread load across instances at the architecture level — if one clogs, others 
 </tbody>
 </table>
 
+<p><strong>The deepest design-philosophy divergence: OOM-prevention vs DDoS-prevention</strong></p>
+<p>The &quot;safe by default vs dangerous by default&quot; distinction above is surface level. Beneath it, each framework's architecture is engineered to defend against a <strong>different class of disaster</strong> entirely:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Paozhu</th>
+<th>Drogon</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Defends against</strong></td>
+<td><strong>OOM / service freeze</strong> (business-layer runaway)</td>
+<td><strong>DDoS / linear memory growth</strong> (connection-layer runaway)</td>
+</tr>
+<tr>
+<td><strong>Core mechanism</strong></td>
+<td>I/O and business are <strong>inherently separated</strong>: <code>add_sync_task</code> returns false when the pool can't take more → I/O layer returns <code>fail_503</code> but keeps accepting connections; deadlock detection + 15s watchdog exit prevents unbounded queue growth</td>
+<td>I/O thread count is <strong>fixed</strong> (<code>setThreadNum</code>): 4 threads whether 1k or 100k connections arrive; <code>HttpConnectionLimit</code> plugin caps total connections</td>
+</tr>
+<tr>
+<td><strong>The arithmetic</strong></td>
+<td>Without a reject path, 100k queued requests × 1KB avg = 100MB and climbing → OOM</td>
+<td>100k connections × 8MB thread stack each = <strong>800GB</strong> — the single-thread Reactor model eliminates this by design</td>
+</tr>
+<tr>
+<td><strong>Tradeoff</strong></td>
+<td>Higher architectural complexity (dual thread pools, strand, coroutine scheduling)</td>
+<td>Handler runs on ioLoop — blocking = every connection on that thread freezes</td>
+</tr>
+</tbody>
+</table>
+
+<p>Drogon's DDoS resilience is widely acknowledged in the industry — muduo single-thread Reactor + fixed threads + epoll means memory doesn't grow with connection count. Paozhu's OOM resilience is an <strong>architectural safety net</strong> — the business layer can blow up any which way, the I/O layer keeps breathing and never gets dragged into a freeze.</p>
+
 <hr />
 <h2>2. HTTP Protocol Layer</h2>
 <table>
@@ -447,8 +483,8 @@ Spread load across instances at the architecture level — if one clogs, others 
 </tr>
 <tr>
 <td>Pre / cross-cutting</td>
-<td>Per-route <code>pre_sync</code>/<code>co_pre</code> serial chain (<code>@ok/@exit</code>/jump) + site-level pre/after hooks</td>
-<td>Filters + Middlewares (sortable, reusable, decoupled from routing)</td>
+<td><strong>Three-layer hook system</strong>: <strong>per-route</strong> <code>pre_sync</code>/<code>co_pre</code> serial chain (<code>@ok/@exit</code>/jump) + <strong>per-site</strong> <code>action_pre_lists</code>/<code>action_after_lists</code> (<code>serverconfig.h:63-64</code>, <code>run_site_hooks</code> serial, trimmed at <code>site_hook_limit=15</code>) + <strong>per-site 404</strong> <code>action_404_lists</code> (<code>httppeer.cpp:1088</code>, triggered when no route matches)</td>
+<td>Filters (one-way intercept) + Middlewares (before/after route wrapping, <code>registerMiddleware</code>), sortable, reusable, decoupled from routing — <strong>no per-site slot isolation</strong></td>
 </tr>
 <tr>
 <td>Sync/coroutine mixing</td>
@@ -462,12 +498,40 @@ Spread load across instances at the architecture level — if one clogs, others 
 </tr>
 <tr>
 <td>Multi-tenant routing</td>
-<td>Site slot isolation (<code>_site_to_slot</code>)</td>
-<td>None; business-layer grouping</td>
+<td><strong>Multi-domain virtual host built-in at framework level</strong>: <code>host_index</code> matches sites by Host header (<code>alias_domain</code> supports alias domains), each site gets independent wwwpath/cert/hooks/rewrite/CORS/upload limits/slot_id (<code>serverconfig.h:30-79</code>)</td>
+<td>None; business-layer grouping or multi-instance</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Key difference</strong>: Drogon routing is an industrial-class classic pattern — &quot;macro reflection + static registration + Filters/Middlewares&quot; with clean separation of concerns. Paozhu takes an integrated approach — &quot;annotation + codegen + site slot + <code>flow_method</code> orchestration&quot; with built-in light sequential workflow capability and multi-tenancy right at the routing layer.</p>
+<p><strong>Key difference</strong>: Drogon routing is an industrial-class classic pattern — &quot;macro reflection + static registration + Filters/Middlewares&quot; with clean separation of concerns. Paozhu takes an integrated approach — &quot;annotation + codegen + site slot + <code>flow_method</code> orchestration&quot; with <strong>finer-grained per-site hook system</strong> (each site gets independent pre/post/404 hook lists), built-in light sequential workflow capability, multi-tenancy right at the routing layer, and PHP-FPM FastCGI support baked in.</p>
+
+<h3>3.4 PHP-FPM FastCGI Support (Paozhu exclusive)</h3>
+<p><strong>Paozhu</strong> (<strong>built-in at framework level</strong>): <code>isuse_php</code> + <code>php_root_document</code> + <code>rewrite_php_lists</code> three config keys, <code>check_php_dispatch()</code> (<code>server.cpp:1369</code>) full implementation: <code>.php</code> suffix hit → check rewrite rules → locate PHP file → set <code>compress=10</code> marker → forward to php-fpm via FastCGI. <strong>Supports URL rewriting</strong> (<code>rewrite_php_lists</code> regex maps URLs to PHP files) and <strong>index.php fallback</strong> (empty URL path checks <code>php_root_document/index.php</code>).</p>
+<p><strong>Drogon</strong> (<strong>absent</strong>): Zero PHP/FastCGI files in the entire repository. To run PHP, implement the FastCGI protocol yourself on top of trantor <code>TcpClient</code>, or front with Nginx reverse proxy.</p>
+
+<h3>3.5 Multi-domain Virtual Host (Paozhu built-in at framework level)</h3>
+<p>Each Paozhu site maps to <code>sitehostinfos</code> struct in <code>serverconfig.h</code> (<code>serverconfig.h:30-79</code>). <code>host_index</code> matches sites by HTTP <code>Host</code> header (supports <code>alias_domain</code> for alias domains). <strong>Per-site independent configuration fields</strong>:</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Meaning</th><th>Drogon has it?</th></tr>
+</thead>
+<tbody>
+<tr><td><code>mainhost</code> + <code>alias_domain</code></td><td>Primary domain + alias domains (one site can bind multiple domains)</td><td>❌ Zero virtual host files in entire repo</td></tr>
+<tr><td><code>wwwpath</code> + <code>php_root_document</code></td><td>Static file root + PHP root</td><td>❌</td></tr>
+<tr><td><code>certificate_file</code> + <code>privateKey_file</code></td><td><strong>Per-site independent TLS certificates</strong></td><td>❌ (only one global cert via <code>addListener</code>)</td></tr>
+<tr><td><code>action_pre_lists</code> / <code>action_after_lists</code> / <code>action_404_lists</code></td><td>Per-site pre / post / 404 hook lists</td><td>❌ (Filters/Middlewares are framework-registered, no site isolation)</td></tr>
+<tr><td><code>rewrite_php_lists</code></td><td>Per-site PHP rewrite rules</td><td>❌</td></tr>
+<tr><td><code>cors_domain</code> + <code>cors_origin_allowed</code></td><td>Per-site CORS allowlist</td><td>❌</td></tr>
+<tr><td><code>upload_max_size</code></td><td>Per-site upload size limit</td><td>❌</td></tr>
+<tr><td><code>themes</code> + <code>themes_url</code></td><td>Per-site theme/template directory</td><td>❌</td></tr>
+<tr><td><code>slot_id</code></td><td>Routing table slot isolation (each site gets its own routing table)</td><td>❌</td></tr>
+<tr><td><code>http2_enable</code></td><td>Per-site HTTP/2 on/off</td><td>❌</td></tr>
+<tr><td><code>fastcgi_host</code> + <code>fastcgi_port</code></td><td>Per-site PHP-FPM backend address</td><td>❌</td></tr>
+<tr><td><code>siteid</code> + <code>groupid</code></td><td>Site/group ID (business layer can use for tenant auth)</td><td>❌</td></tr>
+</tbody>
+</table>
+<p><strong>Matching flow</strong>: HTTP request arrives → <code>find_host_index()</code> (<code>httppeer.h:170</code>) looks up <code>Host</code> header in <code>mainhost</code> → miss → check <code>alias_domain</code> → resolve <code>host_index</code> → <strong>all routing, hooks, certs, roots, CORS, upload limits switch automatically by <code>host_index</code></strong>. No domain branching needed in business code.</p>
+
 <hr />
 <h2>4. ORM Deep Dive</h2>
 <blockquote>
@@ -644,13 +708,18 @@ txnlink-&gt;commit();                      // Unified commit or rollback
 <li>SQLite: picks type based on <code>sizeof(T)</code>; also supports <code>trantor::Date</code> / <code>vector&lt;char&gt;</code> / <code>optional&lt;T&gt;</code> / <code>Json::Value</code>.</li>
 <li>DB row → C++ field: <code>Field::as&lt;T&gt;()</code> (<code>Field.h:70-107</code>, extensive specializations) + model constructor <code>T(const Row&amp;, indexOffset)</code>, does special parsing for date/bytea, and controls incremental column writes based on <code>dirtyFlag_[]</code>.</li>
 </ul>
-<h3>4.8 Connection Pools</h3>
-<p><strong>Paozhu</strong>: <code>orm_conn_pool.cpp</code> maintains a <strong>read-write separated</strong> pool per dbtag (<code>async_get_mysql_select_conn</code> for reads / <code>async_get_mysql_edit_conn</code> for writes); coroutine connection fetch/build via <code>co_await async_add_*_connect</code>; backends <code>pg_conn</code>/<code>mysql_conn</code>/<code>sqlite_conn</code> each implement <code>async_*</code> non-blocking I/O; started by <code>init_orm_conn_pool(io_context,...)</code> (<code>server.cpp:9269</code>).</p>
+<h3>4.8 Connection Pools &amp; Multi-database Isolation</h3>
+<p><strong>Paozhu</strong>: <code>orm_conn_pool.h</code> — each database gets its own <strong>independent read-write separated pool</strong> (<code>get_mysql_select_conn</code> for reads / <code>get_mysql_edit_conn</code> for writes, all three databases support this). Connection pools are indexed by database name (<code>get_orm_conn_pool_obj()</code> returns <code>std::map&lt;std::string, std::shared_ptr&lt;orm_conn_pool&gt;&gt;</code>, keys are <code>&quot;cms&quot;</code>/<code>&quot;blog&quot;</code>/<code>&quot;lite&quot;</code> etc.). ORM model classes are generated <strong>inside per-database namespaces</strong> (<code>modelfun.hpp:9467</code> produces <code>namespace orm { namespace db_tag { class model {...} }}</code>), so tables with the same name in different databases are compile-time isolated — <code>orm::cms::user</code> and <code>orm::blog::user</code> are completely different C++ classes. Multi-database call: <code>auto db = make_unique&lt;orm::db_conn&gt;(&quot;cms&quot;);</code> selects the target DB directly. <strong>Framework-level table prefix</strong> (<code>orm_conn_t::pretable</code>, <code>orm_common.h:718</code>, configured in <code>conf/orm.conf</code>): under <code>[docs]</code> section write <code>pretable = web_</code>, allowing multiple business ORM models to share one physical database — namespace + prefix double isolation.</p>
+<p><strong>Drogon</strong>: Multi-database via multiple db sections in config + <code>app().getDbClient(&quot;cms&quot;)</code> to fetch; ORM models <strong>also support namespace isolation</strong>, but you must specify it manually — <code>drogon_ctl create model --namespace cms</code> command-line flag, or <code>&quot;namespace&quot;: &quot;cms&quot;</code> in the JSON config; default value is the database name. <strong>No read-write separation</strong>: a single <code>DbClient</code>'s <code>connections_</code> pool is shared for reads and writes. <strong>No table prefix</strong>: zero related implementations in the entire repository; to host multiple business ORMs in one physical DB you must either create separate DBs or hand-edit generated model source.</p>
+<p><strong>Paozhu exclusive</strong>:</p>
 <ul>
-<li><strong>Framework-level connection health check</strong> <code>orm_connect_mar_t</code> (<code>orm_connect_mar.h/cpp</code>): When borrowing, <code>watch_mysql_connect(conn)</code> registers a weak_ptr + <code>time_begin</code>. The server main loop calls <code>clear_connect()</code> every <strong>320 ticks</strong> — automatically prunes <code>weak_ptr</code> that have expired, skips async connections, and hard-closes (<code>hard_close()</code>) sync connections exceeding <code>CONST_ORM_QUERY_CONNECT_TIMEOUT</code>. Rate-limit: max 10 connections per scan round, scan over multiple rounds, sleeps 200ns between rounds to yield CPU.</li>
+<li><strong>Read-write separated coroutine pools</strong> (<code>async_get_*_select_conn</code> / <code>async_get_*_edit_conn</code> — reads hit read-only instances, writes hit primary)</li>
+<li><strong>Automatic namespace isolation</strong> (generated per-database without manual config; Drogon requires <code>--namespace</code> flag or JSON field)</li>
+<li><strong>Framework-level table prefix</strong> (<code>pretable = web_</code> in <code>conf/orm.conf</code>; Drogon unsupported)</li>
+<li><strong>Framework-level connection health check</strong> <code>orm_connect_mar_t</code> (<code>orm_connect_mar.h/cpp</code>): When borrowing, <code>watch_mysql_connect(conn)</code> registers a weak_ptr + <code>time_begin</code>. The server main loop calls <code>clear_connect()</code> every <strong>320 ticks</strong> — automatically prunes expired <code>weak_ptr</code>, skips async connections, and hard-closes (<code>hard_close()</code>) sync connections exceeding <code>CONST_ORM_QUERY_CONNECT_TIMEOUT</code>. Rate-limit: max 10 connections per round, scan over multiple rounds, sleeps 200ns between rounds to yield CPU.</li>
 <li><strong>ORM query logging</strong>: In debug mode, <code>push_log(sql_string, duration_ms)</code> records slow queries; <code>save_log()</code> flushes to disk every <code>CONST_ORM_QUERY_LOG_TIME</code> ticks.</li>
 </ul>
-<p><strong>Drogon</strong>: <code>DbClientLockFree</code> (<code>orm_lib/src/DbClientLockFree.cc</code>) with three-state collections <code>connections_</code>/<code>readyConnections_</code>/<code>busyConnections_</code> (mutex-protected). <code>execSql</code> reuses an idle one if available, otherwise pushes into <code>sqlCmdBuffer_</code> (max <strong>20000</strong>; exceeding it reports &quot;Too many queries in buffer&quot;, <code>DbClientLockFree.cc:203</code>). Number of event loops decided by <code>connNum</code> (SQLite fixed at 1, PG/MySQL take <code>min(hardware_concurrency(), connNum)</code>). Per-library connection classes <code>PgConnection</code>/<code>MysqlConnection</code>/<code>Sqlite3Connection</code> only handle single-connection non-blocking I/O; supports <code>execSqlWithTimeout</code> which throws <code>TimeoutError</code> on timeout.</p>
+<p><strong>Drogon</strong>: <code>DbClientLockFree</code> (<code>orm_lib/src/DbClientLockFree.cc</code>) with three-state collections <code>connections_</code>/<code>readyConnections_</code>/<code>busyConnections_</code> (mutex-protected). <code>execSql</code> reuses an idle one if available, otherwise pushes into <code>sqlCmdBuffer_</code> (max <strong>20000</strong>; exceeding it reports &quot;Too many queries in buffer&quot;, <code>DbClientLockFree.cc:203</code>). Number of event loops decided by <code>connNum</code> (SQLite fixed at 1, PG/MySQL take <code>min(hardware_concurrency(), connNum)</code>). Per-library connection classes <code>PgConnection</code>/<code>MysqlConnection</code>/<code>Sqlite3Connection</code> only handle single-connection non-blocking I/O; supports <code>execSqlWithTimeout</code> which throws <code>TimeoutError</code> on timeout. <strong>No framework-level connection health check</strong> — zombie cleanup relies on the DB server's <code>wait_timeout</code> setting.</p>
 <p><strong>Underlying protocol implementation divergence (architecture-level)</strong>:</p>
 <ul>
 <li><strong>Paozhu self-implements MySQL / PostgreSQL wire protocols; SQLite uses the official library</strong>:
@@ -925,7 +994,58 @@ auto one = co_await cmapper.findOne(
 <li><strong>Paozhu (base built-in + business-layer extensibility)</strong>: Core framework provides <strong>basic self-check capability</strong>: <code>controller/src/serverwatch.cpp</code> registers a <code>paozhu_status</code> route (returns version, current online connection count <code>total_count</code>, coroutine pool <code>clientrunpool</code> thread status); <code>frametasks_timeloop</code> is the framework-level interval task registration point (router triggers it periodically by <code>run_timeloop</code> chain name). Access log is embedded in server.cpp (<code>access_loglist</code> + <code>httpwatch_flush_access_log</code>). However, <strong>no Prometheus-style Collector/Registry/Counter/Gauge/Histogram abstraction</strong> — if Prometheus metrics are needed, business layer must instrument with prometheus-cpp (<code>docs/qiyedev.txt</code> mentions this).</li>
 <li><strong>Drogon (built-in complete Prometheus system)</strong>: <code>lib/inc/drogon/utils/monitoring/</code> — full <code>Collector</code>/<code>Counter</code>/<code>Gauge</code>/<code>Histogram</code>/<code>Metric</code>/<code>Registry</code> abstraction + <code>PromExporter</code> plugin (<code>plugins/PromExporter.h</code>). Enable with JSON config, default exposes <code>/metrics</code> endpoint, configurable collectors + labels (e.g. <code>http_requests_total{method, status}</code>); <code>version.cc</code> explicitly lists Prometheus-related dependencies. Production observability ready out of the box.</li>
 </ul>
-<h3>6.11 Timers &amp; Scheduled Tasks</h3>
+
+<h3>6.11 General-purpose In-memory Cache Layer</h3>
+<p>Both frameworks ship <strong>framework-level general-purpose in-memory caches</strong> (not ORM-specific), but the implementation styles are dramatically different — directly reflecting their respective threading models:</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Paozhu <code>pzcache&lt;BASE_TYPE&gt;</code></th>
+<th>Drogon <code>CacheMap&lt;T1, T2&gt;</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Location</strong></td>
+<td><code>vendor/httpserver/include/pzcache.h</code></td>
+<td><code>lib/inc/drogon/CacheMap.h</code></td>
+</tr>
+<tr>
+<td><strong>Underlying storage</strong></td>
+<td><code>static std::map&lt;string, data_cache_t&gt;</code> + <strong>one global mutex</strong></td>
+<td><strong>Time wheel</strong> (4 wheels × 200 buckets), <code>tickInterval * 200^4</code> seconds max validity</td>
+</tr>
+<tr>
+<td><strong>Expiry cleanup</strong></td>
+<td>Background thread scans for <code>exptime &lt; nowtime</code></td>
+<td>Time wheel fires <code>fnOnErase</code> callback <strong>automatically</strong> on expiry — no polling needed</td>
+</tr>
+<tr>
+<td><strong>Instance model</strong></td>
+<td>Global singleton <code>pzcache&lt;T&gt;::conn()</code> (intentionally not destructed — cleanup thread safety)</td>
+<td><strong>One independent instance per EventLoop</strong> (<code>IOThreadStorage</code> pattern)</td>
+</tr>
+<tr>
+<td><strong>Thread safety</strong></td>
+<td>Global <code>std::mutex</code> (I/O threads + business pool threads cross-pool, both access it)</td>
+<td>Per-EventLoop instance → <strong>zero lock</strong> (handler always runs on that ioLoop)</td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td><code>save(hashid, data, expnum, cover_data)</code> / <code>get(hashid)</code> / <code>check(hashid)</code> / <code>remove(hashid)</code> / <code>update(hashid, exptime)</code> / <code>clear()</code> / <code>remove_exptime()</code></td>
+<td>Internal <code>insert</code> / <code>erase</code>, notifies business via <code>fnOnInsert</code> / <code>fnOnErase</code> callbacks</td>
+</tr>
+<tr>
+<td><strong>Demo / usage</strong></td>
+<td><code>controller/src/testpzcache.cpp</code> full CRUD example; ORM query result cache <code>orm_cache.hpp</code> follows the same pattern</td>
+<td>Framework-internal: <code>HttpConnectionLimit</code> limiter states, static file cache, rate limiter states</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Threading model is everything</strong>: Drogon handlers are pinned to ioLoops → one <code>CacheMap</code> per EventLoop → zero lock. Paozhu's I/O and business threads live in separate pools → both need access → global mutex. This is the same architectural tradeoff as <code>IOThreadStorage</code> vs global <code>pzcache</code>.</p>
+
+<h3>6.12 Timers &amp; Scheduled Tasks</h3>
 <table>
 <thead>
 <tr>
@@ -1474,6 +1594,9 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 </ul>
 <hr />
 <h2>12. Selection Guide</h2>
+<blockquote>
+<p><strong>Concept clarification</strong>: <strong>Multi-domain virtual host</strong> = one physical server bound to multiple domains, each domain runs an entirely independent website (domain-level isolation: separate certs, roots, hooks); <strong>SaaS multi-tenancy</strong> = one or more domains serving multiple tenants, tenants share the same codebase (usually data-isolated by tenant_id field). These are different scenarios.</p>
+</blockquote>
 <table>
 <thead>
 <tr>
@@ -1482,6 +1605,14 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><strong>Multi-domain virtual host / hosting platform</strong> (one server bound to multiple domains, each site with independent certs/roots/hooks/CORS/upload limits)</td>
+<td><strong>Paozhu</strong> (built-in at framework level: <code>host_index</code> auto-matches <code>sitehostinfos</code> by Host header, each site gets 12+ independent config fields; Drogon has zero virtual host code — can only route at the Nginx proxy layer + multi-instance)</td>
+</tr>
+<tr>
+<td><strong>SaaS multi-tenancy</strong> (one or more domains serving multiple tenants, need tenant isolation)</td>
+<td><strong>Paozhu</strong> (framework-level virtual host + <code>siteid</code>/<code>groupid</code> fields assist tenant auth. When each tenant gets its own subdomain/domain, certs/roots/hooks/CORS/upload limits auto-isolate — business code only needs to switch tenant context by <code>host_index</code>. Drogon has no site isolation fields; tenant isolation is entirely business-layer)</td>
+</tr>
 <tr>
 <td>Need HTTP/2 server support</td>
 <td><strong>Paozhu</strong> (drogon-master ships no HTTP/2 server; Paozhu has it built-in)</td>
@@ -1495,8 +1626,8 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <td><strong>Paozhu</strong> (coroutine as primary paradigm)</td>
 </tr>
 <tr>
-<td>Multi-tenant SaaS / themed sites</td>
-<td><strong>Paozhu</strong> (framework built-in)</td>
+<td><strong>Themed sites / multiple template sets</strong> (same domain, different theme directories/template rendering)</td>
+<td><strong>Paozhu</strong> (<code>themes</code> + <code>themes_url</code> per-site fields, framework built-in; Drogon has no site-isolated theming mechanism)</td>
 </tr>
 <tr>
 <td>Offline CI / ORM generation without runtime DB</td>

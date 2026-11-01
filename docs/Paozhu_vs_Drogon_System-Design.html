@@ -307,6 +307,42 @@ METHOD_ADD(MyController::genPdf, "/pdf", Get) {
 </tbody>
 </table>
 
+<p><strong>最底层的设计哲学分歧：防 OOM vs 防 DDoS</strong></p>
+<p>上面说的"默认安全 vs 默认危险"只是表层。往深看，两个框架在<strong>架构设计上防的是完全不同的灾难</strong>：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Paozhu</th>
+<th>Drogon</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>防什么</strong></td>
+<td><strong>防 OOM / 防服务假死</strong>（业务层失控）</td>
+<td><strong>防 DDoS / 防内存线性增长</strong>（连接层失控）</td>
+</tr>
+<tr>
+<td><strong>核心机制</strong></td>
+<td>IO 和业务<strong>天生隔离</strong>：业务线程池满了通过 <code>add_sync_task</code> 返回 false 拒绝投递 → IO 层走 <code>fail_503</code> 返回过载响应但继续 accept；死锁检测 15 秒 watchdog 退出重启，不让请求无限堆队列吃内存</td>
+<td>IO 线程数<strong>固定</strong>（<code>setThreadNum</code>）：不管进来 1 千还是 10 万连接，都是这几个线程在跑；<code>HttpConnectionLimit</code> 插件限制总连接数上限</td>
+</tr>
+<tr>
+<td><strong>背后的计算</strong></td>
+<td>业务层如果没有 reject 通路，10 万请求堆队列 × 平均 1KB = 100MB 内存，继续涨就 OOM</td>
+<td>10 万连接如果每连接一个线程 × 8MB 栈 = <strong>800GB 直接爆</strong>。单线程 Reactor 从根上杜绝了这个风险</td>
+</tr>
+<tr>
+<td><strong>代价</strong></td>
+<td>架构复杂度高（双线程池、strand、协程调度）</td>
+<td>handler 跑在 ioLoop 上，阻塞 = 该线程所有连接假死</td>
+</tr>
+</tbody>
+</table>
+
+<p>Drogon 防 DDoS 的能力在业界是公认的——muduo 单线程 Reactor 模型 + 固定线程数 + epoll，高连接数下内存不线性增长。Paozhu 防 OOM 的能力是<strong>架构兜底</strong>——业务层再怎么炸，IO 层永远呼吸不停，不会被拖死假死。</p>
+
 <hr />
 <h2>2. HTTP 协议层</h2>
 <table>
@@ -447,8 +483,8 @@ METHOD_ADD(MyController::genPdf, "/pdf", Get) {
 </tr>
 <tr>
 <td>Pre/横切</td>
-<td>每路由 <code>pre_sync</code>/<code>co_pre</code> 串行链（<code>@ok/@exit</code>/跳转）+ 站点级 pre/after hooks</td>
-<td>Filters + Middlewares（可排序、可复用、与路由解耦）</td>
+<td><strong>三层钩子体系</strong>：<strong>每路由</strong> <code>pre_sync</code>/<code>co_pre</code> 串行链（<code>@ok/@exit</code>/跳转）+ <strong>站点级</strong> <code>action_pre_lists</code>/<code>action_after_lists</code>（<code>serverconfig.h:63-64</code>，<code>run_site_hooks</code> 串行，超限时截断到 <code>site_hook_limit=15</code>）+ <strong>站点级 404</strong> <code>action_404_lists</code>（<code>httppeer.cpp:1088</code> 无路由时触发）</td>
+<td>Filters（单向拦截）+ Middlewares（路由前后环绕，<code>registerMiddleware</code> 注册），可排序、可复用、与路由解耦，<strong>无站点级 slot 隔离</strong></td>
 </tr>
 <tr>
 <td>同步/协程混编</td>
@@ -462,12 +498,40 @@ METHOD_ADD(MyController::genPdf, "/pdf", Get) {
 </tr>
 <tr>
 <td>多租户路由</td>
-<td>站点 slot 隔离（<code>_site_to_slot</code>）</td>
-<td>无；业务层分组</td>
+<td><strong>多域名虚拟主机框架级内建</strong>：<code>host_index</code> 按 Host header 匹配站点（<code>alias_domain</code> 支持别名域名），每个 site 独立 wwwpath/证书/钩子/rewrite/CORS/上传限制/slot_id（<code>serverconfig.h:30-79</code>）</td>
+<td>无；业务层分组或多实例</td>
 </tr>
 </tbody>
 </table>
-<p><strong>核心差异</strong>：Drogon 的路由是「宏反射 + 静态注册 + Filters/Middlewares」的工业级经典范式，关注点分离干净；Paozhu 是「注解 + codegen + 站点 slot + <code>flow_method</code> 编排」的一体化范式，额外给了请求内顺序任务编排这一轻量工作流能力，且多租户在路由层即内建。</p>
+<p><strong>核心差异</strong>：Drogon 的路由是「宏反射 + 静态注册 + Filters/Middlewares」的工业级经典范式，关注点分离干净；Paozhu 是「注解 + codegen + 站点 slot + <code>flow_method</code> 编排」的一体化范式——钩子体系比 Drogon 更细（<strong>按站点分</strong>，每个 site 独立 pre/post/404 钩子列表），额外给了请求内顺序任务编排这一轻量工作流能力，且多租户、PHP-FPM FastCGI 支持在框架层即内建。</p>
+
+<h3>3.4 PHP-FPM FastCGI 支持（Paozhu 独有）</h3>
+<p><strong>Paozhu</strong>（<strong>框架级内建</strong>）：<code>isuse_php</code> + <code>php_root_document</code> + <code>rewrite_php_lists</code> 三个配置，<code>check_php_dispatch()</code>（<code>server.cpp:1369</code>）完整实现：<code>.php</code> 后缀命中 → 查 rewrite 规则 → 定位 PHP 文件 → 设 <code>compress=10</code> 标记 → 走 FastCGI 转发给 php-fpm。<strong>支持 rewrite</strong>（<code>rewrite_php_lists</code> 正则匹配 URL 映射到 PHP 文件）、<strong>支持 index.php fallback</strong>（URL 空路径时查 php_root_document/index.php）。</p>
+<p><strong>Drogon</strong>（<strong>无</strong>）：全仓 0 个 PHP/FastCGI 文件。要跑 PHP 需自行基于 trantor <code>TcpClient</code> 实现 FastCGI 协议，或用 Nginx 反代到 PHP-FPM。</p>
+
+<h3>3.5 多域名虚拟主机（Paozhu 框架级内建）</h3>
+<p>Paozhu 每个站点对应 <code>serverconfig.h</code> 里的 <code>sitehostinfos</code> 结构体（<code>serverconfig.h:30-79</code>），<code>host_index</code> 按 HTTP <code>Host</code> header 匹配站点（支持 <code>alias_domain</code> 别名域名）。<strong>每个站点独立配置的字段</strong>：</p>
+<table>
+<thead>
+<tr><th>字段</th><th>含义</th><th>Drogon 有吗</th></tr>
+</thead>
+<tbody>
+<tr><td><code>mainhost</code> + <code>alias_domain</code></td><td>主域名 + 别名域名（一个站点绑多个域名）</td><td>❌ 全仓 0 个虚拟主机相关文件</td></tr>
+<tr><td><code>wwwpath</code> + <code>php_root_document</code></td><td>静态文件根 + PHP 根</td><td>❌</td></tr>
+<tr><td><code>certificate_file</code> + <code>privateKey_file</code></td><td><strong>每个站点独立证书</strong></td><td>❌（只有全局 <code>addListener</code> 配一套证书）</td></tr>
+<tr><td><code>action_pre_lists</code> / <code>action_after_lists</code> / <code>action_404_lists</code></td><td>站点级 pre / post / 404 钩子列表</td><td>❌（Filter/Middleware 框架级注册，无站点隔离）</td></tr>
+<tr><td><code>rewrite_php_lists</code></td><td>站点级 PHP rewrite 规则</td><td>❌</td></tr>
+<tr><td><code>cors_domain</code> + <code>cors_origin_allowed</code></td><td>站点级 CORS 白名单</td><td>❌</td></tr>
+<tr><td><code>upload_max_size</code></td><td>站点级上传大小限制</td><td>❌</td></tr>
+<tr><td><code>themes</code> + <code>themes_url</code></td><td>站点级主题/模板目录</td><td>❌</td></tr>
+<tr><td><code>slot_id</code></td><td>路由表 slot 隔离（每个站点独立路由表）</td><td>❌</td></tr>
+<tr><td><code>http2_enable</code></td><td>站点级 HTTP/2 开关</td><td>❌</td></tr>
+<tr><td><code>fastcgi_host</code> + <code>fastcgi_port</code></td><td>站点级 PHP-FPM 后端地址</td><td>❌</td></tr>
+<tr><td><code>siteid</code> + <code>groupid</code></td><td>站点/分组 ID（业务层可用于租户鉴权）</td><td>❌</td></tr>
+</tbody>
+</table>
+<p><strong>匹配机制</strong>：HTTP 请求进来 → <code>find_host_index()</code>（<code>httppeer.h:170</code>）按 <code>Host</code> header 查 <code>mainhost</code> → 不命中再查 <code>alias_domain</code> → 定位 <code>host_index</code> → <strong>路由、钩子、证书、根目录、CORS、上传限制全部按 <code>host_index</code> 切换</strong>，框架自动处理，业务代码不用写任何域名分支。</p>
+
 <hr />
 <h2>4. ORM 深度对比</h2>
 <blockquote>
@@ -644,13 +708,18 @@ txnlink-&gt;commit();                      // 统一提交或回滚
 <li>SQLite：按 <code>sizeof(T)</code> 选类型；另支持 <code>trantor::Date</code>/<code>vector&lt;char&gt;</code>/<code>optional&lt;T&gt;</code>/<code>Json::Value</code>。</li>
 <li>DB 行→C++ 字段：<code>Field::as&lt;T&gt;()</code>（<code>Field.h:70-107</code>，带大量特化）+ 模型构造 <code>T(const Row&amp;, indexOffset)</code>，对 date/bytea 做特殊解析，并据 <code>dirtyFlag_[]</code> 控制增量写列。</li>
 </ul>
-<h3>4.8 连接池</h3>
-<p><strong>Paozhu</strong>：<code>orm_conn_pool.cpp</code> 按 dbtag 维护<strong>读写分离</strong>连接池（<code>async_get_mysql_select_conn</code> 读 / <code>async_get_mysql_edit_conn</code> 写），协程取/建连接（<code>co_await async_add_*_connect</code>）；后端 <code>pg_conn</code>/<code>mysql_conn</code>/<code>sqlite_conn</code> 各自实现 <code>async_*</code> 非阻塞 I/O，由 <code>init_orm_conn_pool(io_context,...)</code>（<code>server.cpp:9269</code>）启动。</p>
+<h3>4.8 连接池 &amp; 多库隔离</h3>
+<p><strong>Paozhu</strong>：<code>orm_conn_pool.h</code> 每个库有<strong>独立的读写分离连接池</strong>（<code>get_mysql_select_conn</code> 读 / <code>get_mysql_edit_conn</code> 写，三个数据库都支持），连接池 map 按库名索引（<code>get_orm_conn_pool_obj()</code> 返回 <code>std::map&lt;std::string, std::shared_ptr&lt;orm_conn_pool&gt;&gt;</code>，key 是 <code>"cms"</code>/<code>"blog"</code>/<code>"lite"</code> 等）；ORM 模型生成在<strong>库名命名空间</strong>下（<code>modelfun.hpp:9467</code> 生成 <code>namespace orm { namespace db_tag { class model {...} }}</code>），不同库的同名表编译期隔离——<code>orm::cms::user</code> 和 <code>orm::blog::user</code> 是完全不同的类。多库调用：<code>auto db = make_unique&lt;orm::db_conn&gt;("cms");</code> 直接选库。<strong>框架级表前缀</strong>（<code>orm_conn_t::pretable</code>，<code>orm_common.h:718</code>，在 <code>conf/orm.conf</code> 里配置）：<code>[docs]</code> section 下写 <code>pretable = web_</code>，同一物理库上可以放多套业务的 ORM 模型（<code>SELECT * FROM web_user</code> vs <code>SELECT * FROM shop_product</code>），命名空间 + 表前缀双重隔离。</p>
+<p><strong>Drogon</strong>：<code>DbClientManager</code> 多库靠配置多个 db section + <code>app().getDbClient("cms")</code> 取；ORM 模型<strong>也支持命名空间隔离</strong>，但需要手动指定——<code>drogon_ctl create model --namespace cms</code> 命令行参数，或 JSON 配置里写 <code>"namespace": "cms"</code>；默认值是 dbname。<strong>无读写分离</strong>：单个 <code>DbClient</code> 的 <code>connections_</code> 池读写混用，应用层无法强制"读走从库、写走主库"。<strong>不支持表前缀</strong>：整个仓库无 <code>table_prefix</code> 相关实现，同一物理库放多套业务 ORM 只能靠建独立 db 或手动改生成的模型源码。</p>
+<p><strong>Paozhu 独有</strong>：</p>
 <ul>
+<li><strong>读写分离协程池</strong>（<code>async_get_*_select_conn</code> / <code>async_get_*_edit_conn</code>，读走只读实例、写走主库）</li>
+<li><strong>命名空间自动隔离</strong>（按库名自动生成，无需手动指定；Drogon 需 <code>--namespace</code> 或 JSON <code>"namespace"</code> 字段）</li>
+<li><strong>框架级表前缀</strong>（<code>conf/orm.conf</code> 里 <code>pretable = web_</code>，一个物理库放多套业务 ORM；Drogon 不支持）</li>
 <li><strong>框架级连接健康检查</strong> <code>orm_connect_mar_t</code>（<code>orm_connect_mar.h/cpp</code>）：借出连接时 <code>watch_mysql_connect(conn)</code> 登记 weak_ptr + <code>time_begin</code>；server 主循环<strong>每 320 拍</strong>调 <code>clear_connect()</code> 扫描——<code>weak_ptr</code> 失效自动摘出、异步连接跳过、同步连接超过 <code>CONST_ORM_QUERY_CONNECT_TIMEOUT</code> 硬踢（<code>hard_close()</code>）。限流：每轮最多扫 10 个，分多轮扫完，每轮 sleep 200ns 让出 CPU。</li>
 <li><strong>ORM 查询日志</strong>：debug 模式下 <code>push_log(sql_string, duration_ms)</code> 记录慢查询，每 <code>CONST_ORM_QUERY_LOG_TIME</code> 拍数 <code>save_log()</code> 落盘。</li>
 </ul>
-<p><strong>Drogon</strong>：<code>DbClientLockFree</code>（<code>orm_lib/src/DbClientLockFree.cc</code>）三态集合 <code>connections_</code>/<code>readyConnections_</code>/<code>busyConnections_</code>（互斥保护）；<code>execSql</code> 有空闲则取用，否则压入 <code>sqlCmdBuffer_</code>（上限 <strong>20000</strong>，超限报 &quot;Too many queries in buffer&quot;，<code>DbClientLockFree.cc:203</code>）；按 <code>connNum</code> 决定事件循环数（SQLite 固定 1 个，PG/MySQL 取 <code>hardware_concurrency()</code> 与 <code>connNum</code> 较小值）。各库连接类 <code>PgConnection</code>/<code>MysqlConnection</code>/<code>Sqlite3Connection</code> 仅负责单连接非阻塞 I/O；支持 <code>execSqlWithTimeout</code> 超时抛 <code>TimeoutError</code>。</p>
+<p><strong>Drogon</strong>：<code>DbClientLockFree</code>（<code>orm_lib/src/DbClientLockFree.cc</code>）三态集合 <code>connections_</code>/<code>readyConnections_</code>/<code>busyConnections_</code>（互斥保护）；<code>execSql</code> 有空闲则取用，否则压入 <code>sqlCmdBuffer_</code>（上限 <strong>20000</strong>，超限报 &quot;Too many queries in buffer&quot;，<code>DbClientLockFree.cc:203</code>）；按 <code>connNum</code> 决定事件循环数（SQLite 固定 1 个，PG/MySQL 取 <code>min(hardware_concurrency(), connNum)</code>）。各库连接类 <code>PgConnection</code>/<code>MysqlConnection</code>/<code>Sqlite3Connection</code> 仅负责单连接非阻塞 I/O；支持 <code>execSqlWithTimeout</code> 超时抛 <code>TimeoutError</code>。<strong>无框架级连接健康检查</strong>（僵尸清理靠数据库服务端 <code>wait_timeout</code>）。</p>
 <p><strong>底层协议实现差异（架构级）</strong>：</p>
 <ul>
 <li><strong>Paozhu 自研 MySQL / PostgreSQL 线层协议；SQLite 用官方库</strong>：
@@ -925,7 +994,58 @@ auto one = co_await cmapper.findOne(
 <li><strong>Paozhu（基础内建 + 业务层扩展）</strong>：框架核心提供<strong>基础自检能力</strong>：<code>controller/src/serverwatch.cpp</code> 注册 <code>paozhu_status</code> 路由（返回版本号、当前在线连接数 <code>total_count</code>、协程池 <code>clientrunpool</code> 线程状态）；<code>frametasks_timeloop</code> 是框架级间隔任务注册口（router 按 <code>run_timeloop</code> 链名定时触发）；Access log 内嵌 server.cpp（<code>access_loglist</code> + <code>httpwatch_flush_access_log</code>）。但<strong>无 Prometheus 风格的 Collector/Registry/Counter/Gauge/Histogram 抽象</strong>——业务层如需 Prometheus 指标，需自行用 prometheus-cpp 埋点（<code>docs/qiyedev.txt</code> 有说明）。</li>
 <li><strong>Drogon（内置完整 Prometheus 体系）</strong>：<code>lib/inc/drogon/utils/monitoring/</code> — <code>Collector</code>/<code>Counter</code>/<code>Gauge</code>/<code>Histogram</code>/<code>Metric</code>/<code>Registry</code> 全套抽象 + <code>PromExporter</code> 插件（<code>plugins/PromExporter.h</code>），JSON 配置即启用，默认暴露 <code>/metrics</code> 端点，可配置 collectors + labels（如 <code>http_requests_total{method, status}</code>）；<code>version.cc</code> 也明确列出 Prometheus 相关依赖。生产可观测性开箱即用。</li>
 </ul>
-<h3>6.11 定时器与定时任务</h3>
+
+<h3>6.11 通用内存缓存层</h3>
+<p>两边都有<strong>框架级通用内存缓存</strong>（非 ORM 专用），实现风格却截然不同——直接反映了各自线程模型的差异：</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Paozhu <code>pzcache&lt;BASE_TYPE&gt;</code></th>
+<th>Drogon <code>CacheMap&lt;T1, T2&gt;</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>位置</strong></td>
+<td><code>vendor/httpserver/include/pzcache.h</code></td>
+<td><code>lib/inc/drogon/CacheMap.h</code></td>
+</tr>
+<tr>
+<td><strong>底层存储</strong></td>
+<td><code>static std::map&lt;string, data_cache_t&gt;</code> + <strong>全局一把 mutex</strong></td>
+<td><strong>时间轮</strong>（四轮子 × 200 buckets），<code>tickInterval * 200^4</code> 秒有效期</td>
+</tr>
+<tr>
+<td><strong>过期清理</strong></td>
+<td>定时线程扫 <code>exptime &lt; nowtime</code> 条目</td>
+<td>时间轮到期<strong>自动</strong>触发 <code>fnOnErase</code> 回调，无需轮询</td>
+</tr>
+<tr>
+<td><strong>实例模型</strong></td>
+<td>全局单例 <code>pzcache&lt;T&gt;::conn()</code>（故意不析构，清理线程安全）</td>
+<td><strong>每 EventLoop 一个独立实例</strong>（<code>IOThreadStorage</code> 风格）</td>
+</tr>
+<tr>
+<td><strong>线程安全</strong></td>
+<td>全局 <code>std::mutex</code>（IO 线程 + 业务线程跨池，两边都要访问）</td>
+<td>每 EventLoop 独立 → <strong>零锁</strong>（handler 固定在那个 ioLoop 上跑）</td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td><code>save(hashid, data, expnum, cover_data)</code> / <code>get(hashid)</code> / <code>check(hashid)</code> / <code>remove(hashid)</code> / <code>update(hashid, exptime)</code> / <code>clear()</code> / <code>remove_exptime()</code></td>
+<td>内部 <code>insert</code> / <code>erase</code>，通过 <code>fnOnInsert</code> / <code>fnOnErase</code> 回调通知业务</td>
+</tr>
+<tr>
+<td><strong>演示 / 使用</strong></td>
+<td><code>controller/src/testpzcache.cpp</code> 完整 CRUD 示例；ORM 查询结果缓存 <code>orm_cache.hpp</code> 是同一模式</td>
+<td>框架内部用：<code>HttpConnectionLimit</code> 限流 limiter、静态文件缓存、rate limiter 状态存储</td>
+</tr>
+</tbody>
+</table>
+<p><strong>线程模型决定了一切</strong>：Drogon handler 固定在 ioLoop 上跑 → 每 EventLoop 一个 CacheMap → 零锁；Paozhu IO 和业务线程跨池了 → 两边都要访问缓存 → 只能全局 mutex。这和 <code>IOThreadStorage</code> vs 全局 <code>pzcache</code> 是完全同构的取舍。</p>
+
+<h3>6.12 定时器与定时任务</h3>
 <table>
 <thead>
 <tr>
@@ -1474,6 +1594,9 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 </ul>
 <hr />
 <h2>12. 选型建议</h2>
+<blockquote>
+<p><strong>概念区分</strong>：<strong>多域名虚拟主机</strong>是一个物理服务器绑多个域名、每个域名跑完全独立的网站（域名隔离，证书/根目录/钩子各自独立）；<strong>SaaS 多租户</strong>是一个或多个域名下服务多个租户、租户共享同一套代码（通常数据隔离在 tenant_id 字段），两种场景不同。</p>
+</blockquote>
 <table>
 <thead>
 <tr>
@@ -1482,6 +1605,14 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><strong>多域名虚拟主机 / 建站平台</strong>（一个服务器绑多个域名，每个站点独立证书/根目录/钩子/CORS/上传限制）</td>
+<td><strong>Paozhu</strong>（框架级内建，<code>host_index</code> 按 Host header 自动匹配 <code>sitehostinfos</code>，每个 site 独立配置 12+ 字段；Drogon 全仓零虚拟主机代码，只能靠 Nginx 反代层路由 + 多实例）</td>
+</tr>
+<tr>
+<td><strong>SaaS 多租户</strong>（一个或多个域名下服务多个租户，需要租户隔离）</td>
+<td><strong>Paozhu</strong>（框架级虚拟主机 + <code>siteid</code>/<code>groupid</code> 字段辅助租户鉴权；每个租户绑独立子域名/独立域名时，证书/根目录/钩子/CORS/上传限制全部自动隔离，业务代码只需按 <code>host_index</code> 切租户上下文。Drogon 无 site 隔离字段，租户隔离完全靠业务层实现）</td>
+</tr>
 <tr>
 <td>需要 HTTP/2 服务器支持</td>
 <td><strong>Paozhu</strong>（drogon-master 无 HTTP/2 服务器实现；Paozhu 内置）</td>
@@ -1495,8 +1626,8 @@ std::string testrand(std::shared_ptr&lt;httppeer&gt; peer)
 <td><strong>Paozhu</strong>（协程为主范式）</td>
 </tr>
 <tr>
-<td>多租户 SaaS / 主题化站点</td>
-<td><strong>Paozhu</strong>（框架内建）</td>
+<td><strong>主题化站点 / 模板多套切换</strong>（同一域名不同主题目录/模板渲染）</td>
+<td><strong>Paozhu</strong>（<code>themes</code> + <code>themes_url</code> 站点级字段，框架内建；Drogon 无站点隔离的主题机制）</td>
 </tr>
 <tr>
 <td>离线 CI / 不依赖运行库生成 ORM</td>
