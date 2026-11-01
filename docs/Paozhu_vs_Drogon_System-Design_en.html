@@ -159,7 +159,7 @@
   <body>
      <div class="container">
 
-<h1>Paozhu vs Drogon — System Design Comparison</h1>
+<h1>Paozhu vs Drogon — C++ Web framework System Design Comparison</h1>
 <blockquote>
 <p>Based on source-code verification (<code>paozhu(https://github.com/hggq/paozhu)</code>, <code>drogon(https://github.com/drogonframework/drogon)</code>, both retrieved Oct 2026).
 <strong>Key finding</strong>: drogon-master (master branch checked out Oct 2026) has <strong>no HTTP/2 server implementation</strong> in <code>lib/</code> or <code>trantor/</code> (no <code>Http2Server</code>/<code>Http2Connection</code>; <code>lib/src/HttpServer.cc</code> only outputs <code>HTTP/1.1</code>, no <code>h2</code>/ALPN registration; trantor only has TLS-layer ALPN stubs). Paozhu ships HTTP/2 built-in (<code>http2_parse.cpp</code> and related). All Drogon HTTP/2 references below are scoped to the actual code present in this checkout — Drogon's mainline had not yet landed an HTTP/2 server at time of writing, making Paozhu's HTTP/2 a genuine differentiator.</p>

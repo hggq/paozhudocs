@@ -159,7 +159,7 @@
   <body>
      <div class="container">
 
-<h1>Paozhu vs Drogon —— 系统设计对比</h1>
+<h1>Paozhu vs Drogon —— C++ Web framework 系统设计对比</h1>
 <blockquote>
 <p>基于源码实测（<code>paozhu(https://github.com/hggq/paozhu)</code>, <code>drogon(https://github.com/drogonframework/drogon)</code>，均取 2026-10 最新源码目录）。
 源码目录分析：drogon-master 为 master 分支检出（2026-10 时点，版本头文件 <code>version.h.in</code> 定义 MAJOR/MINOR/PATCH，<code>version.cc</code> 输出 DROGON_VERSION + Git commit）。其 <code>lib/</code> 与 <code>trantor/</code> 中<strong>不含 HTTP/2 服务器实现</strong>（无 <code>Http2Server</code>/<code>Http2Connection</code>；<code>lib/src/HttpServer.cc</code> 仅输出 <code>HTTP/1.1</code>，无 <code>h2</code>/ALPN 注册；trantor 只有 TLS 层的 ALPN 能力桩）。paozhu 则内置 HTTP/2（<code>http2_parse.cpp</code> 等）。故下文对 drogon 的 HTTP/2 描述以「drogon-master 实际代码」为准——drogon 主线截至当前检出时点尚未内置 HTTP/2 服务器实现，paozhu 的 HTTP/2 是两者间的实际差异化能力。</p>
