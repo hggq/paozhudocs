@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -429,6 +429,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="./styles/modern-flat.css">
 </head>
 <body>
     <div class="layout">
@@ -440,8 +441,8 @@
                 </div>
             </div>
             <div class="lang-switcher">
-                <div class="lang-toggle active" onclick="switchLanguage('zh')" id="btn-zh">🇨🇳 中文</div>
-                <div class="lang-toggle" onclick="switchLanguage('en')" id="btn-en">🇬🇧 English</div>
+                <div class="lang-toggle" onclick="switchLanguage('zh')" id="btn-zh">🇨🇳 中文</div>
+                <div class="lang-toggle active" onclick="switchLanguage('en')" id="btn-en">🇬🇧 English</div>
             </div>
             <ul class="sidebar-nav">
                 <li><a href="#overview" onclick="scrollToSection('overview')" data-zh="框架简介" data-en="Framework Overview">框架简介</a></li>
@@ -455,7 +456,7 @@
 
         <main class="content">
             <!-- 中文内容 -->
-            <div class="lang-content active" id="content-zh">
+            <div class="lang-content" id="content-zh">
                 <h1>PaoZhu 项目概述</h1>
 
                 <h2 id="overview">框架简介</h2>
@@ -562,7 +563,7 @@
             </div>
 
             <!-- English content -->
-            <div class="lang-content" id="content-en">
+            <div class="lang-content active" id="content-en">
                 <h1>PaoZhu Project Overview</h1>
 
                 <h2 id="overview-en">Framework Overview</h2>
@@ -674,6 +675,7 @@
 
     <script>
         function switchLanguage(lang) {
+            try { localStorage.setItem('paozhu-lang', lang === 'zh' ? 'zh' : 'en'); } catch (e) {}
             document.querySelectorAll('.lang-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.lang-toggle').forEach(el => el.classList.remove('active'));
 
@@ -752,13 +754,16 @@
         window.addEventListener('scroll', updateSidebarActive);
         window.addEventListener('load', updateSidebarActive);
 
-        var lang = localStorage.getItem('paozhu-lang');
+        var lang = null;
+        try { lang = localStorage.getItem('paozhu-lang'); } catch (e) {}
         var hashLang = window.location.hash;
         if (hashLang === '#english' || hashLang === '#en') {
             switchLanguage('en');
         } else if (hashLang === '#chinese' || hashLang === '#zh') {
             switchLanguage('zh');
-        } else if (lang === 'en') {
+        } else if (lang === 'zh') {
+            switchLanguage('zh');
+        } else {
             switchLanguage('en');
         }
     </script>

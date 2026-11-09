@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>RBAC Guide · Paozhu 权限控制指南</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-body: #ffffff;
+            --text-color: #1e2a3e;
+            --sidebar-bg: #f8fafc;
+            --border-light: #e2e8f0;
+            --code-bg: #f1f5f9;
+            --link-color: #2563eb;
+            --link-hover: #1d4ed8;
+            --heading-border: #cbd5e1;
+            --scroll-thumb: #94a3b8;
+            --nav-hover-bg: #eef2ff;
+            --tip-bg: #eff6ff;
+            --tip-border: #bfdbfe;
+            --tip-ink: #1e40af;
+            --warn-bg: #fff7ed;
+            --warn-border: #fed7aa;
+            --warn-ink: #9a3412;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --text-color: #e2e8f0;
+                --sidebar-bg: #1e293b;
+                --border-light: #334155;
+                --code-bg: #1e293b;
+                --link-color: #60a5fa;
+                --link-hover: #93c5fd;
+                --heading-border: #475569;
+                --scroll-thumb: #475569;
+                --nav-hover-bg: #334155;
+                --tip-bg: #1e3a5f;
+                --tip-border: #2563eb;
+                --tip-ink: #93c5fd;
+                --warn-bg: #431407;
+                --warn-border: #c2410c;
+                --warn-ink: #fdba74;
+            }
+            code, pre {
+                background-color: #0f172a !important;
+            }
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', 'Noto Sans CJK SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-color);
+            line-height: 1.55;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .docs-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            padding: 2rem 0.8rem 2rem 1rem;
+            z-index: 100;
+            transition: transform 0.2s ease;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 290px;
+            min-width: 0;
+            padding: 2rem 2rem 4rem 2rem;
+            max-width: calc(100% - 290px);
+        }
+
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.2rem;
+            }
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: var(--link-color);
+                color: white;
+                border: none;
+                border-radius: 40px;
+                padding: 0.7rem 1.2rem;
+                font-size: 1rem;
+                z-index: 200;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-weight: 500;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        .nav-lang-header {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.8rem;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            opacity: 1;
+            background: var(--link-color);
+            color: white;
+        }
+
+        .nav-tree { list-style: none; margin: 0; padding: 0; }
+        .nav-tree li { margin: 0.2rem 0; list-style: none; }
+        .nav-tree .tree-item { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .nav-tree a {
+            text-decoration: none; color: var(--text-color); font-size: 0.88rem;
+            display: block; padding: 0.3rem 0.5rem; border-radius: 8px;
+            transition: all 0.15s; opacity: 0.85; flex: 1;
+        }
+        .nav-tree a:hover { background-color: var(--nav-hover-bg); opacity: 1; color: var(--link-color); }
+        .nav-tree a.active-link { background-color: var(--link-color); color: white; opacity: 1; }
+        .nav-tree .level-1 > a { font-weight: 600; font-size: 0.95rem; margin-top: 0.2rem; }
+        .nav-tree .level-2 { padding-left: 1.3rem; }
+        .nav-tree .level-3 { padding-left: 2.2rem; }
+
+        .content-panel { display: none; animation: fade 0.2s ease; }
+        .content-panel.active-lang { display: block; }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem; border-radius: 12px; overflow-x: auto;
+            margin: 1.2rem 0; border: 1px solid var(--border-light);
+            font-size: 0.88em;
+        }
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', 'Menlo', Consolas, monospace;
+            background-color: var(--code-bg);
+            padding: 0.15rem 0.4rem; border-radius: 6px; font-size: 0.85em;
+        }
+        pre code { background: transparent; padding: 0; }
+        h1, h2, h3, h4 { margin-top: 1.5em; margin-bottom: 0.6em; font-weight: 600; line-height: 1.3; }
+        h1 { font-size: 2rem; border-bottom: 2px solid var(--heading-border); padding-bottom: 0.3rem; margin-top: 0.3rem; }
+        h2 { font-size: 1.6rem; border-left: 4px solid var(--link-color); padding-left: 0.8rem; }
+        h3 { font-size: 1.35rem; margin-top: 1.8rem; }
+        h4 { font-size: 1.15rem; margin-left: 0.2rem; }
+
+        p { margin: 0.7rem 0; }
+        ul, ol { margin: 0.7rem 0; padding-left: 1.5rem; }
+        li { margin: 0.3rem 0; }
+
+        table {
+            width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.92em;
+        }
+        th, td {
+            border: 1px solid var(--border-light); padding: 0.55rem 0.8rem; text-align: left;
+            vertical-align: top;
+        }
+        th { background-color: var(--sidebar-bg); font-weight: 600; }
+
+        .tip-box {
+            background-color: var(--tip-bg); border-left: 4px solid var(--tip-border);
+            padding: 0.8rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.2rem 0;
+            color: var(--tip-ink); font-size: 0.95rem;
+        }
+        .warn-box {
+            background-color: var(--warn-bg); border-left: 4px solid var(--warn-border);
+            padding: 0.8rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.2rem 0;
+            color: var(--warn-ink); font-size: 0.95rem;
+        }
+
+        .flow-diagram {
+            background: var(--code-bg); border: 1px solid var(--border-light);
+            border-radius: 12px; padding: 1.2rem 1.5rem; margin: 1.2rem 0;
+            font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+            font-size: 0.82em; white-space: pre; overflow-x: auto; line-height: 1.7;
+        }
+
+        .scroll-top {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--link-color); color: white; text-align: center; line-height: 44px;
+            font-size: 1.2rem; text-decoration: none; z-index: 150;
+            opacity: 0; transition: opacity 0.3s;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            pointer-events: none;
+        }
+        .scroll-top.visible { opacity: 1; pointer-events: auto; }
+
+        img, svg { max-width: 100%; }
+        strong { font-weight: 600; }
+
+        .src-ref {
+            display: inline-block; font-size: 0.78em; opacity: 0.7;
+            background: var(--sidebar-bg); border: 1px solid var(--border-light);
+            padding: 0.1rem 0.5rem; border-radius: 4px; margin-left: 0.3rem;
+        }
+
+        .back-to-index {
+            display: block;
+            margin-top: 3rem;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .back-to-index:hover {
+            background-color: var(--nav-hover-bg);
+            color: var(--link-hover);
+            border-color: var(--link-color);
+        }
+    </style>
+    <link rel="stylesheet" href="./styles/modern-flat.css">
+</head>
+<body>
+<div class="docs-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-lang-header">
+            <button class="lang-btn" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
+        </div>
+        <div id="nav-container">
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">🛡️ Contents</div>
+            <div id="dynamic-nav">Loading...</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="content-cn" class="content-panel"></div>
+        <div id="content-en" class="content-panel active-lang"></div>
+    </main>
+</div>
+
+<button class="menu-toggle" id="mobileMenuBtn">☰ 目录</button>
+<a href="javascript:void(0);" id="scrollTopBtn" class="scroll-top">↑</a>
+
+<script>
+    const cnFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🛡️ Paozhu RBAC 权限控制</h1>
+        <p style="opacity: 0.8;">面向 SaaS 后台场景特化的务实设计 · 多租户三层授权 + 路由内嵌判定 + 快照缓存</p>
+    </div>
+
+    <h2 id="intro">概述</h2>
+    <p><strong>RBAC（Role-Based Access Control，基于角色的访问控制）</strong>在 Paozhu 里是「框架声明契约、应用实现判定」的分层设计：框架本体不带 RBAC 依赖，<code>vendor/httpserver/include/router.h</code> 只声明钩子契约，会话、角色和数据库逻辑都放在应用侧的 <code>libs/rbac/</code>。</p>
+    <ul>
+        <li><strong>契约层</strong>：<code>route_auth_fn</code> 返回状态码（<code>0</code> 放行、<code>401</code> 未登录、<code>403</code> 无权限），路由层从不读会话键。</li>
+        <li><strong>运行期</strong>：<code>libs/rbac/</code> 负责权限装载、授权快照缓存与路由判定钩子，由 <code>startup/main_dev.cpp</code> 和 <code>startup/main_daemon.cpp</code> 在 <code>run()</code> 之前安装。</li>
+        <li><strong>数据与管理</strong>：<code>[cms]</code> 的三层表 <code>syscompanyperms</code> / <code>sysroleperms</code> / <code>sysuserrole</code>（<code>sysrole</code> / <code>sysperms</code> / <code>sysuser</code> 配合使用），以及 <code>/superadmin/registerfunc</code>、<code>/superadmin/rbac/perm</code> 等管理页。</li>
+        <li><strong>失败关闭</strong>：钩子没装时，掩码非 0 的路由一律 403，绝不静默放行。</li>
+    </ul>
+
+    <div class="flow-diagram">请求
+   │
+   ▼
+router::resolve() 选中路由条目 → peer-&gt;mask_code = h.mask_code
+   │
+   ├── mask_code == 0 ──▶ 不调判定钩子，零额外查询，照旧由 pre / 登录决定
+   │
+   └── mask_code != 0 ──▶ route_guard(httppeer&amp;, urlpath, mask_code)
+                              │   401 未登录 / 403 无权限 / 0 放行
+                              ▼
+                       route_cache 授权快照 → load_user_grants()
+                       urlpath 命中 且 sysperms.maskcode 精确相等 → 放行
+                              ▼
+                       pre 过滤器（读到同一个 mask_code）→ handler</div>
+    <div class="tip-box">💡 内容依据 <code>AGENTS_CN.md</code> / <code>AGENTS.md</code> 的 §4.8「路由掩码（mask_code）——RBAC 的分流开关」及目录结构、安全规范、干净初始化相关章节。</div>
+
+    <h2 id="architecture">架构总览</h2>
+    <div class="flow-diagram">路由注解 //@urlpath(...):maskcode(n)
+        │  bin/paozhu_pre 写入注册表
+        ▼
+router 注册 mask_code（非 0 才进判定，无掩码零开销）
+        ▼
+route_guard   install_route_guard() 注入 route_auth_fn 钩子
+        ▼
+route_cache  16 分片快照缓存（键：adminid + companyid）
+        │  miss → singleflight 装载
+        ▼
+rbac.cpp::load_user_grants()  6 条 SQL
+        ▼
+sysuserrole + sysuser.roleid → sysrole → sysroleperms ∩ syscompanyperms → sysperms</div>
+    <table>
+        <tr><th>模块</th><th>职责</th></tr>
+        <tr><td><code>route_guard</code></td><td>判定入口。框架层 <code>vendor/httpserver</code> 只定义 <code>route_auth_fn</code> 钩子契约，应用侧注入实现；只有带 maskcode 的路由进入判定，无 maskcode 的路由零开销</td></tr>
+        <tr><td><code>route_cache</code></td><td>按 <code>(adminid, companyid)</code> 缓存授权快照（URL + maskcode 集合）：16 分片锁、singleflight 防击穿、代次号失效、60s TTL 兜底、4096 条上限</td></tr>
+        <tr><td><code>rbac.cpp</code></td><td>授权装载与写路径：角色绑定、授权替换、分配管理</td></tr>
+        <tr><td><code>route_catalog</code></td><td>权限目录与代码注册路由的对账（掩码漂移、显示名）</td></tr>
+    </table>
+
+<h2 id="layers">组成与目录</h2>
+    <table>
+        <tr><th>层次</th><th>位置</th><th>职责</th></tr>
+        <tr><td>钩子契约</td><td><code>vendor/httpserver/include/router.h</code></td><td><code>route_auth_fn</code>、<code>set_route_auth_hook()</code>、<code>route_auth_hook_ready()</code>；只约定返回状态码</td></tr>
+        <tr><td>RBAC 运行期</td><td><code>libs/rbac/</code></td><td>权限装载 + 授权快照缓存 + 路由判定钩子：<code>route_guard.*</code>、<code>route_cache.*</code>、<code>rbac.cpp</code>、<code>route_catalog.cpp</code></td></tr>
+        <tr><td>钩子安装</td><td><code>startup/main_dev.cpp</code> / <code>main_daemon.cpp</code></td><td><code>install_route_guard()</code>，夹在 <code>// paozhu-rbac:begin</code> / <code>// paozhu-rbac:end</code> 之间</td></tr>
+        <tr><td>数据表</td><td><code>[cms]</code> 的 <code>syscompanyperms</code> / <code>sysroleperms</code> / <code>sysuserrole</code> / <code>sysuser</code> / <code>sysperms</code></td><td>平台分配、角色授权、用户绑定三层，以及权限目录与租户 <code>companyid</code></td></tr>
+        <tr><td>管理页</td><td><code>/superadmin/registerfunc</code>、<code>/superadmin/rbac/perm</code>、<code>admin/rbac/sysuser/add</code></td><td>登记权限目录、改显示名、修正掩码漂移、建号</td></tr>
+        <tr><td>演示</td><td><code>controller/src/test_maskcode.cpp</code></td><td><code>/maskpre</code>、<code>/maskprehas</code>、<code>/comaskprehas</code> 三条路由</td></tr>
+    </table>
+
+    <h2 id="mask">路由掩码：分流开关</h2>
+    <p>每条注册条目可以带一个 <code>unsigned int</code> 掩码，它决定两件事：</p>
+    <ol>
+        <li><strong>分流</strong>：<code>mask_code != 0</code> 表示这条路由归 RBAC 管，路由在调用该条目的 pre 之前先走判定钩子；<code>mask_code == 0</code> 表示完全不参与 RBAC —— 钩子一次都不调，零额外查询。</li>
+        <li><strong>搬运</strong>：路由把它写进请求 <code>client.mask_code</code>，位置也在 pre 之前，所以 pre 与 handler 读到的是同一个值。</li>
+    </ol>
+    <p>这个值<strong>不是随便填的</strong>：它必须与登记该 urlpath 的 <code>sysperms.maskcode</code> 精确相等，否则该路由的每个请求都会被拒。</p>
+
+    <pre><code>//@urlpath(null,maskpre/check)
+std::string test_mask_pre(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    httppeer &amp;client = peer-&gt;get_peer();
+    client &lt;&lt; "pre 读到 mask_code=" &lt;&lt; client.mask_code;
+    if (client.mask_code == 0) return "@exit";
+    return "@ok";
+}
+
+//@urlpath(test_mask_pre,maskpre):ratelimit(20,5)                  // 掩码 0 → RBAC 不参与
+//@urlpath(test_mask_pre,maskprehas):maskcode(1234)                 // 归 RBAC 管
+//@urlpath(test_mask_pre,comaskprehas):maskcode(1235):title("测试名称")  // 协程版，同一条规则</code></pre>
+
+    <h3 id="mask-syntax">注解写法与解析</h3>
+    <p>后缀链写在 <code>//@urlpath(...)</code> 的右括号之后，由 <code>vendor/httpcli/autopickcontrolmethod.hpp</code> 提取；写法不合理时会在控制台打印 <code>[ROUTE-WARN]</code>。</p>
+    <table>
+        <tr><th>注解尾部</th><th>条目上存的值</th></tr>
+        <tr><td>没有冒号 <code>//@urlpath(null,foo)</code></td><td><code>0</code></td></tr>
+        <tr><td><code>:maskcode(1234)</code></td><td><code>1234</code></td></tr>
+        <tr><td><code>:maskcode(1234):ratelimit(20,5)</code></td><td><code>1234</code>，另外 <code>rate_time=20</code>、<code>rate_num=5</code></td></tr>
+        <tr><td><code>:123456</code>（旧写法，纯数字）</td><td><code>123456</code>，仍能解析，但请改写 <code>:maskcode(123456)</code></td></tr>
+        <tr><td><code>:maskcode()</code> / <code>:maskcode</code></td><td><code>0</code>，不告警</td></tr>
+        <tr><td><code>:maskcode(99999999999)</code>（超过 UINT_MAX）</td><td>钳到 <code>UINT_MAX</code></td></tr>
+        <tr><td><code>:maskcode(12abc)</code> / <code>:unknown(...)</code></td><td><code>0</code> 或忽略，并打印 <code>[ROUTE-WARN]</code></td></tr>
+    </table>
+
+    <h3 id="mask-title">:title(...) 与权限目录命名</h3>
+    <p><code>:title(测试名称)</code> 和 <code>:title("测试名称")</code> 是同一个功能：给受保护路由在权限目录里起显示名，让授权列表显示「新增产品保存」而不是 <code>/admin/addproductpost</code>。链路是 <code>bin/paozhu_pre</code> → <code>reg_raw()</code> 第 10 个实参 → <code>reg_methold_mid_t::title</code> → <code>rbac::route_entry::title</code> → <code>/superadmin/registerfunc</code>，且<strong>只在第一次插入 <code>sysperms</code> 行时</strong>写进 <code>sysperms.name</code>（没写 title 就回落成 urlpath）。</p>
+    <p>它只用于展示：派发与判定都不读它，<code>urlname</code> 仍是 urlpath，已存在的行也不会被注解改名 —— 要改名去 <code>/superadmin/rbac/perm</code>。手写注册拿到的是空串（<code>reg_raw()</code> 默认参数，<code>REG_*</code> 便捷宏不传这一位）。</p>
+    <div class="warn-box">⚠️ title 里不要写右括号 <code>)</code>：参数在<strong>第一个</strong>右括号处结束，后面的文本会让后缀链静默停住，写在 title 之后的 <code>:maskcode(1234)</code>、<code>:ratelimit(20,5)</code> 会被整段丢弃且不告警 —— 掩码因此变成 0，等于这条路由完全不在 RBAC 里。</div>
+    <div class="tip-box">💡 掩码是代码生成缓存键的一部分（和 pre 名、函数名、urlpath、返回类型、title 一起）。只改冒号后面的数字，下次构建就会重建 <code>controller/include/&lt;name&gt;.h</code> 和注册表。</div>
+
+    <h2 id="guard">判定钩子与授权快照</h2>
+    <p>框架只声明契约，不认识会话、角色和数据库：</p>
+    <pre><code>using route_auth_fn = std::function&lt;unsigned int(httppeer &amp;,
+        const std::string &amp;urlpath, unsigned int mask_code)&gt;;
+// 配套：set_route_auth_hook() / route_auth_hook_ready()</code></pre>
+    <p>实现在 <code>libs/rbac/route_guard.*</code>，返回值就是要写的状态码；路由层从不读会话键。<strong>两种拒绝要分开</strong>：会话没有 <code>adminid</code>（没登录）回 <code>401</code>；有 <code>adminid</code> 但租户 id（<code>session["userid"]</code>，登录时写的是 <code>sysuser.companyid</code>）为 <code>0</code> 回 <code>403</code>。<code>0</code> 不是可复用的全局层，这种账号应找管理员挂到企业上。<code>route_cache::allow()</code> 对同样的入参先拒，既不累加 miss，也不跑那 6 条装载查询。</p>
+    <p><strong>掩码拿 <code>sysperms.maskcode</code> 精确比对。</strong> <code>rbac.cpp::load_user_grants()</code> 把用户生效权限装成 <code>urlpath → 该路径每条权限行各自的 maskcode</code>，逐条保留、不再按位合并；放行条件是这条 urlpath 在表里，<strong>且</strong>路由掩码与其中某一条精确相等。对不上就是 403，原因写作 <code>maskcode drift</code>。位包含已撤掉：目录行只要改宽，掩码是它子集的路由就会静默放行。<code>/superadmin/registerfunc</code> 会标出「掩码漂移」行，勾选后按注册表里的值改写库里的 <code>maskcode</code>。</p>
+    <p><strong>掩码是「每条」而不是「每请求」。</strong> 赋值发生在派发链每一步的顶部，所以跳转（<code>return "/other/path"</code>）和从编排栈弹出的下一步都用自己那条的掩码覆盖，不继承上一步；<code>httppeer::clear()</code> 每请求归零，keep-alive 每个请求、HTTP/2 每个流各有一个 <code>httppeer</code>。配置级的 <code>action_pre</code> / <code>static_pre</code> 跑在「选出路由条目」之前，读到的恒为 <code>0</code>，也不会被 RBAC 拦。</p>
+    <div class="warn-box">⚠️ 钩子由应用入口安装，不是框架自带。钩子没装时，带掩码的路由直接 403（fail-closed）；掩码为 0 的路由行为和改动前一模一样。</div>
+
+    <h3 id="cache">快照缓存与 fail-closed 细节</h3>
+    <p><code>route_cache</code> 以 <code>(adminid, companyid)</code> 为键缓存授权快照（URL + maskcode 集合）：16 分片锁降低争用、singleflight 防击穿、代次号失效、60s TTL 兜底、4096 条上限。缓存未命中时才走 <code>rbac.cpp::load_user_grants()</code> 的 6 条 SQL；DB 失败、账号禁用或装载失败一律拒绝，且不写缓存、不复用旧值。</p>
+    <h2 id="data">多租户三层授权</h2>
+    <table>
+        <tr><th>层</th><th>表</th><th>作用</th></tr>
+        <tr><td>平台分配</td><td><code>syscompanyperms</code></td><td>平台分给企业的权限集（「套餐」）</td></tr>
+        <tr><td>角色授权</td><td><code>sysrole</code> + <code>sysroleperms</code></td><td>企业内角色 → 权限，必须与分配集取交集</td></tr>
+        <tr><td>用户绑定</td><td><code>sysuserrole</code> + <code>sysuser.roleid</code>（遗留双轨）</td><td>用户 → 角色，多对多 + 兼容单角色字段</td></tr>
+    </table>
+    <p>最终生效的权限行落在 <code>sysperms</code>（<code>urlpath</code> / <code>maskcode</code> / <code>name</code>）。授权链：平台分配集 → 企业角色授权（取交集窄化）→ 用户角色绑定 → 登录会话 → <code>urlpath</code> 命中 + <code>maskcode</code> 精确相等。</p>
+    <div class="tip-box">💡 <code>keep_allocated</code> 把角色授权与 <code>syscompanyperms</code> 求交，平台撤销分配立即生效；所有授权行要求 <code>owner == companyid &amp;&amp; companyid != 0</code>，拒绝把 0 当全局层。</div>
+
+    <h2 id="decisions">关键设计决策</h2>
+    <ol>
+        <li><strong>判定 = URL 命中 + maskcode 精确相等</strong>：不做位覆盖；目录行被改宽后按无权处理，防权限目录与代码漂移。</li>
+        <li><strong>分配层窄化</strong>：<code>keep_allocated</code> 把角色授权与 <code>syscompanyperms</code> 求交，平台撤销分配立即生效。</li>
+        <li><strong>租户硬隔离</strong>：所有授权行要求 <code>owner == companyid &amp;&amp; companyid != 0</code>；<code>adminid == 0</code> 回 401、<code>companyid == 0</code> 回 403。</li>
+        <li><strong>全链 fail-closed</strong>：DB 失败、账号禁用、缓存装载失败一律拒绝，不写缓存、不复用旧值。</li>
+        <li><strong>写路径先校验后删</strong>：<code>replace_role_perms</code> 先全量校验可分配集，再删旧授权。</li>
+    </ol>
+
+    <h2 id="limits">边界与短板</h2>
+    <table>
+        <tr><th>方面</th><th>现状</th></tr>
+        <tr><td>表达能力</td><td>扁平 RBAC：无角色继承、无互斥约束、无 ABAC / 资源级权限。「只能改自己的订单」这类规则必须放业务代码</td></tr>
+        <tr><td>一致性</td><td>进程内缓存，多实例部署靠 60s TTL 兜底，权限变更有最长 60s 的 stale 窗口</td></tr>
+        <tr><td>工程细节</td><td><code>sysuser.roleid</code> 遗留双轨、授权替换无事务包裹、<code>operid</code> 审计参数未落地</td></tr>
+    </table>
+
+<h2 id="pitfalls">常见坑与最佳实践</h2>
+    <ul>
+        <li><strong>一个站点里一个掩码值只给一组路由</strong>：生成注册表后 <code>bin/paozhu_pre</code> 按 <code>(站点, mask_code)</code> 分组，同站点两条路由共用一个值会打印 <code>[ROUTE-WARN] mask_code ... duplicated</code>。只是提示，RBAC 仍按 urlpath 分别判定，但每条路由各取一个数字更省事。</li>
+        <li><strong>掩码漂移</strong>：注解值与 <code>sysperms.maskcode</code> 不一致 = 403；用 <code>/superadmin/registerfunc</code> 按注册表值修正。</li>
+        <li><strong>手写注册默认 0</strong>：<code>reg_raw()</code> 与 <code>REG_*</code> 便捷宏不传掩码，也不传 title；需要受保护就显式写 <code>:maskcode(...)</code>。</li>
+        <li><strong>title 里不要带 <code>)</code></strong>：会静默吞掉后面的后缀，掩码变 0。</li>
+        <li><strong>清理脚手架要连钩子一起处理</strong>：删掉 <code>libs/rbac/</code> 时，脚本也会删掉 <code>startup/</code> 里的 <code>paozhu-rbac</code> 块；框架本体不带 RBAC 依赖，此时所有非零掩码路由都会 403。</li>
+        <li><strong>配置级 pre 不是路由条目</strong>：不要指望在那里读到掩码或触发 RBAC 判定。</li>
+    </ul>
+
+    <h2 id="demo">现成演示</h2>
+    <p><code>controller/src/test_maskcode.cpp</code> 注册了三条路由：<code>/maskpre</code> 没写 maskcode，RBAC 完全不介入，pre 读到 <code>0</code> 就地拦下；<code>/maskprehas</code> 带 <code>1234</code>；<code>/comaskprehas</code> 带 <code>1235</code>（协程版，同一个 pre、同一条规则）。<code>/testcohandle</code> 已不带掩码，只演示协程派发。</p>
+    <ol>
+        <li>库里给每个 urlpath 各准备一条 <code>sysperms</code>，<code>maskcode</code> 与路由值精确相等（1234 与 1235 只差一位，改精确后一条目录行只能喂一条路由）。</li>
+        <li>把这些权限行授权给某个角色，再把角色绑到当前登录用户上。</li>
+        <li>登录后访问：pre 打印掩码、handler 再打印一次；给 <code>/maskpre</code> 补上 <code>:maskcode(1234)</code>，同一个请求就要先过 RBAC。</li>
+    </ol>
+
+    <h2 id="refs">参考</h2>
+    <ul>
+        <li><code>AGENTS_CN.md</code> / <code>AGENTS.md</code> §4.8 路由掩码（<code>mask_code</code>）—— RBAC 的分流开关</li>
+        <li>§2 目录结构（<code>libs/rbac/</code>）、§9.6 登录凭证的取值处理、§13 项目干净初始化（第二步）</li>
+        <li>源码：<code>vendor/httpserver/include/router.h</code>、<code>libs/rbac/route_guard.*</code>、<code>libs/rbac/route_cache.*</code>、<code>libs/rbac/rbac.cpp</code>、<code>libs/rbac/route_catalog.cpp</code>、<code>controller/src/test_maskcode.cpp</code></li>
+    </ul>
+
+    <a href="index.html#chinese" class="back-to-index">← 返回首页</a>
+    `;
+
+    const enFullContent = `
+    <div style="text-align: center; margin-bottom: 1.8rem;">
+        <h1 style="margin-top: 0.3rem;">🛡️ Paozhu RBAC Access Control</h1>
+        <p style="opacity: 0.8;">A pragmatic design specialized for SaaS back offices · three-tier multi-tenant authorization, in-router decisions, snapshot cache</p>
+    </div>
+
+    <h2 id="intro-en">Overview</h2>
+    <p><strong>RBAC (Role-Based Access Control)</strong> in Paozhu is layered: the framework declares a contract, the application implements the decision. The framework itself keeps no RBAC dependency — <code>vendor/httpserver/include/router.h</code> declares only the hook signature, while sessions, roles and databases live in the application-side <code>libs/rbac/</code>.</p>
+    <ul>
+        <li><strong>Contract</strong>: <code>route_auth_fn</code> returns a status code (<code>0</code> allow, <code>401</code> not logged in, <code>403</code> no permission); the route layer never reads a session key.</li>
+        <li><strong>Runtime</strong>: <code>libs/rbac/</code> loads grants, caches the authorization snapshot and implements the route guard, installed by <code>startup/main_dev.cpp</code> and <code>startup/main_daemon.cpp</code> before <code>run()</code>.</li>
+        <li><strong>Data &amp; admin</strong>: the three <code>[cms]</code> tiers <code>syscompanyperms</code> / <code>sysroleperms</code> / <code>sysuserrole</code> (with <code>sysrole</code>, <code>sysperms</code>, <code>sysuser</code>), plus <code>/superadmin/registerfunc</code> and <code>/superadmin/rbac/perm</code>.</li>
+        <li><strong>Fail-closed</strong>: with no hook installed, every masked route answers 403 — never a silent allow.</li>
+    </ul>
+
+    <div class="flow-diagram">Request
+   │
+   ▼
+router::resolve() picks the route entry → peer-&gt;mask_code = h.mask_code
+   │
+   ├── mask_code == 0 ──▶ hook never called, no extra query; pre/session as before
+   │
+   └── mask_code != 0 ──▶ route_guard(httppeer&amp;, urlpath, mask_code)
+                              │   401 not logged in / 403 no permission / 0 allow
+                              ▼
+                       route_cache snapshot → load_user_grants()
+                       urlpath present AND sysperms.maskcode matches exactly → allow
+                              ▼
+                       pre filter (reads the same mask_code) → handler</div>
+    <div class="tip-box">💡 Based on <code>AGENTS_CN.md</code> / <code>AGENTS.md</code>, §4.8 "Route Mask Code (mask_code) — the RBAC dispatch switch", plus the directory layout, security and clean-init sections.</div>
+
+    <h2 id="architecture-en">Architecture at a Glance</h2>
+    <div class="flow-diagram">Route annotation //@urlpath(...):maskcode(n)
+        │  bin/paozhu_pre writes the registration table
+        ▼
+router registers mask_code (non-zero only enters the decision; unmasked = zero cost)
+        ▼
+route_guard   install_route_guard() injects the route_auth_fn hook
+        ▼
+route_cache  16-shard snapshot cache (key: adminid + companyid)
+        │  miss → singleflight load
+        ▼
+rbac.cpp::load_user_grants()  6 SQL queries
+        ▼
+sysuserrole + sysuser.roleid → sysrole → sysroleperms ∩ syscompanyperms → sysperms</div>
+    <table>
+        <tr><th>Module</th><th>Responsibility</th></tr>
+        <tr><td><code>route_guard</code></td><td>Decision entry. The framework layer <code>vendor/httpserver</code> defines only the <code>route_auth_fn</code> contract; the application injects the implementation. Only routes with a maskcode are judged, unmasked routes cost nothing</td></tr>
+        <tr><td><code>route_cache</code></td><td>Caches the authorization snapshot (URL + maskcode set) by <code>(adminid, companyid)</code>: 16 sharded locks, singleflight against stampedes, generation-based invalidation, 60s TTL fallback, 4096-entry cap</td></tr>
+        <tr><td><code>rbac.cpp</code></td><td>Grant loading and write paths: role binding, grant replacement, allocation management</td></tr>
+        <tr><td><code>route_catalog</code></td><td>Reconciles the permission catalog with code-registered routes (mask drift, display names)</td></tr>
+    </table>
+
+<h2 id="layers-en">Layers and files</h2>
+    <table>
+        <tr><th>Layer</th><th>Location</th><th>Responsibility</th></tr>
+        <tr><td>Hook contract</td><td><code>vendor/httpserver/include/router.h</code></td><td><code>route_auth_fn</code>, <code>set_route_auth_hook()</code>, <code>route_auth_hook_ready()</code> — status code only</td></tr>
+        <tr><td>RBAC runtime</td><td><code>libs/rbac/</code></td><td>Grant loading + snapshot cache + route hook: <code>route_guard.*</code>, <code>route_cache.*</code>, <code>rbac.cpp</code>, <code>route_catalog.cpp</code></td></tr>
+        <tr><td>Hook installation</td><td><code>startup/main_dev.cpp</code> / <code>main_daemon.cpp</code></td><td><code>install_route_guard()</code> between <code>// paozhu-rbac:begin</code> / <code>// paozhu-rbac:end</code></td></tr>
+        <tr><td>Tables</td><td><code>[cms]</code>: <code>syscompanyperms</code> / <code>sysroleperms</code> / <code>sysuserrole</code> / <code>sysuser</code> / <code>sysperms</code></td><td>Platform allocation, role grants, user binding, permission catalog and tenant <code>companyid</code></td></tr>
+        <tr><td>Admin pages</td><td><code>/superadmin/registerfunc</code>, <code>/superadmin/rbac/perm</code>, <code>admin/rbac/sysuser/add</code></td><td>Register the catalog, rename entries, fix mask drift, create accounts</td></tr>
+        <tr><td>Demo</td><td><code>controller/src/test_maskcode.cpp</code></td><td><code>/maskpre</code>, <code>/maskprehas</code>, <code>/comaskprehas</code></td></tr>
+    </table>
+
+    <h2 id="mask-en">Route mask: the dispatch switch</h2>
+    <p>A registration entry can carry one <code>unsigned int</code>. Two things depend on it:</p>
+    <ol>
+        <li><strong>Dispatch</strong>: <code>mask_code != 0</code> means the route is protected by RBAC and the router runs the authorization hook before that entry's pre filter. <code>mask_code == 0</code> means the route is not part of RBAC at all — the hook is never called, no extra query.</li>
+        <li><strong>Delivery</strong>: the router also writes it onto the request (<code>client.mask_code</code>) before the pre filter runs, so the pre filter and handler read the same value.</li>
+    </ol>
+    <p>The value is <strong>not free-form</strong>: it must match the <code>maskcode</code> column of the <code>sysperms</code> row that registers this urlpath, otherwise every request to that route is denied.</p>
+
+    <pre><code>//@urlpath(null,maskpre/check)
+std::string test_mask_pre(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    httppeer &amp;client = peer-&gt;get_peer();
+    client &lt;&lt; "pre reads mask_code=" &lt;&lt; client.mask_code;
+    if (client.mask_code == 0) return "@exit";
+    return "@ok";
+}
+
+//@urlpath(test_mask_pre,maskpre):ratelimit(20,5)                  // mask 0 → RBAC not involved
+//@urlpath(test_mask_pre,maskprehas):maskcode(1234)                 // RBAC-gated
+//@urlpath(test_mask_pre,comaskprehas):maskcode(1235):title("test name")  // coroutine, same rule</code></pre>
+
+    <h3 id="mask-syntax-en">Annotation spelling and parsing</h3>
+    <p>The <code>:name(args)</code> chain follows the closing parenthesis of <code>//@urlpath(...)</code>; it is extracted by <code>vendor/httpcli/autopickcontrolmethod.hpp</code>, which prints <code>[ROUTE-WARN]</code> for bad suffixes.</p>
+    <table>
+        <tr><th>Annotation tail</th><th>Value on the entry</th></tr>
+        <tr><td>no colon — <code>//@urlpath(null,foo)</code></td><td><code>0</code></td></tr>
+        <tr><td><code>:maskcode(1234)</code></td><td><code>1234</code></td></tr>
+        <tr><td><code>:maskcode(1234):ratelimit(20,5)</code></td><td><code>1234</code>, plus <code>rate_time=20</code>, <code>rate_num=5</code></td></tr>
+        <tr><td><code>:123456</code> (legacy digits only)</td><td><code>123456</code> — still parsed, but write <code>:maskcode(123456)</code></td></tr>
+        <tr><td><code>:maskcode()</code> / <code>:maskcode</code></td><td><code>0</code>, no warning</td></tr>
+        <tr><td><code>:maskcode(99999999999)</code> (past UINT_MAX)</td><td>clamped to <code>UINT_MAX</code></td></tr>
+        <tr><td><code>:maskcode(12abc)</code> / <code>:unknown(...)</code></td><td><code>0</code> or ignored, plus <code>[ROUTE-WARN]</code></td></tr>
+    </table>
+
+    <h3 id="mask-title-en">:title(...) and catalog names</h3>
+    <p><code>:title(test name)</code> and <code>:title("test name")</code> are the same feature: a protected route names itself for the permission directory, so the granted item reads the annotated name instead of a raw path such as <code>/admin/addproductpost</code>. The chain is <code>bin/paozhu_pre</code> → 10th argument of <code>reg_raw()</code> → <code>reg_methold_mid_t::title</code> → <code>rbac::route_entry::title</code> → <code>/superadmin/registerfunc</code>, which writes it into <code>sysperms.name</code> <strong>only when it first inserts the row</strong> (falling back to the urlpath when no title was given).</p>
+    <p>It is display-only: neither dispatch nor the RBAC judgement reads it, <code>urlname</code> stays the urlpath, and an existing row keeps the name an administrator set on <code>/superadmin/rbac/perm</code>. Hand-written registrations get an empty string — the default argument of <code>reg_raw()</code>, which the <code>REG_*</code> macros do not pass.</p>
+    <div class="warn-box">⚠️ Keep <code>)</code> out of a title: the argument ends at the <strong>first</strong> closing parenthesis, and leftover text silently stops the suffix chain. A trailing <code>:maskcode(1234)</code> or <code>:ratelimit(20,5)</code> is then dropped with no warning — the mask becomes 0 and the route is not part of RBAC at all.</div>
+    <div class="tip-box">💡 The mask is part of the codegen cache key (together with the pre name, function name, urlpath, return type and title). Editing only the digits makes the next build regenerate <code>controller/include/&lt;name&gt;.h</code> and the registration table.</div>
+
+    <h2 id="guard-en">Auth hook and grant snapshot</h2>
+    <p>The framework declares the contract and knows nothing about sessions, roles or databases:</p>
+    <pre><code>using route_auth_fn = std::function&lt;unsigned int(httppeer &amp;,
+        const std::string &amp;urlpath, unsigned int mask_code)&gt;;
+// companions: set_route_auth_hook() / route_auth_hook_ready()</code></pre>
+    <p>The implementation lives in <code>libs/rbac/route_guard.*</code>; the return value is the status code to write and the route layer never reads a session key. <strong>Two different refusals</strong>: no <code>adminid</code> in the session (not logged in) gives <code>401</code>; an <code>adminid</code> whose tenant id — <code>session["userid"]</code>, which login sets from <code>sysuser.companyid</code> — is <code>0</code> gives <code>403</code>. <code>0</code> is not a reusable global layer; such an account should be bound to a company by an administrator rather than logging in again. <code>route_cache::allow()</code> refuses the same shape before counting a miss or running the six load queries.</p>
+    <p><strong>The mask is checked against <code>sysperms.maskcode</code>.</strong> <code>rbac.cpp::load_user_grants()</code> loads the effective permissions as <code>urlpath → the maskcode of every granted row on that path</code>, one value per row rather than an OR-merged mask. The request passes only when the urlpath is in that set <strong>and</strong> one of those values equals the route mask exactly. A mismatch is a 403 with reason <code>maskcode drift</code>. Bit containment was dropped on purpose: widening one catalog row would have quietly granted routes whose mask is a subset of it. <code>/superadmin/registerfunc</code> flags those rows and rewrites the catalog value from the registration table.</p>
+    <p><strong>It is per entry, not per request.</strong> The assignment happens at the top of every dispatch step, so a jump (<code>return "/other/path"</code>) and a step popped off the flow stack re-read the mask of <em>their</em> entry; nothing carries over. <code>httppeer::clear()</code> zeroes it for every keep-alive request, and each HTTP/2 stream has its own <code>httppeer</code>. Configuration-level <code>action_pre</code> / <code>static_pre</code> run before a route entry is chosen, so they always read <code>0</code> and are never gated by RBAC.</p>
+    <div class="warn-box">⚠️ The hook is injected by the application, not by the framework. With no hook installed, a masked route is refused with 403 (fail-closed); a <code>mask_code == 0</code> route behaves exactly as before.</div>
+
+    <h3 id="cache-en">Snapshot cache and fail-closed details</h3>
+    <p><code>route_cache</code> keys the authorization snapshot (URL + maskcode set) by <code>(adminid, companyid)</code>: 16 sharded locks reduce contention, singleflight prevents stampedes, generation numbers invalidate entries, a 60s TTL is the fallback, and the cache holds at most 4096 entries. Only a miss runs the 6 SQL queries in <code>rbac.cpp::load_user_grants()</code>; a DB failure, a disabled account or a failed load is always refused, with nothing written to the cache and no reuse of a stale value.</p>
+    <h2 id="data-en">Three-Tier Multi-Tenant Authorization</h2>
+    <table>
+        <tr><th>Tier</th><th>Tables</th><th>Purpose</th></tr>
+        <tr><td>Platform allocation</td><td><code>syscompanyperms</code></td><td>The permission set the platform grants to a company (its "plan")</td></tr>
+        <tr><td>Role grants</td><td><code>sysrole</code> + <code>sysroleperms</code></td><td>Role → permissions inside a company; must be intersected with the allocation set</td></tr>
+        <tr><td>User binding</td><td><code>sysuserrole</code> + <code>sysuser.roleid</code> (legacy dual track)</td><td>User → roles, many-to-many plus a compatibility single-role column</td></tr>
+    </table>
+    <p>Effective permission rows end up in <code>sysperms</code> (<code>urlpath</code> / <code>maskcode</code> / <code>name</code>). Grant chain: platform allocation → company role grants (narrowed by intersection) → user-role binding → login session → urlpath hit + exact maskcode match.</p>
+    <div class="tip-box">💡 <code>keep_allocated</code> intersects role grants with <code>syscompanyperms</code>, so a platform-level revocation takes effect immediately; every grant row requires <code>owner == companyid &amp;&amp; companyid != 0</code>, refusing to treat 0 as a global tier.</div>
+
+    <h2 id="decisions-en">Key Design Decisions</h2>
+    <ol>
+        <li><strong>Decision = urlpath hit + exact maskcode match</strong>: no bit containment; widening a catalog row is treated as no permission, preventing catalog/code drift.</li>
+        <li><strong>Allocation-tier narrowing</strong>: <code>keep_allocated</code> intersects role grants with <code>syscompanyperms</code>, so a platform revocation takes effect immediately.</li>
+        <li><strong>Hard tenant isolation</strong>: every grant row requires <code>owner == companyid &amp;&amp; companyid != 0</code>; <code>adminid == 0</code> gives 401 and <code>companyid == 0</code> gives 403.</li>
+        <li><strong>Fail-closed end to end</strong>: DB errors, disabled accounts and cache load failures are all refused — nothing is cached and no old value is reused.</li>
+        <li><strong>Validate before deleting on write paths</strong>: <code>replace_role_perms</code> validates the full allocatable set before removing old grants.</li>
+    </ol>
+
+    <h2 id="limits-en">Boundaries and Trade-offs</h2>
+    <table>
+        <tr><th>Aspect</th><th>Current state</th></tr>
+        <tr><td>Expressiveness</td><td>Flat RBAC: no role inheritance, no mutual-exclusion constraints, no ABAC or resource-level permissions. Rules such as "may only edit own orders" belong in business code</td></tr>
+        <tr><td>Consistency</td><td>In-process cache; multi-instance deployments rely on the 60s TTL fallback, so permission changes have a stale window of up to 60s</td></tr>
+        <tr><td>Engineering details</td><td>Legacy <code>sysuser.roleid</code> dual track, grant replacement without a transaction, and the <code>operid</code> audit parameter not yet persisted</td></tr>
+    </table>
+
+<h2 id="pitfalls-en">Pitfalls and best practices</h2>
+    <ul>
+        <li><strong>One mask value per site, per urlpath group</strong>: after generating the table, <code>bin/paozhu_pre</code> groups non-zero-mask routes by <code>(site, mask_code)</code> and prints <code>[ROUTE-WARN] mask_code ... duplicated</code> when two routes share one value. It is a warning, not an error — RBAC still judges each urlpath separately — but distinct digits per route are simpler.</li>
+        <li><strong>Mask drift</strong>: an annotation mask that differs from every catalog value the user holds means 403; fix it from <code>/superadmin/registerfunc</code>.</li>
+        <li><strong>Hand-written registrations default to 0</strong>: <code>reg_raw()</code> and the <code>REG_*</code> macros pass neither a mask nor a title; write <code>:maskcode(...)</code> explicitly for protected routes.</li>
+        <li><strong>No <code>)</code> inside a title</strong>: it silently swallows later suffixes and drops the mask to 0.</li>
+        <li><strong>Removing the demo removes the hook too</strong>: emptying <code>libs/rbac/</code> also strips the <code>paozhu-rbac</code> blocks in <code>startup/</code>. The framework keeps no RBAC dependency, so every non-zero-mask route then answers 403.</li>
+        <li><strong>Configuration-level pre filters are not routes</strong>: do not expect a mask or an RBAC decision there.</li>
+    </ul>
+
+    <h2 id="demo-en">Live demo</h2>
+    <p><code>controller/src/test_maskcode.cpp</code> registers three routes: <code>/maskpre</code> has no maskcode, so RBAC never touches it and the pre prints <code>0</code> and stops; <code>/maskprehas</code> carries <code>1234</code>; <code>/comaskprehas</code> carries <code>1235</code> (the coroutine variant, same pre, same rule). <code>/testcohandle</code> carries no maskcode any more — it only demos coroutine dispatch.</p>
+    <ol>
+        <li>Prepare one <code>sysperms</code> row per urlpath whose <code>maskcode</code> equals the route value exactly (1234 and 1235 differ by one digit; one catalog row can feed only one route).</li>
+        <li>Grant those rows to a role, then bind that role to the logged-in user.</li>
+        <li>After login, the pre prints the mask and the handler prints it again; add <code>:maskcode(1234)</code> to <code>/maskpre</code> and the same request first goes through RBAC.</li>
+    </ol>
+
+    <h2 id="refs-en">References</h2>
+    <ul>
+        <li><code>AGENTS_CN.md</code> / <code>AGENTS.md</code> §4.8 "Route Mask Code (mask_code) — the RBAC dispatch switch"</li>
+        <li>§2 directory layout (<code>libs/rbac/</code>), §9.6 login credential handling, §13 clean project initialization (step 2)</li>
+        <li>Sources: <code>vendor/httpserver/include/router.h</code>, <code>libs/rbac/route_guard.*</code>, <code>libs/rbac/route_cache.*</code>, <code>libs/rbac/rbac.cpp</code>, <code>libs/rbac/route_catalog.cpp</code>, <code>controller/src/test_maskcode.cpp</code></li>
+    </ul>
+
+    <a href="index.html#english" class="back-to-index">← Back to Home</a>
+    `;
+
+    function buildHierarchyNav(lang) {
+        const container = document.getElementById('dynamic-nav');
+        const contentDiv = lang === 'cn' ? document.getElementById('content-cn') : document.getElementById('content-en');
+        if (!contentDiv) { container.innerHTML = '<p>Content not found</p>'; return; }
+        const headings = contentDiv.querySelectorAll('h2[id], h3[id], h4[id]');
+        if (headings.length === 0) { container.innerHTML = '<p style="padding: 1rem;">No sections</p>'; return; }
+
+        const root = { children: [] };
+        let stack = [root];
+        headings.forEach(heading => {
+            let level = parseInt(heading.tagName[1]);
+            const id = heading.id;
+            let title = heading.innerText.trim();
+            if (!title) title = heading.textContent.trim() || "Section";
+            const node = { level, id, title, children: [] };
+            while (stack.length > 0 && stack[stack.length-1].level >= level) { stack.pop(); }
+            const parent = stack[stack.length-1];
+            parent.children.push(node);
+            stack.push(node);
+        });
+
+        function renderTree(nodes) {
+            let html = '<ul class="nav-tree">';
+            nodes.forEach(node => {
+                const levelClass = 'level-' + (node.level - 1);
+                html += `<li class="${levelClass}"><a href="#${node.id}" class="nav-link" data-id="${node.id}">${node.title}</a>`;
+                if (node.children.length > 0) { html += renderTree(node.children); }
+                html += '</li>';
+            });
+            html += '</ul>';
+            return html;
+        }
+        container.innerHTML = renderTree(root.children);
+        container.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const id = link.getAttribute('data-id');
+                const target = document.getElementById(id);
+                if (target) {
+                    window.scrollTo({ top: target.offsetTop - 20, behavior: 'smooth' });
+                    history.replaceState(null, null, '#' + id);
+                }
+            });
+        });
+    }
+
+    function injectContent() {
+        document.getElementById('content-cn').innerHTML = cnFullContent;
+        document.getElementById('content-en').innerHTML = enFullContent;
+    }
+    injectContent();
+
+    // Active heading tracking
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.id;
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active-link');
+                    if (link.getAttribute('data-id') === id) { link.classList.add('active-link'); }
+                });
+            }
+        });
+    }, { rootMargin: "-80px 0px -70% 0px", threshold: 0.2 });
+
+    const allHeadings = document.querySelectorAll('.content-panel [id]');
+    allHeadings.forEach(el => observer.observe(el));
+
+    let currentLang = 'en';
+    function switchLanguage(lang) {
+    try { localStorage.setItem('paozhu-lang', lang === 'cn' ? 'zh' : 'en'); } catch (e) {}
+        currentLang = lang;
+        document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
+        if (lang === 'cn') document.getElementById('content-cn').classList.add('active-lang');
+        else document.getElementById('content-en').classList.add('active-lang');
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.getAttribute('data-lang') === lang) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        buildHierarchyNav(lang);
+        window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const lang = btn.getAttribute('data-lang');
+            if (lang) switchLanguage(lang);
+        });
+    });
+
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => sidebar.classList.toggle('mobile-open'));
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 860 && !sidebar.contains(e.target) && e.target !== menuBtn) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+
+    const topBtn = document.getElementById('scrollTopBtn');
+    topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) topBtn.classList.add('visible');
+        else topBtn.classList.remove('visible');
+    });
+
+    const hashLang = window.location.hash;
+    if (hashLang === '#english' || hashLang === '#en') switchLanguage('en');
+    else if (hashLang === '#chinese' || hashLang === '#zh') switchLanguage('cn');
+    else {
+        const paozhuSavedLang = (() => { try { return localStorage.getItem('paozhu-lang'); } catch (e) { return null; } })();
+        if (paozhuSavedLang === 'zh') switchLanguage('cn');
+        else buildHierarchyNav('en');
+    }
+</script>
+</body>
+</html>

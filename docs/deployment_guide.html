@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Paozhu 性能与部署教程 · Performance & Deployment</title>
+    <title>Performance & Deployment · Paozhu 性能与部署教程</title>
     <style>
         * {
             margin: 0;
@@ -399,23 +399,24 @@
             color: var(--link-color);
         }
     </style>
+    <link rel="stylesheet" href="./styles/modern-flat.css">
 </head>
 <body>
 <div class="docs-wrapper">
     <aside class="sidebar" id="sidebar">
         <div class="nav-lang-header">
-            <button class="lang-btn active" data-lang="cn">🇨🇳 中文</button>
-            <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+            <button class="lang-btn" data-lang="cn">🇨🇳 中文</button>
+            <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
         </div>
         <div id="nav-container">
-            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">⚡ 性能与部署导航</div>
-            <div id="dynamic-nav">加载中...</div>
+            <div style="text-align: center; font-size:0.8rem; padding: 0.5rem;">⚡ Contents</div>
+            <div id="dynamic-nav">Loading...</div>
         </div>
     </aside>
 
     <main class="main-content">
-        <div id="content-cn" class="content-panel active-lang"></div>
-        <div id="content-en" class="content-panel"></div>
+        <div id="content-cn" class="content-panel"></div>
+        <div id="content-en" class="content-panel active-lang"></div>
     </main>
 </div>
 
@@ -1665,8 +1666,9 @@ proxy_set_header Connection "upgrade";</code></pre>
         allHeadings.forEach(el => observer.observe(el));
     }
 
-    let currentLang = 'cn';
+    let currentLang = 'en';
     function switchLanguage(lang) {
+    try { localStorage.setItem('paozhu-lang', lang === 'cn' ? 'zh' : 'en'); } catch (e) {}
         currentLang = lang;
         document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active-lang'));
         if (lang === 'cn') {
@@ -1714,7 +1716,12 @@ proxy_set_header Connection "upgrade";</code></pre>
     } else if (hashLang === '#chinese' || hashLang === '#zh') {
         switchLanguage('cn');
     } else {
-        buildHierarchyNav('cn');
+        const paozhuSavedLang = (() => { try { return localStorage.getItem('paozhu-lang'); } catch (e) { return null; } })();
+        if (paozhuSavedLang === 'zh') {
+            switchLanguage('cn');
+        } else {
+            buildHierarchyNav('en');
+        }
     }
 </script>
 </body>

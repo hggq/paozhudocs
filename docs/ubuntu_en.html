@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -99,9 +99,15 @@
         }
     </style>
 
+    <link rel="stylesheet" href="./styles/modern-flat.css">
+    <script src="./js/lang-default.js" data-zh="ubuntu.html" data-en="ubuntu_en.html" data-page="en"></script>
 </head>
 
-<body>
+<body class="flat-article">
+    <div class="flat-langbar" role="group" aria-label="Language">
+        <a href="ubuntu_en.html?lang=en" class="is-active">🇬🇧 English</a>
+        <a href="ubuntu.html?lang=zh">🇨🇳 中文</a>
+    </div>
     <div class="container">
         <h3>Ubuntu install paozhu</h3>
         <pre><code>sudo apt-get install gcc g++

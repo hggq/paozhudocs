@@ -1,0 +1,328 @@
+/* Paozhu Docs — Modern Flat Theme
+   Shared override layer. Loaded after each page's inline <style>, so legacy
+   gradients, shadows and heavy radii are normalized without touching content.
+   Emoji used as icons in the pages are intentionally preserved. */
+
+:root {
+    color-scheme: light dark;
+
+    --bg-body: #ffffff;
+    --text-color: #1b2430;
+    --sidebar-bg: #f7f8fa;
+    --border-light: #e2e7ee;
+    --code-bg: #f3f5f8;
+    --link-color: #1d4ed8;
+    --link-hover: #153eaa;
+    --heading-border: #dfe5ed;
+    --scroll-thumb: #c2cad6;
+    --nav-hover-bg: #eef2f8;
+    --card-bg: #ffffff;
+    --card-shadow: transparent;
+    --card-hover-shadow: transparent;
+
+    /* Legacy pages used six gradients; flat surfaces use solid swatches. */
+    --gradient-1: #1d4ed8;
+    --gradient-2: #2563eb;
+    --gradient-3: #0e7490;
+    --gradient-4: #0f766e;
+    --gradient-5: #7c3aed;
+    --gradient-6: #b45309;
+
+    --flat-radius: 6px;
+    --flat-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    --flat-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-bs-theme="light"]) {
+        --bg-body: #0e141c;
+        --text-color: #e4eaf2;
+        --sidebar-bg: #131b25;
+        --border-light: #283443;
+        --code-bg: #16202c;
+        --link-color: #7eabff;
+        --link-hover: #a8c7ff;
+        --heading-border: #2c3a4b;
+        --scroll-thumb: #3c4b5c;
+        --nav-hover-bg: #1c2735;
+        --card-bg: #131b25;
+        --card-shadow: transparent;
+        --card-hover-shadow: transparent;
+    }
+}
+
+/* about.html exposes a manual Bootstrap theme toggle. */
+:root[data-bs-theme="dark"] {
+    --bg-body: #0e141c;
+    --text-color: #e4eaf2;
+    --sidebar-bg: #131b25;
+    --border-light: #283443;
+    --code-bg: #16202c;
+    --link-color: #7eabff;
+    --link-hover: #a8c7ff;
+    --heading-border: #2c3a4b;
+    --scroll-thumb: #3c4b5c;
+    --nav-hover-bg: #1c2735;
+    --card-bg: #131b25;
+    --card-shadow: transparent;
+    --card-hover-shadow: transparent;
+}
+
+*, *::before, *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+html {
+    background-color: var(--bg-body);
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--flat-font) !important;
+    background-color: var(--bg-body) !important;
+    color: var(--text-color) !important;
+    font-size: 15.5px !important;
+    line-height: 1.7 !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea { font-family: inherit; }
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--flat-font) !important;
+    font-weight: 650;
+    letter-spacing: -0.012em;
+    line-height: 1.3;
+}
+
+h2 { padding-bottom: .45rem; border-bottom: 1px solid var(--heading-border); }
+h1 + p, h2 + p { margin-top: .5rem; }
+
+p, ul, ol, li { color: var(--text-color); }
+
+a {
+    color: var(--link-color);
+    text-decoration: none;
+    transition: color .15s ease, background-color .15s ease, border-color .15s ease;
+}
+a:hover { color: var(--link-hover); }
+p a, li a, td a, blockquote a {
+    text-decoration: underline;
+    text-decoration-color: var(--border-light);
+    text-underline-offset: 3px;
+}
+p a:hover, li a:hover, td a:hover { text-decoration-color: currentColor; }
+
+:focus-visible {
+    outline: 2px solid var(--link-color);
+    outline-offset: 2px;
+}
+::selection { background: var(--nav-hover-bg); color: var(--text-color); }
+
+/* Flat: remove every remaining gradient, including inline ones. */
+:where(.arch-diagram, .back-to-index, .highlight-box, [style*="linear-gradient"], [style*="radial-gradient"]) {
+    background-image: none !important;
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+}
+
+:where(.sidebar-header h1) {
+    background: none !important;
+    -webkit-text-fill-color: var(--text-color) !important;
+    color: var(--text-color) !important;
+}
+
+:where(.card, .feature-card, .req-card, .layer-card, .platform-card, .stat-card,
+       .quick-card, .category-card, .step-card, .code-showcase, .highlight-box,
+       .arch-diagram, .info-box, .note-box, .callout, .bd-callout, .highlight) {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-light) !important;
+    border-radius: var(--flat-radius) !important;
+}
+
+:where(.btn, .btn-primary, .btn-secondary, .lang-btn, .lang-toggle, .menu-toggle,
+       .nav-item, .sidebar-nav a, .bd-links-link, .back-to-index, .tag, .badge,
+       .lang-switch, .lang-switcher) {
+    border-radius: var(--flat-radius) !important;
+}
+
+:where(.btn, .btn-primary, .btn-secondary, .card, .feature-card, .req-card,
+       .layer-card, .platform-card, .back-to-top, .back-to-index):hover {
+    transform: none !important;
+}
+
+/* Sidebar + navigation */
+.sidebar, .bd-sidebar, nav.sidebar {
+    background-color: var(--sidebar-bg) !important;
+    border-right: 1px solid var(--border-light) !important;
+}
+.sidebar-header, .nav-group-title { color: var(--text-color); }
+
+:where(.nav-item, .sidebar-nav a, .bd-links-link) {
+    transition: background-color .15s ease, color .15s ease !important;
+}
+:where(.nav-item, .sidebar-nav a, .bd-links-link):hover {
+    background-color: var(--nav-hover-bg) !important;
+    color: var(--link-color) !important;
+}
+:where(.nav-item, .sidebar-nav a, .bd-links-link).active {
+    background-color: var(--nav-hover-bg) !important;
+    color: var(--link-color) !important;
+    box-shadow: inset 3px 0 0 var(--link-color) !important;
+}
+
+/* Language controls */
+.lang-switch, .lang-switcher {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-light) !important;
+}
+.lang-btn, .lang-toggle {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: var(--text-color) !important;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease !important;
+}
+.lang-btn:hover:not(.active), .lang-toggle:hover:not(.active) {
+    background-color: var(--nav-hover-bg) !important;
+}
+.lang-btn.active, .lang-toggle.active {
+    background-color: var(--link-color) !important;
+    color: #ffffff !important;
+}
+
+/* Guide sidebars: one divider row with two equal-width language buttons. */
+.nav-lang-header {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0 0 1.25rem;
+    padding: 0 0 .75rem;
+    background-color: transparent !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    border-radius: 0 !important;
+}
+.nav-lang-header .lang-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: .4rem .5rem;
+    font-size: .875rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: center;
+    white-space: nowrap;
+    opacity: 1;
+    border: 1px solid var(--border-light) !important;
+    border-radius: var(--flat-radius) !important;
+}
+.nav-lang-header .lang-btn:hover:not(.active),
+.nav-lang-header .lang-btn.active {
+    border-color: var(--link-color) !important;
+}
+
+/* Code, quotes, tables */
+pre, code, kbd, samp, .highlight, .code-showcase, .chroma {
+    font-family: var(--flat-mono) !important;
+    font-size: .9em;
+}
+pre, .highlight, .code-showcase {
+    background-color: var(--code-bg) !important;
+    border: 1px solid var(--border-light) !important;
+    border-radius: var(--flat-radius) !important;
+    padding: 1rem 1.15rem !important;
+    overflow-x: auto;
+}
+code {
+    background-color: var(--code-bg) !important;
+    border-radius: 4px !important;
+    padding: .12em .35em;
+}
+pre code, pre > code, .highlight code, .code-showcase code {
+    background-color: transparent !important;
+    padding: 0 !important;
+}
+/* Code panels own the frame; a nested <pre> must not add a second border/padding. */
+:where(.arch-diagram, .code-showcase, .highlight, .bd-code-snippet) pre,
+pre.arch-code {
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+}
+blockquote {
+    background-color: var(--sidebar-bg) !important;
+    border-left: 3px solid var(--link-color) !important;
+    border-radius: 0 var(--flat-radius) var(--flat-radius) 0 !important;
+    color: var(--text-color) !important;
+}
+hr { border: 0; border-top: 1px solid var(--border-light); }
+table { border-collapse: collapse; width: 100%; }
+th, td { border-bottom: 1px solid var(--border-light); padding: .6rem .8rem; text-align: left; }
+thead th { background-color: var(--sidebar-bg); font-weight: 650; }
+img { max-width: 100%; height: auto; }
+
+/* Standalone article pages (Markdown-exported documents) */
+body.flat-article {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 6rem;
+}
+body.flat-article > h1 { font-size: 2.1rem; margin: 0 0 1.5rem; }
+body.flat-article h2 { margin-top: 2.5rem; }
+body.flat-article h3 { margin-top: 2rem; }
+body.flat-article pre { white-space: pre-wrap; }
+
+/* Compact language bar for standalone EN/ZH page pairs */
+.flat-langbar {
+    position: fixed;
+    top: .75rem;
+    right: .75rem;
+    z-index: 1000;
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-light);
+    border-radius: var(--flat-radius);
+    font-size: .8125rem;
+    line-height: 1.4;
+}
+.flat-langbar a {
+    padding: .3rem .6rem;
+    border-radius: 4px;
+    color: var(--text-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+.flat-langbar a:hover { background-color: var(--nav-hover-bg); color: var(--link-color); }
+.flat-langbar a.is-active { background-color: var(--link-color); color: #ffffff; }
+.flat-langbar a.is-active:hover { color: #ffffff; }
+
+/* Scrollbars stay squared and quiet */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-thumb);
+    border: 2px solid var(--bg-body);
+    border-radius: 0;
+}
+
+@media (max-width: 860px) {
+    body.flat-article { padding: 3rem 1rem 6rem; }
+    .flat-langbar { top: auto; bottom: .75rem; right: .75rem; }
+}
+@media (max-width: 480px) {
+    .flat-langbar { font-size: .75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

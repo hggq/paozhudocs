@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -723,6 +723,7 @@
             border-radius: 4px;
         }
     </style>
+    <link rel="stylesheet" href="./styles/modern-flat.css">
 </head>
 <body class="lang-en">
     <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
@@ -736,8 +737,8 @@
             </div>
 
             <div class="lang-switch">
-                <button class="lang-btn" onclick="switchLang('zh')">🇨🇳 中文</button>
-                <button class="lang-btn active" onclick="switchLang('en')">🇬🇧 English</button>
+                <button class="lang-btn" data-lang="zh" onclick="switchLang('zh')">🇨🇳 中文</button>
+                <button class="lang-btn active" data-lang="en" onclick="switchLang('en')">🇬🇧 English</button>
             </div>
 
             <nav>
@@ -746,7 +747,7 @@
                         <span class="zh">📖 入门指南</span>
                         <span class="en">📖 Getting Started</span>
                     </div>
-                    <a href="project_overview.html" class="nav-item link-zh">
+                    <a href="project_overview.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">📋</span>
                         <span class="zh">项目概述</span>
                     </a>
@@ -754,7 +755,7 @@
                         <span class="nav-icon">📋</span>
                         <span class="en">Project Overview</span>
                     </a>
-                    <a href="core_architecture.html" class="nav-item link-zh">
+                    <a href="core_architecture.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">🏗️</span>
                         <span class="zh">核心架构</span>
                     </a>
@@ -762,7 +763,7 @@
                         <span class="nav-icon">🏗️</span>
                         <span class="en">Core Architecture</span>
                     </a>
-                    <a href="quick_start.html" class="nav-item link-zh">
+                    <a href="quick_start.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">🚀</span>
                         <span class="zh">快速开始</span>
                     </a>
@@ -777,7 +778,7 @@
                         <span class="zh">🛠️ 开发指南</span>
                         <span class="en">🛠️ Development</span>
                     </div>
-                    <a href="controller_guide.html" class="nav-item link-zh">
+                    <a href="controller_guide.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">🎮</span>
                         <span class="zh">控制器开发</span>
                     </a>
@@ -785,7 +786,7 @@
                         <span class="nav-icon">🎮</span>
                         <span class="en">Controller</span>
                     </a>
-                    <a href="orm_guide.html" class="nav-item link-zh">
+                    <a href="orm_guide.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">🗄️</span>
                         <span class="zh">ORM 数据访问</span>
                     </a>
@@ -793,7 +794,7 @@
                         <span class="nav-icon">🗄️</span>
                         <span class="en">ORM Data Access</span>
                     </a>
-                    <a href="view_system.html" class="nav-item link-zh">
+                    <a href="view_system.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">🎨</span>
                         <span class="zh">视图系统</span>
                     </a>
@@ -801,7 +802,7 @@
                         <span class="nav-icon">🎨</span>
                         <span class="en">View System</span>
                     </a>
-                    <a href="websocket_guide.html" class="nav-item link-zh">
+                    <a href="websocket_guide.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">🔌</span>
                         <span class="zh">WebSocket</span>
                     </a>
@@ -809,13 +810,21 @@
                         <span class="nav-icon">🔌</span>
                         <span class="en">WebSocket</span>
                     </a>
-                    <a href="oauth_guide.html" class="nav-item link-zh">
+                    <a href="oauth_guide.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">🔐</span>
                         <span class="zh">OAuth &amp; JWT</span>
                     </a>
                     <a href="oauth_guide.html#english" class="nav-item link-en">
                         <span class="nav-icon">🔐</span>
                         <span class="en">OAuth &amp; JWT</span>
+                    </a>
+                    <a href="rbac_guide.html#chinese" class="nav-item link-zh">
+                        <span class="nav-icon">🛡️</span>
+                        <span class="zh">RBAC 权限控制</span>
+                    </a>
+                    <a href="rbac_guide.html#english" class="nav-item link-en">
+                        <span class="nav-icon">🛡️</span>
+                        <span class="en">RBAC Access Control</span>
                     </a>
                 </div>
 
@@ -824,43 +833,43 @@
                         <span class="zh">💻 平台安装</span>
                         <span class="en">💻 Platform Setup</span>
                     </div>
-                    <a href="macos.html" class="nav-item external link-zh">
+                    <a href="macos.html?lang=zh" class="nav-item external link-zh">
                         <span class="nav-icon">🍎</span>
                         <span class="zh">macOS 安装</span>
                     </a>
-                    <a href="macos_en.html" class="nav-item external link-en">
+                    <a href="macos_en.html?lang=en" class="nav-item external link-en">
                         <span class="nav-icon">🍎</span>
                         <span class="en">macOS Setup</span>
                     </a>
-                    <a href="linux.html" class="nav-item external link-zh">
+                    <a href="linux.html?lang=zh" class="nav-item external link-zh">
                         <span class="nav-icon">🐧</span>
                         <span class="zh">Linux 安装</span>
                     </a>
-                    <a href="linux_en.html" class="nav-item external link-en">
+                    <a href="linux_en.html?lang=en" class="nav-item external link-en">
                         <span class="nav-icon">🐧</span>
                         <span class="en">Linux Setup</span>
                     </a>
-                    <a href="ubuntu.html" class="nav-item external link-zh">
+                    <a href="ubuntu.html?lang=zh" class="nav-item external link-zh">
                         <span class="nav-icon">🟠</span>
                         <span class="zh">Ubuntu 安装</span>
                     </a>
-                    <a href="ubuntu_en.html" class="nav-item external link-en">
+                    <a href="ubuntu_en.html?lang=en" class="nav-item external link-en">
                         <span class="nav-icon">🟠</span>
                         <span class="en">Ubuntu Setup</span>
                     </a>
-                    <a href="windows.html" class="nav-item external link-zh">
+                    <a href="windows.html?lang=zh" class="nav-item external link-zh">
                         <span class="nav-icon">🪟</span>
                         <span class="zh">Windows 安装</span>
                     </a>
-                    <a href="windows_en.html" class="nav-item external link-en">
+                    <a href="windows_en.html?lang=en" class="nav-item external link-en">
                         <span class="nav-icon">🪟</span>
                         <span class="en">Windows Setup</span>
                     </a>
-                    <a href="saas.html" class="nav-item external link-zh">
+                    <a href="saas.html?lang=zh" class="nav-item external link-zh">
                         <span class="nav-icon">☁️</span>
                         <span class="zh">SaaS 模式</span>
                     </a>
-                    <a href="saas_en.html" class="nav-item external link-en">
+                    <a href="saas_en.html?lang=en" class="nav-item external link-en">
                         <span class="nav-icon">☁️</span>
                         <span class="en">SaaS Mode</span>
                     </a>
@@ -871,7 +880,7 @@
                         <span class="zh">📚 参考文档</span>
                         <span class="en">📚 Reference</span>
                     </div>
-                    <a href="api_reference.html" class="nav-item link-zh">
+                    <a href="api_reference.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">📖</span>
                         <span class="zh">API 参考</span>
                     </a>
@@ -879,7 +888,7 @@
                         <span class="nav-icon">📖</span>
                         <span class="en">API Reference</span>
                     </a>
-                    <a href="advanced_modules.html" class="nav-item link-zh">
+                    <a href="advanced_modules.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">🔗</span>
                         <span class="zh">高级模块</span>
                     </a>
@@ -887,7 +896,7 @@
                         <span class="nav-icon">🔗</span>
                         <span class="en">Advanced Modules</span>
                     </a>
-                    <a href="deployment_guide.html" class="nav-item link-zh">
+                    <a href="deployment_guide.html#chinese" class="nav-item link-zh">
                         <span class="nav-icon">⚡</span>
                         <span class="zh">性能与部署</span>
                     </a>
@@ -902,19 +911,19 @@
                         <span class="zh">📊 基准测试</span>
                         <span class="en">📊 Benchmarks</span>
                     </div>
-                    <a href="2026_paozhu-orm_vs_drogon-orm.html" class="nav-item external link-zh">
+                    <a href="2026_paozhu-orm_vs_drogon-orm.html?lang=zh" class="nav-item external link-zh">
                         <span class="nav-icon">🧨</span>
                         <span class="zh">Paozhu ORM vs Drogon ORM 对比</span>
                     </a>
-                    <a href="2026_paozhu-orm_vs_drogon-orm_en.html" class="nav-item external link-en">
+                    <a href="2026_paozhu-orm_vs_drogon-orm_en.html?lang=en" class="nav-item external link-en">
                         <span class="nav-icon">🧨</span>
                         <span class="en">Paozhu ORM vs Drogon ORM</span>
                     </a>
-                    <a href="Paozhu_vs_Drogon_System-Design.html" class="nav-item external link-zh">
+                    <a href="Paozhu_vs_Drogon_System-Design.html?lang=zh" class="nav-item external link-zh">
                         <span class="nav-icon">🏗️</span>
                         <span class="zh">Paozhu vs Drogon 系统设计对比</span>
                     </a>
-                    <a href="Paozhu_vs_Drogon_System-Design_en.html" class="nav-item external link-en">
+                    <a href="Paozhu_vs_Drogon_System-Design_en.html?lang=en" class="nav-item external link-en">
                         <span class="nav-icon">🏗️</span>
                         <span class="en">Paozhu vs Drogon System Design</span>
                     </a>
@@ -925,11 +934,11 @@
                         <span class="zh">📄 原文文档</span>
                         <span class="en">📄 Original Docs</span>
                     </div>
-                    <a href="documentation.html" class="nav-item external link-zh">
+                    <a href="documentation.html?lang=zh" class="nav-item external link-zh">
                         <span class="nav-icon">📝</span>
                         <span class="zh">完整文档 (中)</span>
                     </a>
-                    <a href="documentation_en.html" class="nav-item external link-en">
+                    <a href="documentation_en.html?lang=en" class="nav-item external link-en">
                         <span class="nav-icon">📝</span>
                         <span class="en">Full Docs (EN)</span>
                     </a>
@@ -949,11 +958,11 @@
                     <span class="en">A Full-stack Framework for Rapid C++ Web Development</span>
                 </p>
                 <div class="hero-buttons">
-                    <a href="project_overview.html" class="btn-primary">
+                    <a href="project_overview.html#english" class="btn-primary" data-lang-zh="project_overview.html#chinese" data-lang-en="project_overview.html#english">
                         <span class="zh">📖 开始学习</span>
                         <span class="en">📖 Get Started</span>
                     </a>
-                    <a href="quick_start.html" class="btn-secondary">
+                    <a href="quick_start.html#english" class="btn-secondary" data-lang-zh="quick_start.html#chinese" data-lang-en="quick_start.html#english">
                         <span class="zh">🚀 快速上手</span>
                         <span class="en">🚀 Quick Start</span>
                     </a>
@@ -1329,7 +1338,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                     <span class="en">💡 Add <code>-DENABLE_CHART=ON</code> during compilation to enable the chart module</span>
                 </div>
                 <div class="code-hint" style="margin-top: 0.5rem; font-size: 0.9rem; color: #64748b;">
-                    <span class="zh">📚 查看全部 17 种图表类型，请访问 <a href="advanced_modules.html" style="color: #2563eb; text-decoration: underline;">高级模块 →</a></span>
+                    <span class="zh">📚 查看全部 17 种图表类型，请访问 <a href="advanced_modules.html#chinese" style="color: #2563eb; text-decoration: underline;">高级模块 →</a></span>
                     <span class="en">📚 For all 17 chart types, visit the <a href="advanced_modules.html#english" style="color: #2563eb; text-decoration: underline;">Advanced Modules →</a></span>
                 </div>
             </section>
@@ -1345,7 +1354,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                     <span class="en">Systematically learn Paozhu from scratch</span>
                 </p>
                 <div class="cards-grid">
-                    <a href="project_overview.html" class="card link-zh">
+                    <a href="project_overview.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-1">📋</div>
                         <h3 class="card-title"><span class="zh">项目概述</span></h3>
                         <p class="card-desc">
@@ -1362,7 +1371,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="core_architecture.html" class="card link-zh">
+                    <a href="core_architecture.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-2">🏗️</div>
                         <h3 class="card-title"><span class="zh">核心架构</span></h3>
                         <p class="card-desc">
@@ -1379,7 +1388,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="quick_start.html" class="card link-zh">
+                    <a href="quick_start.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-3">🚀</div>
                         <h3 class="card-title"><span class="zh">快速开始</span></h3>
                         <p class="card-desc">
@@ -1396,7 +1405,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="controller_guide.html" class="card link-zh">
+                    <a href="controller_guide.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-4">🎮</div>
                         <h3 class="card-title"><span class="zh">控制器开发</span></h3>
                         <p class="card-desc">
@@ -1413,7 +1422,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="orm_guide.html" class="card link-zh">
+                    <a href="orm_guide.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-5">🗄️</div>
                         <h3 class="card-title"><span class="zh">ORM 数据访问</span></h3>
                         <p class="card-desc">
@@ -1430,7 +1439,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="view_system.html" class="card link-zh">
+                    <a href="view_system.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-6">🎨</div>
                         <h3 class="card-title"><span class="zh">视图系统</span></h3>
                         <p class="card-desc">
@@ -1447,7 +1456,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="websocket_guide.html" class="card link-zh">
+                    <a href="websocket_guide.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-1">🔌</div>
                         <h3 class="card-title"><span class="zh">WebSocket 教程</span></h3>
                         <p class="card-desc">
@@ -1464,7 +1473,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="oauth_guide.html" class="card link-zh">
+                    <a href="oauth_guide.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-2">🔐</div>
                         <h3 class="card-title"><span class="zh">OAuth &amp; JWT 认证</span></h3>
                         <p class="card-desc">
@@ -1481,7 +1490,24 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="api_reference.html" class="card link-zh">
+                    <a href="rbac_guide.html#chinese" class="card link-zh">
+                        <div class="card-icon gradient-3">🛡️</div>
+                        <h3 class="card-title"><span class="zh">RBAC 权限控制</span></h3>
+                        <p class="card-desc">
+                            <span class="zh">路由掩码分流、授权快照缓存、角色权限目录与判定钩子</span>
+                        </p>
+                        <div class="card-arrow"><span class="zh">阅读更多 →</span></div>
+                    </a>
+                    <a href="rbac_guide.html#english" class="card link-en">
+                        <div class="card-icon gradient-3">🛡️</div>
+                        <h3 class="card-title"><span class="en">RBAC Access Control</span></h3>
+                        <p class="card-desc">
+                            <span class="en">Route mask dispatch, grant snapshot cache, roles and the auth hook</span>
+                        </p>
+                        <div class="card-arrow"><span class="en">Read more →</span></div>
+                    </a>
+
+                    <a href="api_reference.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-2">📖</div>
                         <h3 class="card-title"><span class="zh">API 参考</span></h3>
                         <p class="card-desc">
@@ -1498,7 +1524,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="advanced_modules.html" class="card link-zh">
+                    <a href="advanced_modules.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-3">🔗</div>
                         <h3 class="card-title"><span class="zh">高级模块</span></h3>
                         <p class="card-desc">
@@ -1515,7 +1541,7 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                         <div class="card-arrow"><span class="en">Read more →</span></div>
                     </a>
 
-                    <a href="deployment_guide.html" class="card link-zh">
+                    <a href="deployment_guide.html#chinese" class="card link-zh">
                         <div class="card-icon gradient-4">⚡</div>
                         <h3 class="card-title"><span class="zh">性能与部署</span></h3>
                         <p class="card-desc">
@@ -1545,70 +1571,70 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
                     <span class="en">Choose your platform and view detailed installation steps</span>
                 </p>
                 <div class="platform-grid">
-                    <a href="macos.html" target="_blank" class="platform-card link-zh">
+                    <a href="macos.html?lang=zh" target="_blank" class="platform-card link-zh">
                         <span class="platform-icon">🍎</span>
                         <div class="platform-info">
                             <strong><span class="zh">macOS</span></strong>
                             <span><span class="zh">Apple Silicon / Intel</span></span>
                         </div>
                     </a>
-                    <a href="macos_en.html" target="_blank" class="platform-card link-en">
+                    <a href="macos_en.html?lang=en" target="_blank" class="platform-card link-en">
                         <span class="platform-icon">🍎</span>
                         <div class="platform-info">
                             <strong><span class="en">macOS</span></strong>
                             <span><span class="en">Apple Silicon / Intel</span></span>
                         </div>
                     </a>
-                    <a href="linux.html" target="_blank" class="platform-card link-zh">
+                    <a href="linux.html?lang=zh" target="_blank" class="platform-card link-zh">
                         <span class="platform-icon">🐧</span>
                         <div class="platform-info">
                             <strong><span class="zh">Linux</span></strong>
                             <span><span class="zh">通用 Linux 发行版</span></span>
                         </div>
                     </a>
-                    <a href="linux_en.html" target="_blank" class="platform-card link-en">
+                    <a href="linux_en.html?lang=en" target="_blank" class="platform-card link-en">
                         <span class="platform-icon">🐧</span>
                         <div class="platform-info">
                             <strong><span class="en">Linux</span></strong>
                             <span><span class="en">General Linux distros</span></span>
                         </div>
                     </a>
-                    <a href="ubuntu.html" target="_blank" class="platform-card link-zh">
+                    <a href="ubuntu.html?lang=zh" target="_blank" class="platform-card link-zh">
                         <span class="platform-icon">🟠</span>
                         <div class="platform-info">
                             <strong><span class="zh">Ubuntu</span></strong>
                             <span><span class="zh">Debian 系发行版</span></span>
                         </div>
                     </a>
-                    <a href="ubuntu_en.html" target="_blank" class="platform-card link-en">
+                    <a href="ubuntu_en.html?lang=en" target="_blank" class="platform-card link-en">
                         <span class="platform-icon">🟠</span>
                         <div class="platform-info">
                             <strong><span class="en">Ubuntu</span></strong>
                             <span><span class="en">Debian-based distros</span></span>
                         </div>
                     </a>
-                    <a href="windows.html" target="_blank" class="platform-card link-zh">
+                    <a href="windows.html?lang=zh" target="_blank" class="platform-card link-zh">
                         <span class="platform-icon">🪟</span>
                         <div class="platform-info">
                             <strong><span class="zh">Windows</span></strong>
                             <span><span class="zh">10/11 x64</span></span>
                         </div>
                     </a>
-                    <a href="windows_en.html" target="_blank" class="platform-card link-en">
+                    <a href="windows_en.html?lang=en" target="_blank" class="platform-card link-en">
                         <span class="platform-icon">🪟</span>
                         <div class="platform-info">
                             <strong><span class="en">Windows</span></strong>
                             <span><span class="en">10/11 x64</span></span>
                         </div>
                     </a>
-                    <a href="saas.html" target="_blank" class="platform-card link-zh">
+                    <a href="saas.html?lang=zh" target="_blank" class="platform-card link-zh">
                         <span class="platform-icon">☁️</span>
                         <div class="platform-info">
                             <strong><span class="zh">SaaS 模式</span></strong>
                             <span><span class="zh">多租户 SaaS 部署</span></span>
                         </div>
                     </a>
-                    <a href="saas_en.html" target="_blank" class="platform-card link-en">
+                    <a href="saas_en.html?lang=en" target="_blank" class="platform-card link-en">
                         <span class="platform-icon">☁️</span>
                         <div class="platform-info">
                             <strong><span class="en">SaaS Mode</span></strong>
@@ -1631,9 +1657,20 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
     <script>
         function switchLang(lang) {
             document.body.classList.toggle('lang-en', lang === 'en');
-            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            localStorage.setItem('paozhu-lang', lang);
+            document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+            });
+            try { localStorage.setItem('paozhu-lang', lang); } catch (e) {}
+            syncSharedLangLinks(lang);
+        }
+
+        function syncSharedLangLinks(lang) {
+            document.querySelectorAll('a[data-lang-zh]').forEach(a => {
+                a.setAttribute('href', lang === 'en'
+                    ? a.getAttribute('data-lang-en')
+                    : a.getAttribute('data-lang-zh'));
+            });
         }
 
         function toggleSidebar() {
@@ -1651,15 +1688,17 @@ eab_hmac_key =            <span class="comment"><span class="zh">EAB HMAC Key</s
 
         document.addEventListener('DOMContentLoaded', () => {
             const hashLang = window.location.hash;
-            const savedLang = localStorage.getItem('paozhu-lang');
+            let savedLang = null;
+            try { savedLang = localStorage.getItem('paozhu-lang'); } catch (e) {}
             if (hashLang === '#english' || hashLang === '#en') {
                 switchLang('en');
             } else if (hashLang === '#chinese' || hashLang === '#zh') {
                 switchLang('zh');
             } else if (savedLang === 'zh') {
                 switchLang('zh');
+            } else {
+                switchLang('en');
             }
-            // 默认英文，无需额外处理
         });
     </script>
 </body>

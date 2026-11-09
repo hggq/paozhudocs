@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -99,9 +99,15 @@
         }
     </style>
 
+    <link rel="stylesheet" href="./styles/modern-flat.css">
+    <script src="./js/lang-default.js" data-zh="windows.html" data-en="windows_en.html" data-page="en"></script>
 </head>
 
-<body>
+<body class="flat-article">
+    <div class="flat-langbar" role="group" aria-label="Language">
+        <a href="windows_en.html?lang=en" class="is-active">🇬🇧 English</a>
+        <a href="windows.html?lang=zh">🇨🇳 中文</a>
+    </div>
     <div class="container">
         <h3>Greater than Windows 10, C++20 must be used</h3>
         <p>Introduce two compilation methods, xmake and vcpkg</p>
