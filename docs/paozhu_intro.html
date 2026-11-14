@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="zh-CN" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Paozhu（炮竹）Web 框架介绍</title>
+     <style>
+        /* Light mode */
+        body {
+            font-family:'PingFang SC','Helvetica Neue','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC',Sathu,EucrosiaUPC,Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:1.45em;
+        }
+        /* Inline code chip; the shared modern-flat.css sets code backgrounds with !important. */
+        body code{
+            background-color: #eaf0f8 !important;
+            color: #b42318;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent !important;
+            color: inherit;
+            border: 0;
+            border-radius: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        /* Inline code chip; the shared modern-flat.css sets code backgrounds with !important. */
+        body code{
+            background-color: #eaf0f8 !important;
+            color: #b42318;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent !important;
+            color: inherit;
+            border: 0;
+            border-radius: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        body code{
+            background-color: #1c2a3a !important;
+            color: #ffa198;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+      <link rel="stylesheet" href="./styles/modern-flat.css">
+</head>
+  <body>
+      <div class="container">  
+<h1>Paozhu（炮竹）Web 框架介绍</h1>
+<p>Paozhu 是一个用 C++ 写的 Web 框架，CMake 工程名是 <code>Paozhu_web_framework</code>，版本 1.0.0。它最直观的特点是&quot;一个可执行文件什么都带&quot;：HTTP/1.1、HTTP/2、WebSocket、裸 TCP、MQTT 客户端、Redis 客户端、ORM、模板视图和静态文件服务都在同一个进程里，编译时再按开关把用不到的部分裁掉。</p>
+<p>这篇文档按一个第一次接触仓库的人会关心的顺序来讲：它是什么、怎么跑起来、一次请求在里面怎么走、各个目录分别管什么、配置和扩展怎么做。文中的结论都来自当前仓库的源码和目录，关键结论对应的文件集中在最后一节。少数只读了公开头文件、没有逐行看实现的模块，也在最后一节说明。</p>
+<h2>一、它是什么</h2>
+<p>从源码结构看，Paozhu 有几个很明确的取向。</p>
+<p><strong>网络层直接建在 standalone Asio 上。</strong> 服务器持有的就是 <code>asio::io_context</code>，没有另造一套事件循环，所以 Asio 生态里的用法基本都能接进来。</p>
+<p><strong>I/O 和业务是分开的。</strong> I/O 线程只做 accept、read、write，同步业务 handler 会被投递到独立的业务线程池 <code>clientrunpool</code>。这意味着在 handler 里写阻塞代码，堵住的是业务池，不会把网络线程一起拖死。</p>
+<p><strong>I/O 循环按核数分组，而不是单 loop。</strong> 进程里有一组 <code>io_context</code>，连接按轮询分到其中某一个，每个 ioc 再跑若干线程，后面第三节会展开。</p>
+<p><strong>协程是路由层的入口。</strong> 路由匹配和派发的主入口是 <code>router::co_resolve</code>，pre 和 handler 都同时准备了同步、协程两套槽位，业务可以按需要选。</p>
+<p><strong>HTTP/2 是自己实现的。</strong> 帧解析、HPACK 用的 Huffman、每连接的发送环、全局发送队列和流控都在仓库里，不是包一层第三方库。</p>
+<p><strong>路由声明写在注释里，构建时生成注册表。</strong> 业务函数的注释里写 <code>//@urlpath(...)</code>，构建时由 <code>paozhu_pre</code> 扫描出来，生成注册表和函数声明桩。</p>
+<p><strong>能力是打包交付的。</strong> ORM、连接池、RBAC、OAuth、支付、Excel/Word/PDF、图片、压缩、图表、短信、Redis 客户端都在同一个仓库的 <code>vendor/</code> 和 <code>libs/</code> 下，默认关闭，按 CMake 开关启用，这些 option 在 <code>CMakeLists.txt</code> 里的默认值都是 <code>OFF</code>。</p>
+<p>仓库大致分成四层：<code>vendor/httpserver</code> 是框架本体；<code>vendor/</code> 下其余子目录和 <code>libs/</code> 是可复用能力；<code>common/</code>、<code>orm/</code>、<code>models/</code>、<code>viewsrc/</code> 这些是框架和业务之间的胶水层；<code>controller/</code>、<code>view/</code>、<code>www/</code>、<code>module/</code> 则是可以直接删掉的示例业务。这个分层在 <code>mini_project.sh</code> 里体现得很直接：它会移除 <code>controller/src/admin</code>、<code>github</code>、<code>oauth</code> 等演示目录，只留框架核心。</p>
+<h2>二、把项目跑起来</h2>
+<h3>依赖和构建</h3>
+<p>依赖列在 <code>vcpkg.json</code>：<code>openssl</code>、<code>brotli</code>、<code>asio</code>、<code>zlib</code>、<code>sqlite3</code>，另有一个 <code>gd</code> feature 带 <code>pkgconf</code>、<code>libgd</code>、<code>freetype</code>、<code>libpng</code>、<code>libqrencode</code>。用 vcpkg 时打开 <code>-DENABLE_VCPKG=ON</code> 并把 <code>CMAKE_TOOLCHAIN_FILE</code> 传进去，<code>README_CN.md</code> 里有对应说明。仓库也带了一份 <code>xmake.lua</code>，喜欢 xmake 的可以走另一条路。</p>
+<p>常规构建就是三步：</p>
+<pre><code class="language-bash">cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+./bin/paozhu                 # 也可以传 ./bin/paozhu /path/to/server.conf
+</code></pre>
+<p><code>bin/</code> 下现在有 <code>paozhu</code>、<code>paozhu_cli</code>、<code>paozhu_pre</code> 三个产物。压测相关的东西要显式打开 <code>-DENABLE_BENCHMARK=ON</code>。</p>
+<p>构建会产出四个 CMake 目标：主程序 <code>paozhu</code>、数据库/模型工具 <code>paozhu_cli</code>、注解路由生成器 <code>paozhu_pre</code>，以及每次构建都会跑一遍的 <code>paozhu_codegen</code>。</p>
+<p>主程序的源码集合是几个 glob 拼起来的：</p>
+<pre><code class="language-cmake">set(paozhu_srcs
+  ${common_list} ${viewsrc_list} ${framework_cpps} ${orm_list}
+  ${reflect_list} ${src_list} ${source_list} ${controller_list})
+</code></pre>
+<p>其中 <code>reflect_list</code> 会把 <code>libs/*.cpp</code> 递归收进来。</p>
+<h3>启动入口</h3>
+<p>Release 构建用 <code>startup/main_daemon.cpp</code>，其它构建配置自动换成 <code>startup/main_dev.cpp</code>。守护版先把 <code>argv[1]</code> 当作 <code>server.conf</code> 的路径或目录解析，然后 <code>init_daemon()</code> 里 fork：子进程执行 <code>get_server_app()</code>、<code>http::rbac::install_route_guard()</code>、<code>httpmy.run(argv_str)</code>；父进程循环 <code>wait</code>，收到 <code>SIGCHLD</code> 时重启子进程。前台版走同一条 <code>run()</code>，只是不 fork。</p>
+<p><code>run()</code> 内部依次做：读配置、建 ioc 和线程、起 accept、注册路由、进事件循环。</p>
+<h2>三、一次请求怎么走</h2>
+<h3>线程是怎么分的</h3>
+<p>进程里的线程可以归成四类，先看全貌：</p>
+<table>
+<thead>
+<tr>
+<th>线程类别</th>
+<th>数量</th>
+<th>负责什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>accept 线程</td>
+<td>2（HTTP 一个、SSL 一个）</td>
+<td>阻塞 accept，把新连接交给 ioc</td>
+</tr>
+<tr>
+<td>I/O 线程</td>
+<td>ioc 组数 × 每组的 <code>run()</code> 线程数</td>
+<td>跑 <code>io_context::run()</code>，做连接读写和协议解析</td>
+</tr>
+<tr>
+<td>旁路线程</td>
+<td><code>httpwatch</code> 1 条、HTTP/2 发送 <code>http2_send_loop_num</code> 条（下限 2）、<code>websocket_loop</code> 1 条、<code>ratelimiter</code> 1 条</td>
+<td>定时巡检、消费 HTTP/2 发送队列、连接级限流</td>
+</tr>
+<tr>
+<td>业务线程池</td>
+<td><code>hardware_concurrency() + 2</code></td>
+<td>跑同步 handler</td>
+</tr>
+</tbody>
+</table>
+<p>I/O 线程的数量分两层算。组数是 <code>min(cothreadnum, hardware_concurrency())</code>，低于 4 时抬到 4；每组再起 <code>per_ioc_thread_num</code> 个 <code>run()</code> 线程。<code>conf/server.conf</code> 的注释直接给了算式 <code>cothreadnum * per_ioc_thread_num = threads</code>。</p>
+<p><code>io_contexts[0]</code> 还有额外身份：它同时就是兼容成员 <code>io_context</code>，框架自己的定时循环、同步取连接和 <code>client_context</code> 都留在它上面。</p>
+<p>串行只发生在连接内部。新连接按 <code>session_ioc_cursor++ % io_contexts.size()</code> 轮询落到某个 ioc，连接自己再绑一个 <code>asio::strand</code>，保证同一条连接上的协议处理按序执行。不同连接之间没有这层顺序。</p>
+<p><code>httppeer</code> 池不是线程，放在这里只是因为容易和线程混在一起：<code>acquire_peer()</code> 拿可复用对象，最后一个引用释放时走 <code>reset_for_reuse()</code> 回池；上限 <code>PEER_POOL_MAX = 512</code>，<code>BENCHMARK</code> 构建下是 4096。</p>
+<p>一条连接从进来到出去，会依次碰到这些线程：</p>
+<ol>
+<li>accept 线程接住连接，交给某个 ioc。</li>
+<li>之后该连接的读写和协议解析都在这个 ioc 的 <code>run()</code> 线程上，由 strand 保证同连接串行。</li>
+<li>命中同步 handler 时，工作被投递到业务线程池；协程 handler 则就地 <code>co_await</code>，仍在该 ioc 线程上推进。</li>
+<li>输出阶段，HTTP/1.1 由 I/O 线程直接写回，HTTP/2 交给固定的 <code>http2_send_queue_loop</code> 线程消费发送队列。</li>
+<li>旁路线程只做周期性的巡检、限流和队列消费，不参与具体业务处理。</li>
+</ol>
+<h3>路由匹配与派发</h3>
+<p>请求从 accept 到输出，主干是这样的：</p>
+<pre><code>accept（旁路线程）
+  → 轮询选 ioc，连接绑 strand
+  → 协议解析：HTTP/1.1 走 http_parse.cpp，HTTP/2 走 http2_parse.cpp
+  → 取 httppeer（acquire_peer）
+  → router::co_resolve
+        ├─ 精确查找，未命中再做前缀回退（最多 6 段）
+        ├─ 把命中的 mask_code 写进 peer
+        ├─ 注解级限流
+        ├─ RBAC 钩子，mask_code 非 0 才进
+        └─ pre → handler（同步步进业务池，协程就地 co_await）
+  → 输出写回：HTTP/1.1 直接写，HTTP/2 进发送队列
+</code></pre>
+<p>同步链和协程链在 <code>router.cpp</code> 里是两段平行实现：同步侧一条，协程侧在 <code>co_resolve</code> 里一条。<code>router.h</code> 的注释明确要求两条链的 pre/handler 分支行为保持一致，改一边就得同步改另一边。</p>
+<h3>HTTP/1.1 与 HTTP/2 的输出</h3>
+<p>HTTP/1.1 是自研解析，主体在 <code>vendor/httpserver/src/http_parse.cpp</code>，配合 <code>request.cpp</code>、<code>httppeer.cpp</code>。请求-响应串行，没有 pipeline。</p>
+<p>HTTP/2 是一套完整实现，相关文件都在 <code>vendor/httpserver/src/</code>：<code>http2_parse.cpp</code> 管帧解析和连接状态机，<code>http2_frame.cpp</code>/<code>http2_define.cpp</code> 管帧结构与常量，<code>http2_huffman.cpp</code> 是 HPACK 用的 Huffman 编解码，<code>http2_ring_queue.cpp</code> 是每连接的定长发送环，<code>http2_send_queue.cpp</code> 是全局发送队列，<code>http2_flow.h</code> 放流控窗口定义。</p>
+<p>几个关键设计点：</p>
+<ul>
+<li>每连接一个 32 槽定长环，常量 <code>CONST_HTTP2_RING_QUEUE_CAPACITY = 32</code>。编译期要求它是 2 的幂并且能塞进 <code>unsigned char</code>；<code>head_</code>/<code>tail_</code> 是原子下标，另有一个 <code>bytes</code> 积压计数。</li>
+<li>发送对象有明确的状态机：<code>own_state</code> 表示它在池里、全局队列里、线程私有还是挂起，<code>block_reason</code> 记录为什么被挡住。</li>
+<li>被挡住的对象不会反复轮询复查，而是 park 进 <code>parked_list</code>，由 <code>park()</code> / <code>detach_parked()</code> / <code>reattach_parked()</code> 在窗口变化、收到 SETTINGS、环腾出槽位这三类事件上回灌。</li>
+<li>撤流条件是&quot;连续 120 秒没有任何推进&quot;，不是普通的空闲超时。<code>CONST_HTTP2_SEND_NO_PROGRESS_TIMEOUT = 120</code>，判定逻辑在 <code>server.cpp</code>。</li>
+<li>开关是 <code>conf/server.conf</code> 里的 <code>http2_enable = 1</code>。</li>
+</ul>
+<h2>四、各模块各自管什么</h2>
+<h3>框架核心 <code>vendor/httpserver</code></h3>
+<p><code>include/</code> 加 <code>src/</code>，<code>src/</code> 下有 85 个 <code>.cpp</code>。按职责可以分成这么几组：</p>
+<ul>
+<li>服务器与生命周期：<code>server.cpp</code>、<code>serverconfig.cpp</code>、<code>client_context.cpp</code>、<code>resident_stop.cpp</code>，负责启动、配置、线程编排和优雅退出。</li>
+<li>连接与协议：<code>http_parse.cpp</code>、<code>http_header.cpp</code>、<code>http_domain.cpp</code>、<code>rpc_parse.cpp</code>、<code>client_session.cpp</code>，负责 HTTP/1.1 解析、域名路由和 RPC 解析。</li>
+<li>HTTP/2：前面第三节列过的那组文件。</li>
+<li>请求模型：<code>httppeer.cpp</code>、<code>request.cpp</code>、<code>cookie.cpp</code>、<code>session_id.cpp</code>。</li>
+<li>路由：<code>router.cpp</code>、<code>viewmethold_reg.cpp</code>。</li>
+<li>ORM 与连接：<code>orm_common.cpp</code>、<code>orm_conn_pool.cpp</code>、<code>orm_connect_mar.cpp</code>、<code>orm_query.cpp</code>、<code>mysql_conn.cpp</code>、<code>pg_conn.cpp</code>、<code>sqlite_conn.cpp</code>。</li>
+<li>线程原语：<code>threadpool.cpp</code>、<code>atomic_count.cpp</code>、<code>atomic_guard.cpp</code>。</li>
+<li>静态文件：<code>file_get_content.cpp</code>、<code>gzip.cpp</code>、<code>https_brotli.cpp</code>、<code>mime.cpp</code>、<code>directory_fun.cpp</code>。</li>
+<li>长连接：<code>ws_*.cpp</code>、<code>http_websocket_client.cpp</code>、<code>http_socket*.cpp</code>、<code>mqtt_*.cpp</code>、<code>sock_subpub_reg.cpp</code>。</li>
+<li>安全与鉴权：<code>jwt.cpp</code>、<code>acme_*.cpp</code>、<code>ocsp_check.cpp</code>、<code>base64.cpp</code>、<code>md5.cpp</code>。</li>
+<li>工具：<code>parse_ini.cpp</code>、<code>str_fun.cpp</code>、<code>urlcode.cpp</code>、<code>unicode.cpp</code>、<code>datetime.cpp</code>、<code>qrcode.cpp</code>、<code>send_email.cpp</code>、<code>fastcgi.cpp</code>、<code>loadmodule.cpp</code>、<code>loadviewso.cpp</code>。</li>
+</ul>
+<p><code>include/</code> 里有两个容易看错的头。<code>request.h</code> 其实是内置的 JSON 微对象 <code>obj_val</code>，不是 HTTP 请求类；真正的请求/响应载体是 <code>httppeer.h</code>。<code>httphook.h</code> 配合 <code>common/httphook.cpp</code> 构成钩子层，路由、认证、限流都挂在上面。另外 <code>orm_cache.hpp</code>、<code>mysqlorm.hpp</code>、<code>postgresqlorm.hpp</code>、<code>sqliteorm.hpp</code> 是 ORM 的模板门面。</p>
+<h3>两个生成器 <code>vendor/httpcli</code></h3>
+<p>这个目录编出两个可执行文件，用途完全不同。</p>
+<p><code>paozhu_pre</code> 是注解路由生成器，源码是 <code>vendor/httpcli/autopickmethod.cpp</code> 加 <code>vendor/httpserver/src/md5.cpp</code>。它扫描 <code>controller/src</code> 里的注解，写出 <code>common/autocontrolmethod.hpp</code> 和 <code>controller/include/*.h</code>。</p>
+<p><code>paozhu_cli</code> 是数据库/模型工具，源码是 <code>vendor/httpcli/http_cli.cpp</code> 加 ORM 连接和模型相关源。能力包括 <code>dbcreate</code>、<code>dbconvert</code>、<code>dbschema_check</code>、<code>dbdump_*</code>、<code>templateparse*</code>、<code>struct_reflectfile</code> 等，声明在 <code>vendor/httpcli/*.hpp</code> 里。</p>
+<p><code>vendor/httpcli/</code> 下那批 <code>.hpp</code> 是生成器的模板和解析实现：<code>controllerparse.hpp</code>、<code>ccontrollfun.hpp</code>、<code>dbtypes.hpp</code>、<code>modelfun.hpp</code>、<code>templateparse.hpp</code>、<code>typestatement.hpp</code>、<code>utility.hpp</code>。</p>
+<p>生成链挂在构建里：</p>
+<pre><code>add_custom_target(paozhu_codegen ALL)
+    COMMAND paozhu_pre &lt;源码根&gt;
+add_dependencies(paozhu paozhu_codegen)
+</code></pre>
+<p>所以每次构建都会跑一遍 <code>paozhu_pre</code>，但它用文件 hash 加 mtime 判断，没变化就不落盘。</p>
+<h3>注册表与业务层 <code>common</code>、<code>controller</code></h3>
+<p><code>common/</code> 下有 14 个文件，大部分是手写的全局定义和注册表，只有一个文件是生成物。<code>autocontrolmethod.hpp</code> 就是 <code>paozhu_pre</code> 写出的注解路由注册表，输出路径写死在 <code>vendor/httpcli/autopickmethod.cpp</code>。<code>autorestfulpaths.hpp</code> 登记 RESTful 路径里的参数名，<code>server.cpp</code> 引入它，<code>mini_project.sh</code> 会在建新项目时重写。<code>cost_define.h</code> 放全局常量，<code>httphook.cpp</code> 是钩子层实现，<code>json_reflect_headers.h</code> 聚合 JSON 反射头。<code>reghttpmethod.hpp</code> 和 <code>reghttpmethod_pre.hpp</code> 是早期的手写注册表（<code>REG_SYNC_SYNC</code> 宏列表，<code>server.cpp</code> 引入）。剩下 <code>mqtt_client_regmethod.hpp</code>、<code>mqtt_method_reg.hpp</code>、<code>redis_regmethod.hpp</code>、<code>sock_client_regmethod.hpp</code>、<code>sockets_method_reg.hpp</code>、<code>websockets_method_reg.hpp</code>、<code>ws_client_regmethod.hpp</code> 分别是各长连接后端的注册表。</p>
+<p>注册顺序值得记一下：<code>server.cpp</code> 里依次调用 <code>_initauto_all_httputils()</code>、<code>_inithttpmethodregto()</code>、<code>_inithttpmethodregto_pre()</code>，也就是&quot;生成表 → 手写表 → 手写 pre 表&quot;。<code>reg_add</code> 保留首次注册，所以同一个路径上手写项会被生成表挡住。<code>paozhu_pre</code> 知道这一点，生成时会把撞名打成 <code>ROUTE-WARN</code>。</p>
+<p><code>controller/include/</code> 下的 100 个头都是生成出来的函数声明桩，不是手写代码。<code>paozhu_pre</code> 只在注解签名变化时重写它们，内部靠 md5 和 mtime 判断；CMake 在 configure 阶段对缺失的头只做 <code>file(TOUCH)</code> 占位。真正的实现在 <code>controller/src/</code>，按业务域分目录：<code>admin/</code>、<code>superadmin/</code>（含 <code>superadmin/rbac/</code>）、<code>rbac/</code> 是后台与权限，<code>oauth/</code>、<code>oauth_client/</code>、<code>github/</code> 是授权登录，<code>saas.com/</code> 是多租户演示站，<code>serverwatch.cpp</code> 放监控端点，<code>test_*.cpp</code> 和 <code>test*.cpp</code> 是一批能力演示和回归用例（比如 <code>test_maskcode.cpp</code> 演示注解限流）。</p>
+<h3>数据层 <code>orm</code>、<code>models</code>、<code>schema</code></h3>
+<p><code>orm/orm.h</code> 是总入口，下面有 <code>cms/</code>、<code>pg/</code>、<code>lite/</code> 三套模型域，分别对应 MySQL、PostgreSQL、SQLite。<code>orm/cms/include/</code> 里的 64 个 <code>*_base.h</code> 是 <code>paozhu_cli</code> 生成的，文件头注释写着 <code>This file is auto create from paozhu_cli</code>。<code>fk_child_opsql.cpp</code> 和 <code>fk_parent_opsql.cpp</code> 是手写的联表查询。<code>models/</code> 放模型行为实现，这批 <code>.cpp</code> 由 <code>paozhu_cli</code> 首次生成，之后不再覆盖——文件头写着&quot;如果此文件存在不会自动覆盖，没有则会自动生成&quot;，所以可以放心在里面写业务。<code>schema/</code> 是建表 SQL。</p>
+<p>连接池在 <code>vendor/httpserver/src/orm_conn_pool.cpp</code> 和 <code>include/orm_conn_pool.h</code>。池按 ioc 分槽，全局 <code>max_pool</code> 按槽数切分、余数给小槽、每槽保底 1（<code>slot_max_of</code> / <code>slot_min_of</code>），每槽一把独立的锁，不同 ioc 的线程不会抢同一把锁。配置项是 <code>orm_ioc_num</code> 和 <code>orm_thread_pool_num</code>，连接参数在 <code>conf/orm.conf</code>。ORM 也提供协程接口，<code>orm_connect_mar.cpp</code>、<code>orm_query.cpp</code> 里的查询可以直接 <code>co_await</code>。</p>
+<h3>可复用能力库 <code>libs</code></h3>
+<p><code>libs/</code> 下 11 个子目录，全是手写源码。编译期由 <code>CMakeLists.txt</code> 里的递归 glob 收进主目标，头文件目录也递归加入 include 路径。</p>
+<p><code>libs/rbac</code> 是权限判定内核。<code>rbac.h</code> 提供 <code>load_user_roles</code>、<code>load_role_perms</code>、<code>load_user_grants</code>（一次六条查询把角色、权限、分配层、目录取完）、<code>user_has_url</code>、<code>user_has_permscode</code> 等；<code>route_guard.cpp</code> 是路由钩子，先看 <code>adminid</code> 判 401，再看 <code>companyid</code> 判 403，最后交给缓存；<code>route_cache.cpp</code> 的 <code>allow()</code> 按 <code>(adminid, companyid)</code> 做缓存，16 分片、4096 条、60 秒 TTL，装载时持分片锁做 singleflight，加载失败按 fail-closed 处理。<code>route_cache.cpp</code> 里还有个 <code>stats()</code>，目前没有调用点。</p>
+<p><code>libs/oauth</code> 是 OAuth 服务端侧，拆成 <code>oauth_config</code>（读 <code>conf/oauth.conf</code>）、<code>oauth_store</code>（令牌哈希、PKCE 验算、Basic 客户端认证）、<code>oauth_audit</code>（审计）。<code>oauth_audit</code> 的 <code>audit_log()</code> 把一行写进框架的错误日志队列，由 <code>httpwatch</code> 追加到 <code>log/error.log</code>。具体端点在 <code>controller/src/oauth/</code>：<code>oauth_authorize.cpp</code>、<code>oauth_token.cpp</code>、<code>oauth_introspect.cpp</code>、<code>oauth_revoke.cpp</code>、<code>oauth_jwks.cpp</code>、<code>oauth_metadata.cpp</code>、<code>oauth_userinfo.cpp</code>、<code>oauth_bearerauth.cpp</code>、<code>oauth_client_add.cpp</code>、<code>oauth_purge.cpp</code>。</p>
+<p><code>libs/oauth_client</code> 是通用 OAuth 2.x/2.1 客户端，不绑定具体授权服务器：填四个端点 URL 就能对 GitHub、Google 或自搭的 oauth 端点。它提供 PKCE、授权码/refresh/client_credentials 三种 grant，以及 introspect 和 revoke。<code>libs/github</code> 则是 GitHub 专用版，state 是 <code>[adminid, client_id, rand32]</code> 三段式，revoke 走 DELETE + Basic，scope 会强制追加 <code>read:user</code>，另外还有 <code>github_api</code>、<code>github_config</code>、<code>github_crypto</code>、<code>github_store</code>。</p>
+<p><code>libs/webpay</code> 是应用侧的支付逻辑：订单状态机（pending/paid/cancelled/refunded）、单号生成、按 <code>wxorder</code> 查单、异步查单、微信 V3 查单应答的落账判定，以及回调、证书闸门、支付宝/微信 V2/V3、二维码、token 这些文件。</p>
+<p><code>libs/markdown</code> 的 <code>markdown2html</code> 逐项处理块引用、粗体、链接、标题、分隔线、表格、图片、单行删除线、代码块、有序/无序列表，还维护目录和引用列表。<code>libs/pinyin</code> 做汉字转拼音，数据取自 pinyin-data，用二分查找。<code>libs/ipdata</code> 读 <code>ip.data</code>（ip2region 格式），用二分查找把 IP 落到国家/省/市。<code>libs/department</code> 是带 <code>parentid</code> 和 <code>children</code> 的组织树结构。<code>libs/img</code> 的 <code>upload_images</code> 处理图片、视频、base64 和表单文件上传，并列出已上传文件。<code>libs/types</code> 是 JSON 反射的样例类型，里面有嵌套对象和数组，用来演示反射生成。</p>
+<h3>可选能力模块 <code>vendor/*</code></h3>
+<p>这些模块都是 <code>include/</code> + <code>src/</code> 的结构，默认关闭，源码通过 <code>CMakeLists.txt</code> 里的条件 glob 加入 <code>paozhu_srcs</code>，开关也集中在 <code>CMakeLists.txt</code>。下面按业务里用到的可能性从高到低分组。</p>
+<p><strong>文档与表格。</strong> 后台导出报表、导入 Excel、生成合同或通知、把页面存成 PDF，这类需求都在这一组。<code>pzexcel</code> 负责 xlsx 读写，支持多 sheet 和单元格样式；<code>pzword</code> 负责 docx 读写，能在 HTML 和 docx 之间互转，也能直接输出内存字节流；<code>webpdf</code> 是 PDF 渲染，公开头里能看到 <code>HTMLRenderer</code>，同目录还配了 HTML、CSS、SVG、TTF 四个解析器。业务只要涉及 Office 文档的导入导出，就开 <code>ENABLE_OFFICE</code>；需要 HTML 转 PDF 再单独开 <code>ENABLE_PDF</code>。</p>
+<p><strong>压缩、图片与图表。</strong> 打包下载或上传解包用 <code>pzzip</code>，它支持把 zip 直接写进内存 buffer，不必落临时文件；验证码和常规图片处理用 <code>pzimage</code>，它自带 PNG/JPEG 编解码，也能读 TrueType/OpenType 字形轮廓来画字；报表页要内嵌图形用 <code>pzcharts</code>，它直接输出 SVG，覆盖折线、平滑折线、柱状、散点、环形、雷达、仪表盘和漏斗。三个开关彼此独立，按实际用到的能力单独打开即可。</p>
+<p><strong>支付与短信。</strong> 需要走交易闭环时用 <code>vendor/webpay</code>，它是微信/支付宝的 SDK 封装，处理 V3 证书、平台证书和退款幂等键这些底层细节；订单状态机、回调、证书闸门这些应用侧逻辑在 <code>libs/webpay</code>，前面 <code>libs</code> 一节已经讲过。需要短信验证码或通知时用 <code>sms</code>，里面是阿里云和腾讯云两个客户端。两者分别对应 <code>ENABLE_WEBPAY</code> 和 <code>ENABLE_SMS</code>。</p>
+<p><strong>缓存与其它。</strong> <code>pzredis</code> 是 Redis 客户端，<code>redis_client</code> 不持有连接，每条命令向配置段借一条、用完归还，同步和协程各有一套方法。做缓存、分布式锁或 pub/sub 时开 <code>ENABLE_REDIS</code>；框架层的 Redis 长连接客户端是另一个开关 <code>ENABLE_REDIS_CLIENT</code>，它要求 <code>ENABLE_REDIS</code> 同时打开，否则 configure 直接报错。</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>CMake 开关</th>
+<th>能力</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vendor/pzexcel</code></td>
+<td><code>ENABLE_OFFICE</code></td>
+<td>xlsx 读写，多 sheet，单元格值与字体/边框/填充/对齐样式</td>
+</tr>
+<tr>
+<td><code>vendor/pzword</code></td>
+<td><code>ENABLE_OFFICE</code></td>
+<td>docx 读写、HTML 与 docx 互转、内存字节流输出</td>
+</tr>
+<tr>
+<td><code>vendor/webpdf</code></td>
+<td><code>ENABLE_PDF</code></td>
+<td>PDF 渲染，<code>HTMLRenderer</code> 加 HTML/CSS/SVG/TTF 解析器</td>
+</tr>
+<tr>
+<td><code>vendor/pzzip</code></td>
+<td><code>ENABLE_ZIP</code></td>
+<td>zip 读写，支持直接写内存 buffer</td>
+</tr>
+<tr>
+<td><code>vendor/pzimage</code></td>
+<td><code>ENABLE_IMAGE</code></td>
+<td>PNG/JPEG 编解码，TrueType/OpenType 字形轮廓绘制</td>
+</tr>
+<tr>
+<td><code>vendor/pzcharts</code></td>
+<td><code>ENABLE_CHART</code></td>
+<td>SVG 图表：折线、柱状、散点、环形、雷达、仪表盘、漏斗</td>
+</tr>
+<tr>
+<td><code>vendor/webpay</code></td>
+<td><code>ENABLE_WEBPAY</code></td>
+<td>微信/支付宝 SDK 封装，含 V3 证书、平台证书、退款幂等键</td>
+</tr>
+<tr>
+<td><code>vendor/sms</code></td>
+<td><code>ENABLE_SMS</code></td>
+<td>阿里云、腾讯云短信客户端</td>
+</tr>
+<tr>
+<td><code>vendor/pzredis</code></td>
+<td><code>ENABLE_REDIS</code></td>
+<td>Redis 客户端，按配置段借还连接，同步/协程双接口</td>
+</tr>
+</tbody>
+</table>
+<p>依赖上有一条联动：<code>ENABLE_OFFICE</code> 会自动打开 <code>ENABLE_ZIP</code>，因为 <code>pzword</code> 打包 docx 时要用 <code>pz::zip</code>。</p>
+<h3>长连接</h3>
+<p>仓库里有四个独立目录 <code>websockets/</code>、<code>sockets/</code>、<code>mqtt/</code>、<code>redis/</code>，它们主要是演示站点和示例，真正的协议实现在 <code>vendor/httpserver/src/</code> 里：WebSocket 对应 <code>ws_conn.cpp</code>、<code>ws_handshake.cpp</code>、<code>ws_parser.cpp</code>、<code>ws_wire.cpp</code>、<code>websockets_callback.cpp</code>；裸 TCP 对应 <code>http_socket.cpp</code>、<code>http_socket_client.cpp</code>、<code>sock_subpub_reg.cpp</code>；MQTT 对应 <code>mqtt_frame.cpp</code>、<code>mqtt_session.cpp</code>、<code>mqtt_reg.cpp</code>、<code>mqtt_subpub_reg.cpp</code>、<code>http_mqtt_client.cpp</code>；Redis 长连接对应 <code>http_rpcclient.cpp</code> 加 <code>vendor/pzredis</code> 的客户端。开关分别是 <code>ENABLE_WEBSOCKETS_CLIENT</code>、<code>ENABLE_SOCKETS_CLIENT</code>、<code>ENABLE_MQTT_CLIENT</code>（默认 ON）和 <code>ENABLE_REDIS_CLIENT</code>（默认 OFF，且要求 <code>ENABLE_REDIS</code>）。业务侧的注册表就是前面 <code>common/</code> 里那组 <code>*_regmethod.hpp</code>。</p>
+<h3>视图、静态文件与 <code>.so</code> 热加载</h3>
+<p><code>view/</code> 是手写 HTML 模板，按业务域分 <code>home/</code>、<code>admin/</code>、<code>cms/</code>、<code>login/</code>、<code>oauth/</code>、<code>superadmin/</code> 等目录。<code>viewsrc/include/viewsrc.h</code> 和 <code>viewsrc/include/regviewmethod.hpp</code> 是手写的注册入口；<code>viewsrc/view/**.cpp</code> 则是模板解析器生成的 C++，文件头写着 <code>//This file create by paozhu</code>（见 <code>viewsrc/view/home/header.cpp</code>），现有的有 <code>home/header.cpp</code>、<code>oauth/consent.cpp</code>、<code>oauth_client/page.cpp</code>、<code>superadmin/*.cpp</code> 等。解析器在 <code>vendor/httpcli/templateparse.hpp</code>。</p>
+<p><code>www/default/</code> 是静态站点根目录，配置项是 <code>wwwpath = ./www/default</code>。</p>
+<p><code>module/</code> 是动态库目录，里面有 <code>module/controller/testviewso.so</code> 和 <code>module/view/{admin,cms,home,login}/*.so</code>。两个开关各管一边：<code>ENABLE_VIEWSO</code> 用 <code>viewsopath</code> 指向 <code>module/view</code>；<code>ENABLE_MODELSO</code> 用 <code>controlsopath</code> 指向 <code>module/controller</code>。加载逻辑在 <code>loadmodule.cpp</code> 和 <code>loadviewso.cpp</code>，用 <code>pz::dll::library</code> 打开 <code>.so</code>，缓存函数指针时同时持有库句柄，避免 <code>dlclose</code> 之后指针失效。</p>
+<h2>五、配置和扩展怎么做</h2>
+<h3>配置文件放在哪</h3>
+<p><code>conf/</code> 按子系统拆文件：<code>server.conf</code>、<code>orm.conf</code>、<code>redis.conf</code>、<code>mqtt.conf</code>、<code>sockets.conf</code>、<code>websockets.conf</code>、<code>oauth.conf</code>、<code>webpay.conf</code>、<code>acme.conf</code>、<code>github.conf</code>、<code>test.conf</code>，另有证书和密钥文件。日常改得最多的是前三份：<code>server.conf</code> 管进程和站点，<code>orm.conf</code> 管数据库连接，<code>acme.conf</code> 管证书自动签发。其余几份只在启用对应子系统时才需要动。</p>
+<h3><code>server.conf</code></h3>
+<p>这是主配置，进程启动时读一次。结构是 <code>[default]</code> 全局段加若干以域名命名的站点段（原文里是 <code>[www.hggq.com]</code>），站点段可以覆盖 <code>wwwpath</code>、<code>http2_enable</code>、<code>acme_auto</code>、<code>upload_max_size</code>、<code>cors_domain</code>、<code>static_pre</code>、<code>fastcgi_host</code>、<code>fastcgi_port</code>、<code>siteid</code>、<code>groupid</code> 这些键。改端口、调线程、放宽上传大小、开关静态缓存、开限流、开证书续期，都在这里。下面是 <code>conf/server.conf</code> 的原文：</p>
+<pre><code>[default]
+threadmax                  = 1024
+threadmin                  = 5
+httpport                   = 80
+httpsport                  = 443
+bmcport                    = 7755 ;Baseboard Management Controller
+cothreadnum                = 4 ;Coroutines run on thread num
+per_ioc_thread_num         = 4 ;per io_context run thread num, cothreadnum * per_ioc_thread_num = threads, 4 * 4 = 16 threads
+orm_ioc_num                = 4 ;ORM io_context num;
+orm_thread_pool_num        = 4 ;0 use hardware_concurrency()
+http2_send_loop_num        = 2 ; 
+
+http2_enable               = 1
+debug_enable               = 1
+deamon_enable              = 0
+ip6_listen_enable          = 1
+
+mainhost                   = www.hggq.com
+certificate_chain_file     = www.hggq.com.pem
+private_key_file           = www.hggq.com.key
+tmp_dh_file                = dh4096.pem
+chain_crt_file             = www.hggq.com.crt
+reboot_password            = e10adc3949ba59abbe56e057f20f883e ;md5(md5("123456")+"rand_char"+md5("123456"))
+reboot_cron                = d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week
+clean_cron                 = m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+temp_clean_time            = 86400 ;seconds(3600*24); every N seconds httpwatch scans temp folder, remove pzraw_/pzup_ files modified more than N seconds ago (60-604800)
+links_restart_process      = n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+session_type               = 1 ;session save type 0.file 1.memory 2.redis 3.memcache 4.reserve
+static_file_compress_cache = 1 ;1 enable, Cache static file compress(gzip,br) content to cache directory
+resident_client_show       = 0 ;1 enable /resident_stop self-check route for resident outbound clients (redis,ws,sock,mqtt), effective at startup only
+
+rate_limit_status          = 0 ; 1 enable Traffic limiting
+rate_limit_new_wait_num    = 300 ; level 1, start rate-limiting at N connections
+rate_limit_accept_wait_num = 600 ; level 2, maximum rate-limit severity (interpolation upper bound)
+rate_limit_second_num1     = 20  ; pass per second at low load
+rate_limit_second_num2     = 5   ; pass per second at high load
+
+modelspath                 = ./models
+serverpath                 = ./
+viewpath                   = ./view
+viewsopath                 = ./module/view
+
+controlpath                = ./controller
+controlsopath              = ./module/controller
+
+temppath                   = ./temp
+logpath                    = ./log
+wwwpath                    = ./www/default
+pluginspath                = ./plugins
+libspath                   = ./libs
+directorylist              = 1
+index                      = index.html
+;html cache: 带点 url 先看盘上那个文件，没过期就发文件，过期才交给同名注册路由重生成
+;非空即开，关掉请注释掉整行；其余域名段可以各写一份覆盖这里
+usehtmlcache               = 1
+usehtmlcachetime           = 3600 ;seconds 缓存文件放多久算过期，下限 10 秒
+
+acme_auto                  = 0 ;acme automatically applies for SSL certificates, 1 自动更新SSL证书
+acme_every_day             = 7 ;What time does acme run every day, 每天几点运行一次，如果有证书需要就更新
+acme_every_num             = 5 ;How many domain names are processed at a time, 每次处理几个域名
+ocsp_intv_time             = 14400 ;OCSP update interval second(14400 * 5, may be set 3600), OCSP 更新时间间隔 至少4小时
+
+staticfile_cache_num       = 0 ;0 not cache, min 10 begin
+rewrite_404                = 0 ;1 file 2 action url path
+rewrite_404_action         = index.html
+method_pre                 = 
+method_after               = 
+show_visitinfo             = 0
+upload_max_size            = 16777216
+siteid                     = 1
+groupid                    = 0
+alias_domain               = 
+init_func                  = 
+;cors_domain CORS whitelist, comma-separated; only when the request Origin matches will the corresponding ACAO be echoed and Vary: Origin be added
+;  not written / written empty  → deny by default: this site sends no CORS headers at all (logs [CORS-WARN] naming it at startup)
+;  *                   → explicitly allow all cross-origin (echo * for any origin)
+;  when a whitelist is written in this section, sites without their own cors_domain inherit this section's list
+;  cors_expose_headers response headers that page JS is allowed to read during cross-origin, if not written the header is not sent
+;  cors_domain 实际上是白名单列表，允许那些域名通行
+cors_domain                =
+;cors_expose_headers        = x-request-id, x-total-count
+;cors_credentials whether cross-origin is allowed to carry credentials (cookie / HTTP auth); 1 or starting with T means on, default off
+;  when enabled, only responses that hit the whitelist and echo a specific Origin in ACAO carry Access-Control-Allow-Credentials: true
+;  sites that allow all (ACAO is *) do not send this header even if set to 1: per spec, "*"+credentials are mutually exclusive and browsers will hard-reject
+;  this header only solves "allowed to carry": for cookies to be sent cross-site it must also be HTTPS, and the cookie itself must have SameSite=None
+;  after setting 1 the framework will also write the session cookie as SameSite=None; Secure (HTTPS requests only; not sent in plaintext,
+;  because browsers drop Secure cookies in plaintext, which would break the login state in local http dev environments)
+;cors_credentials            = 0
+;cors_allow_methods cross-origin methods allowed in preflight (Access-Control-Allow-Methods), comma-separated
+;  not writing this line → use the framework default POST, GET, OPTIONS, QUERY (QUERY is the read-only query method of the METHOD-QUERY draft)
+;  writing the whole list overrides: both the response header and the validation of Access-Control-Request-Method use this list
+;  writing empty → this site's preflight allows no methods (Allow-Methods is not sent either, cross-origin write operations will be blocked by the browser)
+;  comparison is case-insensitive, output is uniformly converted to uppercase
+; cors_allow_methods 是OPTIONS查询返回的能力
+;cors_allow_methods           = POST, GET, OPTIONS, QUERY
+
+[www.hggq.com]
+wwwpath                    = ./www/default
+http2_enable               = 1
+acme_auto                  = 0
+;rewrite_404=1
+;rewrite_404_action=index.html|psy/index.html|exam/index.html
+;controlsopath=./controller
+static_pre                 = downloadfileauth|upload
+method_pre                 =  ;api/dev/hostcors
+method_after               = 
+isuse_php                  = 0
+rewrite_php                = ./www/mpdftest|index.php
+fastcgi_host               = 127.0.0.1 ;/run/php/php8.1-fpm.sock
+fastcgi_port               = 9000
+upload_max_size            = 16777216
+siteid                     = 1
+groupid                    = 0
+alias_domain               = 
+init_func                  = 
+;cors_domain CORS whitelist, comma-separated; only when the request Origin matches will the corresponding ACAO be echoed and Vary: Origin be added
+;  *                           allow all, echo * for any origin
+;  https://www.hggq.com        if a full origin is written it is matched as-is (non-standard ports must be written in full)
+;  www.hggq.com,www.hggq.net   domain only, automatically matches both http:// and https:// schemes
+;  not writing this line               → inherit [default]'s whitelist; writing empty makes this site exit inheritance and deny by default
+;  before entering the list: uniformly lowercase, strip trailing slash, remove default port matching the scheme (:80 / :443)
+cors_domain                = www.hggq.com, www.hggq.net
+;cors_expose_headers response headers that page JS is allowed to read during cross-origin (Access-Control-Expose-Headers)
+;  if not written the header is not sent; list as needed, e.g.: x-request-id, x-total-count
+;  writing * means expose all response headers (not recommended: internal response headers would also be exposed to page scripts)
+;cors_expose_headers        =
+;cors_credentials whether cross-origin is allowed to carry credentials (cookie / HTTP auth), 1 on 0 off
+;  not writing this line → inherit [default]; writing 0 is this site explicitly disabling it, it will not follow [default]'s 1
+;  only sent when ACAO echoes a specific Origin (whitelist hit); for mutual exclusion rules see the same-named item in the [default] section
+;cors_credentials            = 0
+;cors_allow_methods cross-origin methods allowed in preflight, comma-separated
+;  not writing this line → inherit [default]; writing the whole list overrides this site's list (response header and preflight validation share the same source)
+;  writing empty → this site's preflight allows no methods; for the default four items and other notes see the same-named item in the [default] section
+;cors_allow_methods           = POST, GET, OPTIONS, QUERY
+</code></pre>
+<p>线程相关的键是三组联动：<code>cothreadnum</code> 是 ioc 组数上限，实际组数取 <code>min(cothreadnum, 核数)</code>，低于 4 抬到 4；<code>per_ioc_thread_num</code> 是每组 <code>run()</code> 线程数，两者相乘就是总 I/O 线程数；<code>orm_thread_pool_num</code> 是 ORM 线程总数，配 0 表示用 <code>hardware_concurrency()</code>，上限 512，线程按 <code>orm_ioc_num</code> 均分，余数给下标小的 ioc。</p>
+<p>几个容易看反的取值：<code>upload_max_size</code> 单位是字节，模板值 16777216 即 16 MiB，只有大于 1024 才真正启用限制，配 0 或留空表示不限，站点段可以覆盖；<code>usehtmlcache</code> 空或 0 打头算关、其它非空值算开，<code>usehtmlcachetime</code> 低于 10 秒按 10 秒算；<code>rate_limit_second_num2</code> 必须严格小于 <code>rate_limit_second_num1</code>，<code>rate_limit_accept_wait_num</code> 要比 <code>rate_limit_new_wait_num</code> 高 100 以上，否则会被改成后者的 2 倍；<code>session_type</code> 依次是 0 文件 / 1 内存 / 2 Redis / 3 Memcache / 4 预留；<code>acme_every_day</code> 允许 2–23，<code>ocsp_intv_time</code> 低于 3600 秒按 3600 算。</p>
+<p>还有一组键在当前仓库的 C++ 代码里找不到读取点，配置文件里留着只是历史遗留，不要以为还要配：<code>threadmax</code>、<code>threadmin</code>、<code>bmcport</code>、<code>staticfile_cache_num</code>、<code>modelspath</code>、<code>viewpath</code>、<code>controlpath</code>、<code>libspath</code>、<code>pluginspath</code>。其中 <code>bmcport</code> 注释写着管理和监控端口，<code>staticfile_cache_num</code> 注释写着缓存条数，但两者都没有对应的运行时读取。</p>
+<h3><code>orm.conf</code></h3>
+<p>管数据库连接。文件是 INI，段名就是数据库 tag（原文里有 <code>[default]</code>、<code>[docs]</code>、<code>[cms]</code>、<code>[pg]</code>、<code>[lite]</code>）。每个段里可以写多组连接，用空行隔开，靠 <code>type</code> 区分角色：<code>type = main</code> 是编辑/写入连接，<code>type = second</code> 是查询/只读连接，同一个 tag 的两组配置会分别进各自的连接池。下面是 <code>conf/orm.conf</code> 的原文：</p>
+<pre><code>[default]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = benchmarkdbuser
+password = benchmarkdbpass
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+#ssl=ON
+#sslverify=ON                    ; Verify the certificate chain 校验证书链（配合系统 CA / SSL_CERT_FILE）
+#sslhost=db.example.com          ; Certificate domain (SNI + hostname check); when empty both fall back to host. SNI is always sent regardless of sslverify; the hostname check only runs when sslverify=ON 证书域名（SNI + 域名校验），为空则两者都用 host 兜底；域名校验只在 sslverify=ON 时执行
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = benchmarkdbuser
+password = benchmarkdbpass
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+#ssl=ON
+#sslverify=ON
+#sslhost=db.example.com
+
+[docs]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = paozhu_docs
+user     = root
+password = 12345678
+pretable = web_
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = paozhu_docs
+user     = root
+password = 12345678
+pretable = web_
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+
+[cms]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+
+[pg]
+type     = main
+host     = 127.0.0.1
+port     = 5432
+dbname   = hello_world
+user     = hello
+password = 12345678
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = postgresql
+charset  = utf8
+#ssl=ON
+#sslverify=ON                    ; 校验证书链（配合系统 CA / SSL_CERT_FILE）
+#sslhost=db.example.com          ; 证书域名（SNI + 域名校验），为空则两者都用 host 兜底（host 为 IP 时域名校验比证书的 iPAddress SAN）；SNI 不受 sslverify 开关影响总会发，域名校验只在 sslverify=ON 时执行
+
+type     = second
+host     = 127.0.0.1
+port     = 5432
+dbname   = hello_world
+user     = hello
+password = 12345678
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = postgresql
+charset  = utf8
+#ssl=ON
+#sslverify=ON
+#sslhost=db.example.com
+
+[lite]
+type     = main
+host     = /Users/hzq/paozhu/docs/sqlite_lite.db
+port     =
+dbname   = lite
+user     =
+password =
+pretable =
+minpool  = 1
+maxpool  = 5
+dbtype   = sqlite
+charset  = utf8mb4
+
+type     = second
+host     = /Users/hzq/paozhu/docs/sqlite_lite.db
+port     =
+dbname   = lite
+user     =
+password =
+pretable =
+minpool  = 1
+maxpool  = 5
+dbtype   = sqlite
+charset  = utf8mb4
+</code></pre>
+<p><code>maxpool</code> 和 <code>minpool</code> 的分法不对称，容易看错。连接池按 ioc 分槽，槽数等于 <code>orm_ioc_num</code>；<code>maxpool</code> 是该角色所有槽共享的全局预算，不是每槽额度，先算 <code>maxpool / 槽数</code>，余数逐个加给下标小的槽，每个槽至少 1，比如 <code>maxpool = 20</code>、4 个槽是每槽 5，<code>maxpool = 10</code>、3 个槽是 4/3/3；<code>minpool</code> 不参与切分，每个槽都独立预建 <code>minpool</code> 条，只受本槽配额限制，所以 <code>maxpool = 5</code>、4 个槽时配额是 2/1/1/1，<code>minpool = 5</code> 也只能各建 2/1/1/1 条。</p>
+<p>另外两点：<code>password</code> 只允许可打印 ASCII 0x21–0x7E，含空格、控制字符或非 ASCII 的配置会被跳过并打错误日志；SQLite 的 <code>host</code> 填数据库文件路径，<code>port</code>、<code>dbname</code>、账号密码留空即可，<code>ssl</code>、<code>sslverify</code>、<code>sslhost</code> 只在 MySQL/PostgreSQL 上用。</p>
+<h3><code>acme.conf</code></h3>
+<p>管证书自动签发。默认对接 ZeroSSL 的 ACME 端点，用 HTTP-01 验证。下面是 <code>conf/acme.conf</code> 的原文：</p>
+<pre><code>[info]
+acme_path  = ./acme ;/Users/hzq/paozhu/acme ;项目目录下acme 目录，存放申请中间文件 The "acme" directory under the project directory stores intermediate application files
+cert_path  = ./conf ;/usr/local/etc/paozhu ;域名证书存放 Storage of domain name certificate
+email      = ;必须设置邮箱才能生效，Email must be set to take effect server.conf 相应的域名下 acme_auto=1 才能自动 
+days_remain= 10 ;剩余多少天才更新SSL证书
+
+[zerossl]
+server_url = https://acme.zerossl.com/v2/DV90
+eab_api    = https://api.zerossl.com/acme/eab-credentials-email
+eab_kid	=
+eab_hmac_key =
+email      = 
+user_name  =
+user_pwd   =
+</code></pre>
+<p>只有同时满足两个条件才会真正触发：<code>server.conf</code> 里对应站点的 <code>acme_auto = 1</code>，且这里的 <code>email</code> 非空。缺邮箱时任务会直接返回，只在 <code>log/acme_log/</code> 里记一行。另外 <code>cert_path</code> 虽然写着 <code>./conf</code>，当前代码实际把证书复制到 <code>server.conf</code> 所在目录，这一项读了但没有参与复制路径。</p>
+<p>签发流程在 <code>httpwatch</code> 里按天触发：<code>acme_every_day</code> 指定小时，前一小时先把当天标记置上，到点起一个 detached 线程跑 <code>acme_task</code>。任务逐个站点看 <code>acme_auto</code>，拼出主域名和 <code>www</code> 域名，先检查 <code>acme_path/&lt;主域名&gt;/cert.pem</code> 的剩余天数，超过 <code>days_remain</code> 就跳过。需要申请时走完 ACME 的账户、订单、HTTP-01 验证、CSR 和 finalize，产物写到 <code>acme_path/&lt;主域名&gt;/</code> 下的 <code>privkey.pem</code>、<code>cert.pem</code>、<code>fullchain.pem</code>。成功后把 <code>fullchain.pem</code> 复制成 <code>conf/&lt;主域名&gt;.pem</code>、<code>privkey.pem</code> 复制成 <code>conf/&lt;主域名&gt;.key</code>、<code>cert.pem</code> 复制成 <code>conf/&lt;主域名&gt;.crt</code>，并写 <code>restart_ssl_config</code> 让 SSL 配置重载。<code>server.conf</code> 里的 <code>certificate_chain_file</code>、<code>private_key_file</code>、<code>chain_crt_file</code> 就是按这些文件名填的，路径相对于 <code>server.conf</code> 所在目录。</p>
+<h3>注解路由怎么写</h3>
+<p>路由声明写在业务函数上方的注释里，格式是 <code>//@urlpath(pre, urlpath)</code>，可以带 <code>:mask</code> 后缀区分 HTTP method：</p>
+<pre><code class="language-cpp">//@urlpath(superadmin_islogin,superadmin/rbac/perm)
+std::string superadmin_rbac_perm_list(std::shared_ptr&lt;httppeer&gt; peer)
+</code></pre>
+<p>这个例子来自 <code>controller/src/superadmin/rbac/rbacperm.cpp</code>。</p>
+<p><code>paozhu_pre</code> 扫描后会生成 <code>reg_raw(site, path, pre_sync, co_pre, reg_sync, co_reg, mask_code)</code> 形式的表项（落在 <code>common/autocontrolmethod.hpp</code>）。带 <code>:param</code> 的路径同时把参数名登记到 <code>common/autorestfulpaths.hpp</code>。注解还能带限流参数，写法是 <code>//@urlpath(...):ratelimit(time,num)</code>，示例在 <code>controller/src/test_maskcode.cpp</code>，解析结果进路由项的 <code>rate_time</code> 和 <code>rate_num</code>。</p>
+<p>如果不想用注解，<code>common/reghttpmethod.hpp</code> 还留了纯手写的 <code>REG_SYNC_SYNC</code> 注册方式，里面有一个 <code>/helloworld</code> 的内联 lambda。但它的注册顺序在生成表之后，同名路径会被生成表覆盖，适合临时验证，不适合正式接口。</p>
+<h3>新增一个接口要动哪些地方</h3>
+<p>正常路径很短：在 <code>controller/src/</code> 找个合适的文件写函数，函数上写注解，然后构建。构建时 <code>paozhu_codegen</code> 会跑 <code>paozhu_pre</code>，它更新 <code>controller/include/</code> 里的声明桩和 <code>common/autocontrolmethod.hpp</code> 里的注册项；进程启动时把生成表注册进去，请求就能命中。</p>
+<p>如果接口需要限流，在注解后面加 <code>ratelimit(time,num)</code>；如果接口要进 RBAC，给路由一个非 0 的 <code>mask_code</code>，并在权限表里配一条同 <code>urlpath</code>、同 <code>maskcode</code> 的授权行——<code>libs/rbac/rbac.h</code> 的注释说明了判定是&quot;路由的 maskcode 必须与用户生效授权里某一条精确相等&quot;。</p>
+<h3>运行期加载 <code>.so</code></h3>
+<p>如果编译时打开了 <code>ENABLE_VIEWSO</code> 或 <code>ENABLE_MODELSO</code>，<code>module/view</code> 和 <code>module/controller</code> 下的 <code>.so</code> 可以在运行期被加载。视图侧入口是 <code>loadview</code> / <code>loadviewso</code>，控制器侧入口在 <code>loadmodule.cpp</code> 里。配置里把 <code>viewsopath</code>、<code>controlsopath</code> 指到对应目录即可。<code>module/</code> 下的文件是构建产物或手工部署的动态库，不是源码。</p>
+<h2>六、测试与自检</h2>
+<p>测试默认不构建，打开 <code>-DENABLE_TESTS=ON</code> 才进 <code>tests/</code>。<code>tests/CMakeLists.txt</code> 的约定是：为 <code>tests/*.cpp</code> 和 <code>tests/orm/*.cpp</code> 自动生成同名可执行目标，<code>pool_thread</code> 是例外。现有用例包括 <code>test_framework_smoke.cpp</code>（框架冒烟）、<code>test_http2_ring_queue.cpp</code> 和 <code>test_http2_headers_split.cpp</code>（HTTP/2 发送环与头拆分）、<code>test_router_hooks.cpp</code>（路由钩子）、<code>test_jwt_smoke.cpp</code>（JWT）、<code>test_filename_safety.cpp</code>（文件名安全）、<code>test_pzexcel_p2.cpp</code> 和 <code>test_pzzip.cpp</code>（可选子模块）。另有 <code>http1_consume/</code>、<code>multipart_boundary/</code>、<code>multipart_part_headers/</code>、<code>postform/</code>、<code>raw_post_fastpath/</code>、<code>orm/</code> 这些针对协议解析的子目录。</p>
+<p>自检端点都在 <code>controller/src/serverwatch.cpp</code>：<code>/metrics</code> 输出 Prometheus 文本格式；<code>/paozhu_status</code> 是旧版自定义仪表盘；<code>/frametasks_timeloop</code> 看框架定时任务。后台登录入口是 <code>admin/login</code> 和带限流的 <code>admin/loginpost:ratelimit(60,5)</code>，实现在 <code>controller/src/admin/main.cpp</code>；超管入口是 <code>superadmin/login</code>，实现在 <code>controller/src/superadmin/supermain.cpp</code>。</p>
+<h2>七、关于这份文档的核验范围</h2>
+<p>正文里的结论基本都是读源码或读目录得到的：构建配置、线程拓扑、路由链路、HTTP/2 发送队列、RBAC 缓存、限流、生成物来源、<code>server.conf</code> 各项、自检端点，都能按文末列出的文件回查。<code>libs/</code> 和 <code>vendor/</code> 下各模块的职责这一轮也补读了公开头文件，<code>oauth</code>、<code>oauth_client</code>、<code>github</code>、<code>webpay</code>、<code>markdown</code>、<code>pinyin</code>、<code>ipdata</code>、<code>department</code>、<code>img</code>、<code>types</code>、<code>pzexcel</code>、<code>pzword</code>、<code>webpdf</code>、<code>pzimage</code>、<code>pzcharts</code>、<code>pzzip</code>、<code>pzredis</code>、<code>sms</code> 的描述都有头文件里的函数签名或注释支撑。</p>
+<p>还没逐行读实现的部分有六处，看的时候别把这段之外的相关描述当成逐行核实过的事实：</p>
+<ul>
+<li><code>ENABLE_MODELSO</code> 打开后，<code>module/controller/testviewso.so</code> 里的函数名怎样映射到路由，只确认了开关和目录的对应关系，没有把加载后的注册链走完。</li>
+<li><code>orm/</code> 三套模型域（<code>cms</code>/<code>pg</code>/<code>lite</code>）的字段覆盖范围和生成规则，只确认了生成来源、连接池分槽和模型文件&quot;存在则不覆盖&quot;的策略。</li>
+<li><code>view/</code> 模板到 <code>viewsrc/view/*.cpp</code> 的生成语法和更新触发条件，只确认了文件头标记和解析器位置。</li>
+<li><code>tests/*.cpp</code> 各用例的具体断言，只按文件名和 <code>tests/CMakeLists.txt</code> 的约定描述。</li>
+<li><code>startup/main_dev.cpp</code> 与 <code>startup/main_daemon.cpp</code> 除 fork 之外是否完全同链，没有逐行对比。</li>
+<li><code>pzexcel</code>、<code>pzword</code>、<code>webpdf</code> 的内部实现深度，只读了公开头文件，没有逐个走读写流程。</li>
+</ul>
+<h2>八、关键结论对应的文件</h2>
+<table>
+<thead>
+<tr>
+<th>结论</th>
+<th>对应文件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工程名、版本、全部构建开关与源码 glob</td>
+<td><code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>第三方依赖与 vcpkg feature</td>
+<td><code>vcpkg.json</code>、<code>README_CN.md</code></td>
+</tr>
+<tr>
+<td>四类线程、ioc 组数公式、每 ioc 线程数、连接轮询、strand、peer 池</td>
+<td><code>vendor/httpserver/src/server.cpp</code>、<code>vendor/httpserver/include/server.h</code>、<code>vendor/httpserver/include/client_session.h</code></td>
+</tr>
+<tr>
+<td>同步/协程两条路由链与行为对齐要求</td>
+<td><code>vendor/httpserver/src/router.cpp</code>、<code>vendor/httpserver/include/router.h</code></td>
+</tr>
+<tr>
+<td>HTTP/2 发送环、发送对象状态机、park 回灌、120 秒零推进撤流</td>
+<td><code>vendor/httpserver/include/http2_ring_queue.h</code>、<code>vendor/httpserver/include/http2_send_queue.h</code>、<code>common/cost_define.h</code>、<code>vendor/httpserver/src/server.cpp</code></td>
+</tr>
+<tr>
+<td>HTTP/1.1 解析与请求模型</td>
+<td><code>vendor/httpserver/src/http_parse.cpp</code>、<code>httppeer.cpp</code>、<code>request.cpp</code></td>
+</tr>
+<tr>
+<td><code>paozhu_pre</code> / <code>paozhu_cli</code> 的职责与生成链</td>
+<td><code>vendor/httpcli/autopickmethod.cpp</code>、<code>vendor/httpcli/http_cli.cpp</code>、<code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>注册顺序、同名覆盖与 <code>ROUTE-WARN</code></td>
+<td><code>vendor/httpserver/src/server.cpp</code>、<code>vendor/httpcli/autopickmethod.cpp</code></td>
+</tr>
+<tr>
+<td><code>controller/include</code> 声明桩的生成与 <code>file(TOUCH)</code> 占位</td>
+<td><code>vendor/httpcli/autopickmethod.cpp</code>、<code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>ORM 模型头生成、模型文件&quot;存在则不覆盖&quot;</td>
+<td><code>orm/cms/include/sysperms_base.h</code>、<code>models/cms/Sysperms.cpp</code></td>
+</tr>
+<tr>
+<td>ORM 连接池分槽与每槽独立锁</td>
+<td><code>vendor/httpserver/include/orm_conn_pool.h</code>、<code>vendor/httpserver/src/orm_conn_pool.cpp</code></td>
+</tr>
+<tr>
+<td>RBAC 判定链路、缓存分片/TTL/fail-closed</td>
+<td><code>libs/rbac/rbac.h</code>、<code>libs/rbac/route_guard.cpp</code>、<code>libs/rbac/route_cache.cpp</code></td>
+</tr>
+<tr>
+<td>OAuth 服务端配置、令牌存储与审计</td>
+<td><code>libs/oauth/oauth_config.h</code>、<code>libs/oauth/oauth_store.h</code>、<code>libs/oauth/oauth_audit.h</code>、<code>controller/src/oauth/</code></td>
+</tr>
+<tr>
+<td>通用 OAuth 客户端与 GitHub 专用客户端</td>
+<td><code>libs/oauth_client/oauth_client.h</code>、<code>libs/github/github_oauth.h</code></td>
+</tr>
+<tr>
+<td>支付订单状态机、查单落账与应用侧逻辑</td>
+<td><code>libs/webpay/webpay_order.h</code>、<code>libs/webpay/webpay_wxpayv3.h</code>、<code>vendor/webpay/include/wxpay.h</code></td>
+</tr>
+<tr>
+<td>markdown、拼音、IP 归属地、组织树、图片上传、JSON 反射样例</td>
+<td><code>libs/markdown/markdown2html.h</code>、<code>libs/pinyin/hanyu_to_pinyin.h</code>、<code>libs/ipdata/ip_data_obj.h</code>、<code>libs/department/department_type.h</code>、<code>libs/img/upload_images.h</code>、<code>libs/types/json_ref_obj.h</code></td>
+</tr>
+<tr>
+<td>Excel、Word、PDF 能力</td>
+<td><code>vendor/pzexcel/include/pzexcel.h</code>、<code>vendor/pzword/include/pz_word.h</code>、<code>vendor/webpdf/include/webpdf/webpdf.h</code></td>
+</tr>
+<tr>
+<td>zip、图片编解码与字体绘制、SVG 图表、短信、Redis 客户端</td>
+<td><code>vendor/pzzip/include/pzzip.h</code>、<code>vendor/pzimage/include/pzpng.h</code>、<code>vendor/pzimage/include/ttffont.h</code>、<code>vendor/pzcharts/include/svg_chart.h</code>、<code>vendor/sms/include/sms.h</code>、<code>vendor/pzredis/include/redis_client.h</code></td>
+</tr>
+<tr>
+<td>长连接协议实现文件与后端注册表</td>
+<td><code>vendor/httpserver/src/ws_*.cpp</code>、<code>http_socket*.cpp</code>、<code>mqtt_*.cpp</code>、<code>common/*_regmethod.hpp</code></td>
+</tr>
+<tr>
+<td>视图模板生成与 <code>.so</code> 热加载</td>
+<td><code>viewsrc/view/home/header.cpp</code>、<code>vendor/httpserver/src/loadmodule.cpp</code>、<code>vendor/httpserver/src/loadviewso.cpp</code>、<code>vendor/httpserver/src/serverconfig.cpp</code></td>
+</tr>
+<tr>
+<td><code>server.conf</code> 关键项、失效项与路径配置</td>
+<td><code>conf/server.conf</code></td>
+</tr>
+<tr>
+<td>注解路由语法、限流示例、手写注册方式</td>
+<td><code>controller/src/superadmin/rbac/rbacperm.cpp</code>、<code>controller/src/test_maskcode.cpp</code>、<code>common/reghttpmethod.hpp</code></td>
+</tr>
+<tr>
+<td>测试目标约定与现有用例</td>
+<td><code>tests/CMakeLists.txt</code>、<code>tests/</code></td>
+</tr>
+<tr>
+<td>自检端点与后台登录入口</td>
+<td><code>controller/src/serverwatch.cpp</code>、<code>controller/src/admin/main.cpp</code>、<code>controller/src/superadmin/supermain.cpp</code></td>
+</tr>
+<tr>
+<td>守护/前台启动入口</td>
+<td><code>startup/main_daemon.cpp</code>、<code>startup/main_dev.cpp</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+  </body>
+</html>
