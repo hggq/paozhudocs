@@ -119,7 +119,6 @@ p a:hover, li a:hover, td a:hover { text-decoration-color: currentColor; }
     outline: 2px solid var(--link-color);
     outline-offset: 2px;
 }
-::selection { background: var(--nav-hover-bg); color: var(--text-color); }
 
 /* Flat: remove every remaining gradient, including inline ones. */
 :where(.arch-diagram, .back-to-index, .highlight-box, [style*="linear-gradient"], [style*="radial-gradient"]) {
