@@ -138,7 +138,7 @@ asio::awaitable&lt;std::string&gt; testhello(std::shared_ptr&lt;httppeer&gt; pee
  
 }// namespace http
 </code></pre>
-<p>Bu belge, depoyu ilk kez gören birinin ilgisini çekecek sırayı izler: nedir, nasıl çalıştırılır, bir istek içinden nasıl geçer, her dizin neyi yönetir, yapılandırma ve genişletme nasıl yapılır. Tüm sonuçlar bu deponun kaynak ağacından gelir; temel sonuçların arkasındaki dosyalar son bölümde listelenmiştir. Yalnızca genel başlıkları okunan modüller de vardır; bu da son bölümde belirtilmiştir.</p>
+<p><code>hello</code>, bir ek açıklama işlevidir. <code>testhello.h</code> dosyasını elle oluşturmanız gerekmez; cmake make sırasında otomatik üretilir. <code>co_return "";</code> gelişmiş bir kullanımdır: bir değer döndürmek sonraki ek açıklama işlevine devam eder, boş dönüş ise tamamlandığı anlamına gelir.</p>
 <h2>1. Nedir</h2>
 <p>Kaynak yapısına bakarak bile birkaç net tasarım kararı görülebilir.</p>
 <p><strong>Ağ katmanı, bağımsız Asio üzerine kuruludur.</strong> Sunucu, kendi olay döngüsü yerine bir <code>asio::io_context</code> tutar; bu nedenle Asio ekosisteminin çoğu kullanımı olduğu gibi takılabilir.</p>

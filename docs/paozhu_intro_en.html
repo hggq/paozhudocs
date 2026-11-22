@@ -138,7 +138,7 @@ asio::awaitable&lt;std::string&gt; testhello(std::shared_ptr&lt;httppeer&gt; pee
  
 }// namespace http
 </code></pre>
-<p>The document follows the order a newcomer to the repository would care about: what it is, how to get it running, how a request travels through it, what each directory is responsible for, and how configuration and extension work. Every conclusion comes from the source tree in this repository, and the files behind the key conclusions are listed in the final section. A few modules were read only at the public-header level; that is noted in the final section as well.</p>
+<p><code>hello</code> is an annotation function. <code>testhello.h</code> does not need to be created manually — it is generated automatically during cmake make. <code>co_return "";</code> is an advanced feature: returning a value continues to the next annotation function, while returning an empty string means completion.</p>
 <h2>1. What It Is</h2>
 <p>Several design choices are visible directly in the source layout.</p>
 <p><strong>The network layer is built on standalone Asio.</strong> The server holds an <code>asio::io_context</code> rather than a home-grown event loop, so most of the Asio ecosystem can be plugged in as-is.</p>

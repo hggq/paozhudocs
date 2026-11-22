@@ -138,7 +138,7 @@ asio::awaitable&lt;std::string&gt; testhello(std::shared_ptr&lt;httppeer&gt; pee
  
 }// namespace http
 </code></pre>
-<p>이 문서는 저장소를 처음 접하는 사람이 궁금해할 순서로 구성됩니다. 무엇인지, 어떻게 실행하는지, 요청이 내부를 어떻게 흘러가는지, 각 디렉터리가 무엇을 담당하는지, 설정과 확장은 어떻게 이루어지는지 순서입니다. 모든 결론은 이 저장소의 소스 트리에서 나왔고, 핵심 결론에 해당하는 파일은 마지막 절에 정리했습니다. 공개 헤더만 확인한 모듈도 있으며, 그 사실 역시 마지막 절에 밝힙니다.</p>
+<p><code>hello</code>는 주석 함수입니다. <code>testhello.h</code>는 직접 만들 필요가 없으며 cmake make 시 자동으로 생성됩니다. <code>co_return "";</code>은 고급 사용 방식으로, 값을 반환하면 다음 주석 함수로 계속 진행하고 빈 값을 반환하면 완료를 뜻합니다.</p>
 <h2>1. 무엇인가</h2>
 <p>소스 구조만 보아도 분명한 설계 방향이 드러납니다.</p>
 <p><strong>네트워크 계층은 standalone Asio 위에 구축되어 있습니다.</strong> 서버는 자체 이벤트 루프 대신 <code>asio::io_context</code>를 보유하며, 따라서 Asio 생태계의 대부분의 용법을 그대로 연결할 수 있습니다.</p>
