@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="tr" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Paozhu (Havai Fişek) Web Çatısı Tanıtımı</title>
+     <style>
+        /* Light mode */
+        body {
+            font-family:'PingFang SC','Helvetica Neue','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC',Sathu,EucrosiaUPC,Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:1.45em;
+        }
+        /* Inline code chip; the shared modern-flat.css sets code backgrounds with !important. */
+        body code{
+            background-color: #eaf0f8 !important;
+            color: #b42318;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent !important;
+            color: inherit;
+            border: 0;
+            border-radius: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        /* Inline code chip; the shared modern-flat.css sets code backgrounds with !important. */
+        body code{
+            background-color: #eaf0f8 !important;
+            color: #b42318;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent !important;
+            color: inherit;
+            border: 0;
+            border-radius: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        body code{
+            background-color: #1c2a3a !important;
+            color: #ffa198;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+      <link rel="stylesheet" href="./styles/modern-flat.css">
+</head>
+  <body>
+  <div class="container">  
+<nav class="lang-nav" aria-label="Language" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0 12px;margin-bottom:14px;border-bottom:1px solid #888;font-size:14px;line-height:1.6;">
+<a href="paozhu_intro.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">中文</a>
+<a href="paozhu_intro_en.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">English</a>
+<a href="paozhu_intro_kr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">한국어</a>
+<a href="paozhu_intro_jp.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">日本語</a>
+<a href="paozhu_intro_de.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Deutsch</a>
+<a href="paozhu_intro_fr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Français</a>
+<span aria-current="page" style="font-weight:bold;padding:1px 5px;border:1px solid currentColor;border-radius:4px;background:rgba(128,128,128,0.18);">Türkçe</span>
+</nav>
+<h1>Paozhu (Havai Fişek) Web Çatısı</h1>
+<p>Paozhu, C++ ile yazılmış bir web çatısıdır. Kaynak kod: <a href="https://github.com/hggq/paozhu">https://github.com/hggq/paozhu</a>. Öne çıkan ilk özellik, tek bir çalıştırılabilir dosyanın her şeyi içermesidir: HTTP/1.1, HTTP/2, WebSocket, ham TCP, bir MQTT istemcisi, bir Redis istemcisi, ORM, şablon görünümleri ve statik dosya sunumu aynı süreçte bulunur; derleme zamanı anahtarlarıyla ihtiyaç duyulmayan bölümler çıkarılabilir.</p>
+<p>En kısa örnekle başlayalım: işleyici bir coroutine görevi döndürür, <code>peer-&gt;output</code> alanına atanan değer yanıt gövdesidir ve rota işlevin üstündeki yorum satırıyla bildirilir:</p>
+<p>Sunucu çalıştırıldıktan sonra tarayıcıdan <a href="http://localhost/hello">http://localhost/hello</a> adresini açabilirsiniz.</p>
+<pre><code class="language-cpp">#include "httppeer.h"
+#include "testhello.h"
+namespace http
+{
+//@urlpath(null,hello)
+asio::awaitable&lt;std::string&gt; testhello(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    peer-&gt;output = "Hello, world!";
+    co_return "";
+}
+ 
+}// namespace http
+</code></pre>
+<p>Bu belge, depoyu ilk kez gören birinin ilgisini çekecek sırayı izler: nedir, nasıl çalıştırılır, bir istek içinden nasıl geçer, her dizin neyi yönetir, yapılandırma ve genişletme nasıl yapılır. Tüm sonuçlar bu deponun kaynak ağacından gelir; temel sonuçların arkasındaki dosyalar son bölümde listelenmiştir. Yalnızca genel başlıkları okunan modüller de vardır; bu da son bölümde belirtilmiştir.</p>
+<h2>1. Nedir</h2>
+<p>Kaynak yapısına bakarak bile birkaç net tasarım kararı görülebilir.</p>
+<p><strong>Ağ katmanı, bağımsız Asio üzerine kuruludur.</strong> Sunucu, kendi olay döngüsü yerine bir <code>asio::io_context</code> tutar; bu nedenle Asio ekosisteminin çoğu kullanımı olduğu gibi takılabilir.</p>
+<p><strong>G/Ç ve iş mantığı ayrılmıştır.</strong> G/Ç iş parçacıkları yalnızca accept, read ve write yapar; zaman uyumlu işleyiciler özel bir iş parçacığı havuzuna, <code>clientrunpool</code> içine dağıtılır. Dolayısıyla bir işleyicideki engelleyici kod ağ iş parçacıklarını değil, iş havuzunu meşgul eder.</p>
+<p><strong>G/Ç döngüleri tek bir döngüde birleştirilmez, çekirdek sayısına göre gruplanır.</strong> Süreç bir dizi <code>io_context</code> örneğine sahiptir; her bağlantı round-robin ile bunlardan birine atanır ve her ioc birkaç iş parçacığı çalıştırır. Ayrıntılar 3. bölümdedir.</p>
+<p><strong>Coroutine'ler, yönlendirme katmanının giriş noktasıdır.</strong> Rota eşleştirme ve dağıtım <code>router::co_resolve</code> adresinde başlar; hem ön işleyicilerin hem de işleyicilerin zaman uyumlu ve coroutine yuvaları vardır, böylece iş kodu iki stil arasında seçim yapabilir.</p>
+<p><strong>HTTP/2, kendi içimizde uygulanmıştır.</strong> Çerçeve ayrıştırma, HPACK'in kullandığı Huffman kodlaması, bağlantı başına gönderme halkası, genel gönderme kuyruğu ve akış kontrolü bu depoda, bir üçüncü taraf sarmalayıcının arkasında değil.</p>
+<p><strong>Rotalar yorumlarda bildirilir ve derleme sırasında bir kayıt defterine dönüştürülür.</strong> Bir işlev <code>//@urlpath(...)</code> yorumu taşır; derleme sırasında <code>paozhu_pre</code> bunu tarar ve kayıt defterini ile işlev bildirim taslaklarını üretir.</p>
+<p><strong>Özellikler tek bir paket olarak sunulur.</strong> ORM, bağlantı havuzu, RBAC, OAuth, ödeme, Excel/Word/PDF, görüntü, sıkıştırma, grafikler, SMS ve Redis istemcisi aynı depoda <code>vendor/</code> ve <code>libs/</code> altındadır. Varsayılan olarak kapalıdırlar; <code>CMakeLists.txt</code> içindeki ilgili CMake seçeneklerinin varsayılanı <code>OFF</code>'tur.</p>
+<p>Depo kabaca dört katmana ayrılır. <code>vendor/httpserver</code> çatının kendisidir. Diğer <code>vendor/</code> alt dizinleri ve <code>libs/</code> yeniden kullanılabilir özelliklerdir. <code>common/</code>, <code>orm/</code>, <code>models/</code> ve <code>viewsrc/</code> çatı ile iş kodu arasındaki yapıştırıcı katmandır. <code>controller/</code>, <code>view/</code>, <code>www/</code> ve <code>module/</code> ise toptan silinebilen örnek iş kodudur. <code>mini_project.sh</code> bu ayrımı somutlaştırır: <code>controller/src/admin</code>, <code>github</code> ve <code>oauth</code> gibi demo dizinlerini kaldırıp yalnızca çatı çekirdeğini bırakır.</p>
+<h2>2. Çalıştırmak</h2>
+<h3>Bağımlılıklar ve derleme</h3>
+<p>Bağımlılıklar <code>vcpkg.json</code> içinde listelenmiştir: <code>openssl</code>, <code>brotli</code>, <code>asio</code>, <code>zlib</code>, <code>sqlite3</code> ve <code>pkgconf</code>, <code>libgd</code>, <code>freetype</code>, <code>libpng</code>, <code>libqrencode</code> öğelerini getiren <code>gd</code> özelliği. vcpkg ile <code>-DENABLE_VCPKG=ON</code> seçeneğini açın ve <code>CMAKE_TOOLCHAIN_FILE</code> değerini geçirin; ayrıntılar <code>README_CN.md</code> içindedir. xmake tercih edenler için <code>xmake.lua</code> da sunulur.</p>
+<p>Normal bir derleme üç adımdır:</p>
+<pre><code class="language-bash">cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+./bin/paozhu                 # you can also pass ./bin/paozhu /path/to/server.conf
+</code></pre>
+<p><code>bin/</code> şu anda üç çıktı içerir: <code>paozhu</code>, <code>paozhu_cli</code> ve <code>paozhu_pre</code>. Kıyaslamayla ilgili kod açıkça <code>-DENABLE_BENCHMARK=ON</code> gerektirir.</p>
+<p>Derleme dört CMake hedefi üretir: ana program <code>paozhu</code>, veritabanı/model aracı <code>paozhu_cli</code>, ek açıklama rota üreteci <code>paozhu_pre</code> ve her derlemede çalışan <code>paozhu_codegen</code>.</p>
+<p>Ana programın kaynak kümesi birkaç glob ile birleştirilir:</p>
+<pre><code class="language-cmake">set(paozhu_srcs
+  ${common_list} ${viewsrc_list} ${framework_cpps} ${orm_list}
+  ${reflect_list} ${src_list} ${source_list} ${controller_list})
+</code></pre>
+<p><code>reflect_list</code>, <code>libs/*.cpp</code> öğelerini özyinelemeli olarak alır.</p>
+<h3>Giriş noktaları</h3>
+<p>Release derlemesi <code>startup/main_daemon.cpp</code> kullanır; diğer derleme yapılandırmaları otomatik olarak <code>startup/main_dev.cpp</code> öğesine geçer. Daemon sürümü önce <code>argv[1]</code> değerini <code>server.conf</code> yolu veya onu içeren dizin olarak ele alır, ardından <code>init_daemon()</code> içinde fork yapar: çocuk <code>get_server_app()</code>, <code>http::rbac::install_route_guard()</code> ve <code>httpmy.run(argv_str)</code> işlevlerini çalıştırırken ebeveyn <code>wait</code> döngüsüne girer ve <code>SIGCHLD</code> geldiğinde çocuğu yeniden oluşturur. Ön plandaki sürüm, forksuz olarak aynı <code>run()</code> yolunu izler.</p>
+<p><code>run()</code> içindeki sıra şudur: yapılandırmayı oku, ioc ve iş parçacıklarını oluştur, accept işlemini başlat, rotaları kaydet, olay döngüsüne gir.</p>
+<h2>3. Bir istek içinden nasıl geçer</h2>
+<h3>İş parçacıklarının ayrımı</h3>
+<p>Süreçte dört sınıf iş parçacığı vardır. Genel görünüm:</p>
+<table>
+<thead>
+<tr>
+<th>İş parçacığı sınıfı</th>
+<th>Sayı</th>
+<th>Sorumluluk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>accept iş parçacıkları</td>
+<td>2 (biri HTTP, biri SSL için)</td>
+<td>engelleyici accept; yeni bağlantıları bir ioc'ye verir</td>
+</tr>
+<tr>
+<td>G/Ç iş parçacıkları</td>
+<td>ioc sayısı × ioc başına <code>run()</code> iş parçacığı</td>
+<td><code>io_context::run()</code> çalıştırır; bağlantı G/Ç'si ve protokol ayrıştırma</td>
+</tr>
+<tr>
+<td>yardımcı iş parçacıkları</td>
+<td>bir <code>httpwatch</code>, <code>http2_send_loop_num</code> HTTP/2 göndericisi (en az 2), bir <code>websocket_loop</code>, bir <code>ratelimiter</code></td>
+<td>dönemsel denetim, HTTP/2 gönderme kuyruğunu boşaltma, bağlantı düzeyinde hız sınırlama</td>
+</tr>
+<tr>
+<td>iş havuzu</td>
+<td><code>hardware_concurrency() + 2</code></td>
+<td>zaman uyumlu işleyicileri çalıştırır</td>
+</tr>
+</tbody>
+</table>
+<p>G/Ç iş parçacığı sayısı iki aşamada hesaplanır. ioc sayısı <code>min(cothreadnum, hardware_concurrency())</code> değeridir ve 4'ten küçükse 4'e yükseltilir; ardından her ioc <code>per_ioc_thread_num</code> adet <code>run()</code> iş parçacığı başlatır. <code>conf/server.conf</code> dosyasındaki yorum formülü doğrudan belirtir: <code>cothreadnum * per_ioc_thread_num = threads</code>.</p>
+<p><code>io_contexts[0]</code> ikinci bir role sahiptir: aynı zamanda uyumluluk üyesi <code>io_context</code>'tir ve çatının kendi zamanlayıcı döngüsü, zaman uyumlu bağlantı edinme ve <code>client_context</code> bunun üzerinde kalır.</p>
+<p>Serileştirme yalnızca bir bağlantının içinde gerçekleşir. Yeni bir bağlantı <code>session_ioc_cursor++ % io_contexts.size()</code> ile bir ioc'ye atanır ve kendi <code>asio::strand</code> öğesini bağlar; böylece o bağlantının protokol işleme sırası korunur. Farklı bağlantılar arasında böyle bir sıra garantisi yoktur.</p>
+<p><code>httppeer</code> havuzu bir iş parçacığı değildir; yalnızca karıştırılmaya elverişli olduğu için burada yer alır. <code>acquire_peer()</code> yeniden kullanılabilir bir nesne alır; son referans bırakıldığında nesne <code>reset_for_reuse()</code> aracılığıyla geri döner. Üst sınır <code>PEER_POOL_MAX = 512</code>, <code>BENCHMARK</code> derlemesinde ise 4096'dır.</p>
+<p>Bir bağlantı gelişinden çıkışına kadar şu iş parçacıklarından geçer:</p>
+<ol>
+<li>Bir accept iş parçacığı onu alır ve bir ioc'ye verir.</li>
+<li>O andan itibaren okuma, yazma ve protokol ayrıştırma o ioc'nin <code>run()</code> iş parçacıklarında çalışır; strand bağlantıyı seri tutar.</li>
+<li>Zaman uyumlu bir işleyiciye ulaşıldığında iş iş havuzuna dağıtılır; coroutine işleyici ise olduğu yerde bekler ve ioc iş parçacığında ilerlemeye devam eder.</li>
+<li>Çıktıda HTTP/1.1 doğrudan G/Ç iş parçacığı tarafından yazılır; HTTP/2 ise gönderme kuyruğunu boşaltan sabit <code>http2_send_queue_loop</code> iş parçacıklarına gider.</li>
+<li>Yardımcı iş parçacıkları yalnızca dönemsel denetim, hız sınırlama ve kuyruk boşaltma yapar; iş mantığını hiç işlemez.</li>
+</ol>
+<h3>Rota eşleştirme ve dağıtım</h3>
+<p>Accept'ten yanıta kadar ana yol şöyle görünür:</p>
+<pre><code>accept (side thread)
+  → pick an ioc by round-robin, bind the connection to a strand
+  → parse: HTTP/1.1 via http_parse.cpp, HTTP/2 via http2_parse.cpp
+  → take an httppeer (acquire_peer)
+  → router::co_resolve
+        ├─ exact lookup, then prefix fallback (up to 6 segments)
+        ├─ write the matched mask_code into the peer
+        ├─ annotation-level rate limiting
+        ├─ RBAC hook, only when mask_code is non-zero
+        └─ pre → handler (the synchronous path goes to the business pool; coroutines await in place)
+  → write the response: HTTP/1.1 directly, HTTP/2 through the send queue
+</code></pre>
+<p><code>router.cpp</code> iki paralel uygulama içerir: biri zaman uyumlu zincir, diğeri <code>co_resolve</code> içindeki coroutine zinciri. <code>router.h</code> dosyasındaki bir yorum, iki zincirin pre/handler dallarının aynı şekilde davranmasını açıkça gerektirir; birini değiştiren diğerini de değiştirmelidir.</p>
+<h3>HTTP/1.1 ve HTTP/2 çıktısı</h3>
+<p>HTTP/1.1 ayrıştırma kendi kodumuzdadır; <code>vendor/httpserver/src/http_parse.cpp</code> merkezindedir ve <code>request.cpp</code> ile <code>httppeer.cpp</code> destekler. İstekler ve yanıtlar seridir, pipelining yoktur.</p>
+<p>HTTP/2 tam bir uygulamadır ve dosyalarının tümü <code>vendor/httpserver/src/</code> içindedir: <code>http2_parse.cpp</code> çerçeve ayrıştırma ve bağlantı durum makinesi, <code>http2_frame.cpp</code>/<code>http2_define.cpp</code> çerçeve yapısı ve sabitler, <code>http2_huffman.cpp</code> HPACK'in kullandığı Huffman kodlayıcı, <code>http2_ring_queue.cpp</code> bağlantı başına sabit boyutlu gönderme halkası, <code>http2_send_queue.cpp</code> genel gönderme kuyruğu ve <code>http2_flow.h</code> akış kontrolü pencere tanımları.</p>
+<p>Birkaç tasarım noktası önemlidir:</p>
+<ul>
+<li>Her bağlantının 32 yuvadan oluşan sabit bir halkası vardır: <code>CONST_HTTP2_RING_QUEUE_CAPACITY = 32</code>. Derleme zamanı denetimi, değerin iki kuvveti olmasını ve bir <code>unsigned char</code> içine sığmasını ister; <code>head_</code> ve <code>tail_</code> atomik indislerdir, ayrıca bir <code>bytes</code> birikim sayacı vardır.</li>
+<li>Gönderme nesneleri açık bir durum makinesine sahiptir: <code>own_state</code>, bir nesnenin havuzda mı, genel kuyrukta mı, iş parçacığına özel depolamada mı yoksa park edilmiş mi olduğunu belirtir; <code>block_reason</code> engellenme nedenini kaydeder.</li>
+<li>Engellenmiş nesneler tekrar tekrar yoklanmaz. <code>parked_list</code> içinde park edilir ve üç tür olayda — pencere değişimi, SETTINGS çerçevesi veya halka yuvasının boşalması — <code>park()</code> / <code>detach_parked()</code> / <code>reattach_parked()</code> ile yeniden bağlanır.</li>
+<li>Bir akış, sıradan boşta kalma zaman aşımıyla değil, &quot;120 saniye ilerleme olmaması&quot; ile sıfırlanır. Sabit <code>CONST_HTTP2_SEND_NO_PROGRESS_TIMEOUT = 120</code>'tür ve denetim <code>server.cpp</code> içindedir.</li>
+<li>Anahtar, <code>conf/server.conf</code> dosyasındaki <code>http2_enable = 1</code> değeridir.</li>
+</ul>
+<h2>4. Modüllerin görevi</h2>
+<h3>Çatı çekirdeği: <code>vendor/httpserver</code></h3>
+<p>Bu dizin <code>include/</code> ve <code>src/</code> içerir; <code>src/</code> altında 85 adet <code>.cpp</code> dosyası vardır. Sorumluluklar şöyle gruplanır:</p>
+<ul>
+<li>Sunucu ve yaşam döngüsü: <code>server.cpp</code>, <code>serverconfig.cpp</code>, <code>client_context.cpp</code>, <code>resident_stop.cpp</code> — başlatma, yapılandırma, iş parçacığı düzenleme, düzgün kapatma.</li>
+<li>Bağlantılar ve protokoller: <code>http_parse.cpp</code>, <code>http_header.cpp</code>, <code>http_domain.cpp</code>, <code>rpc_parse.cpp</code>, <code>client_session.cpp</code> — HTTP/1.1 ayrıştırma, ana bilgisayar yönlendirme, RPC ayrıştırma.</li>
+<li>HTTP/2: 3. bölümde listelenen dosya grubu.</li>
+<li>İstek modeli: <code>httppeer.cpp</code>, <code>request.cpp</code>, <code>cookie.cpp</code>, <code>session_id.cpp</code>.</li>
+<li>Yönlendirme: <code>router.cpp</code>, <code>viewmethold_reg.cpp</code>.</li>
+<li>ORM ve bağlantılar: <code>orm_common.cpp</code>, <code>orm_conn_pool.cpp</code>, <code>orm_connect_mar.cpp</code>, <code>orm_query.cpp</code>, <code>mysql_conn.cpp</code>, <code>pg_conn.cpp</code>, <code>sqlite_conn.cpp</code>.</li>
+<li>İş parçacığı temel öğeleri: <code>threadpool.cpp</code>, <code>atomic_count.cpp</code>, <code>atomic_guard.cpp</code>.</li>
+<li>Statik dosyalar: <code>file_get_content.cpp</code>, <code>gzip.cpp</code>, <code>https_brotli.cpp</code>, <code>mime.cpp</code>, <code>directory_fun.cpp</code>.</li>
+<li>Uzun ömürlü bağlantılar: <code>ws_*.cpp</code>, <code>http_websocket_client.cpp</code>, <code>http_socket*.cpp</code>, <code>mqtt_*.cpp</code>, <code>sock_subpub_reg.cpp</code>.</li>
+<li>Güvenlik ve kimlik doğrulama: <code>jwt.cpp</code>, <code>acme_*.cpp</code>, <code>ocsp_check.cpp</code>, <code>base64.cpp</code>, <code>md5.cpp</code>.</li>
+<li>Yardımcı işlevler: <code>parse_ini.cpp</code>, <code>str_fun.cpp</code>, <code>urlcode.cpp</code>, <code>unicode.cpp</code>, <code>datetime.cpp</code>, <code>qrcode.cpp</code>, <code>send_email.cpp</code>, <code>fastcgi.cpp</code>, <code>loadmodule.cpp</code>, <code>loadviewso.cpp</code>.</li>
+</ul>
+<p><code>include/</code> içindeki iki başlık kolayca yanlış okunabilir. <code>request.h</code> aslında bir HTTP isteği sınıfı değil, gömülü bir JSON mikro nesnesi olan <code>obj_val</code>'tir; gerçek istek/yanıt taşıyıcısı <code>httppeer.h</code>'tir. <code>httphook.h</code>, <code>common/httphook.cpp</code> ile birlikte yönlendirmenin, kimlik doğrulamanın ve hız sınırlamanın bağlandığı kanca katmanını oluşturur. Ayrıca <code>orm_cache.hpp</code>, <code>mysqlorm.hpp</code>, <code>postgresqlorm.hpp</code> ve <code>sqliteorm.hpp</code> ORM'in şablon cepheleridir.</p>
+<h3>İki üreteç: <code>vendor/httpcli</code></h3>
+<p>Bu dizin, işleri tamamen farklı iki çalıştırılabilir dosya üretir.</p>
+<p><code>paozhu_pre</code>, ek açıklama rota üretecidir. Kaynakları <code>vendor/httpcli/autopickmethod.cpp</code> ve <code>vendor/httpserver/src/md5.cpp</code>'tür. <code>controller/src</code> altındaki ek açıklamaları tarar ve <code>common/autocontrolmethod.hpp</code> ile <code>controller/include/*.h</code> dosyalarını yazar.</p>
+<p><code>paozhu_cli</code>, veritabanı/model aracıdır. Kaynakları <code>vendor/httpcli/http_cli.cpp</code> ve ORM bağlantı ile model kaynaklarıdır. <code>dbcreate</code>, <code>dbconvert</code>, <code>dbschema_check</code>, <code>dbdump_*</code>, <code>templateparse*</code> ve <code>struct_reflectfile</code> gibi yetenekleri <code>vendor/httpcli/*.hpp</code> içinde bildirilmiştir.</p>
+<p><code>vendor/httpcli/</code> altındaki <code>.hpp</code> dosyaları üreteçlerin şablonları ve ayrıştırma uygulamalarıdır: <code>controllerparse.hpp</code>, <code>ccontrollfun.hpp</code>, <code>dbtypes.hpp</code>, <code>modelfun.hpp</code>, <code>templateparse.hpp</code>, <code>typestatement.hpp</code>, <code>utility.hpp</code>.</p>
+<p>Üretim zinciri derlemeye bağlıdır:</p>
+<pre><code>add_custom_target(paozhu_codegen ALL)
+    COMMAND paozhu_pre &lt;source root&gt;
+add_dependencies(paozhu paozhu_codegen)
+</code></pre>
+<p>Böylece her derlemede <code>paozhu_pre</code> çalışır; ancak dosya karma değerlerini ve mtime'ları karşılaştırır ve değişiklik yoksa hiçbir şey yazmaz.</p>
+<h3>Kayıt defterleri ve iş katmanı: <code>common</code>, <code>controller</code></h3>
+<p><code>common/</code> 14 dosya içerir; çoğu elle yazılmış genel tanımlar ve kayıt defterleridir, yalnızca biri üretilmiştir. <code>autocontrolmethod.hpp</code>, <code>paozhu_pre</code> tarafından yazılan ek açıklama rota kayıt defteridir ve çıkış yolu <code>vendor/httpcli/autopickmethod.cpp</code> içinde sabit kodlanmıştır. <code>autorestfulpaths.hpp</code> RESTful yolların parametre adlarını kaydeder; <code>server.cpp</code> bunu dahil eder, <code>mini_project.sh</code> yeni proje oluştururken yeniden yazar. <code>cost_define.h</code> genel sabitleri, <code>httphook.cpp</code> kanca katmanını, <code>json_reflect_headers.h</code> JSON yansıma başlıklarını toplar. <code>reghttpmethod.hpp</code> ve <code>reghttpmethod_pre.hpp</code> eski elle yazılmış kayıt defterleridir (bir <code>REG_SYNC_SYNC</code> makro listesi; <code>server.cpp</code> dahil eder). Kalan dosyalar — <code>mqtt_client_regmethod.hpp</code>, <code>mqtt_method_reg.hpp</code>, <code>redis_regmethod.hpp</code>, <code>sock_client_regmethod.hpp</code>, <code>sockets_method_reg.hpp</code>, <code>websockets_method_reg.hpp</code>, <code>ws_client_regmethod.hpp</code> — çeşitli uzun ömürlü bağlantı arka uçları için kayıt defterleridir.</p>
+<p>Kayıt sırasını hatırlamakta fayda var. <code>server.cpp</code>, <code>_initauto_all_httputils()</code>, <code>_inithttpmethodregto()</code> ve <code>_inithttpmethodregto_pre()</code> işlevlerini bu sırayla çağırır: üretilen tablo, elle yazılmış tablo, elle yazılmış ön tablo. <code>reg_add</code> ilk kaydı korur; bu nedenle aynı yol için elle yazılmış bir girdi üretilen tablo tarafından gölgelenir. <code>paozhu_pre</code> bunu bilir ve üretim sırasında bu tür çakışmaları <code>ROUTE-WARN</code> olarak bildirir.</p>
+<p><code>controller/include/</code> altındaki 100 başlık, elle yazılmış kod değil üretilmiş işlev bildirim taslaklarıdır. <code>paozhu_pre</code> bunları yalnızca bir ek açıklama imzası değiştiğinde, md5 ve mtime'a bakarak yeniden yazar; configure aşamasında CMake eksik başlıkları <code>file(TOUCH)</code> ile yalnızca yer tutucu olarak oluşturur. Gerçek uygulamalar <code>controller/src/</code> içindedir ve iş alanlarına göre ayrılır: arka ofis ve izinler için <code>admin/</code>, <code>superadmin/</code> (<code>superadmin/rbac/</code> dahil) ve <code>rbac/</code>; yetkilendirme ve oturum açma için <code>oauth/</code>, <code>oauth_client/</code>, <code>github/</code>; çok kiracılı demo site için <code>saas.com/</code>; izleme uç noktaları için <code>serverwatch.cpp</code>; yetenek demoları ve regresyon durumları için çok sayıda <code>test_*.cpp</code> ve <code>test*.cpp</code> (örneğin <code>test_maskcode.cpp</code> ek açıklama hız sınırlamasını gösterir).</p>
+<h3>Veri katmanı: <code>orm</code>, <code>models</code>, <code>schema</code></h3>
+<p><code>orm/orm.h</code> giriş noktasıdır. Altında MySQL, PostgreSQL ve SQLite'a karşılık gelen üç model alanı vardır: <code>cms/</code>, <code>pg/</code> ve <code>lite/</code>. <code>orm/cms/include/</code> altındaki 64 <code>*_base.h</code> dosyası <code>paozhu_cli</code> tarafından üretilir; başlıklarında <code>This file is auto create from paozhu_cli</code> yazar. <code>fk_child_opsql.cpp</code> ve <code>fk_parent_opsql.cpp</code> elle yazılmış birleştirme sorgularıdır. <code>models/</code> model davranışını içerir: Bu <code>.cpp</code> dosyaları <code>paozhu_cli</code> tarafından bir kez üretilir ve sonrasında hiçbir zaman üzerine yazılmaz — dosya başlığında mevcut dosyanın korunduğu, eksik olanın üretildiği belirtilir — bu nedenle buraya iş mantığı güvenle yazılabilir. <code>schema/</code> tablo oluşturma SQL'ini içerir.</p>
+<p>Bağlantı havuzu <code>vendor/httpserver/src/orm_conn_pool.cpp</code> ve <code>include/orm_conn_pool.h</code> içindedir. Havuz ioc bazında bölmelenir; genel <code>max_pool</code> bölüm sayısına bölünür, kalan kısımlar küçük bölümlere verilir ve her bölüm en az bir yuva alır (<code>slot_max_of</code> / <code>slot_min_of</code>). Her bölümün kendi kilidi vardır, böylece farklı ioc'lerdeki iş parçacıkları aynı kilit için yarışmaz. Yapılandırma anahtarları <code>orm_ioc_num</code> ve <code>orm_thread_pool_num</code>'dur; bağlantı parametreleri <code>conf/orm.conf</code> içindedir. ORM ayrıca bir coroutine arayüzü sunar: <code>orm_connect_mar.cpp</code> ve <code>orm_query.cpp</code> içindeki sorgular doğrudan await edilebilir.</p>
+<h3>Yeniden kullanılabilir yetenek kitaplıkları: <code>libs</code></h3>
+<p><code>libs/</code>, tamamı elle yazılmış 11 alt dizine sahiptir. Derleme sırasında <code>CMakeLists.txt</code> içindeki özyinelemeli glob ile ana hedefe dahil edilirler ve başlık dizinleri de özyinelemeli olarak include yoluna eklenir.</p>
+<p><code>libs/rbac</code>, izin kararının çekirdeğidir. <code>rbac.h</code>, <code>load_user_roles</code>, <code>load_role_perms</code>, <code>load_user_grants</code> (rolleri, izinleri, atama katmanlarını ve dizinleri tek geçişte almak için altı sorgu), <code>user_has_url</code> ve <code>user_has_permscode</code> işlevlerini sağlar. <code>route_guard.cpp</code> rota kancasıdır: <code>adminid</code> yoksa 401, <code>companyid</code> yoksa 403 döndürür, diğer durumlarda işi önbelleğe devreder. <code>route_cache.cpp</code> içindeki <code>allow()</code>, <code>(adminid, companyid)</code> anahtarıyla 16 bölüm, 4096 girdi ve 60 saniye TTL kullanarak önbelleğe alır; yükleme sırasında single-flight davranışı için bölüm kilidi tutulur ve yükleme hatası fail-closed olarak ele alınır. <code>route_cache.cpp</code> içinde ayrıca çağrısı olmayan bir <code>stats()</code> işlevi vardır.</p>
+<p><code>libs/oauth</code>, OAuth'un sunucu tarafıdır ve <code>conf/oauth.conf</code> dosyasını okuyan <code>oauth_config</code>, belirteç karmaşası, PKCE doğrulaması ve Basic istemci kimlik doğrulamasını yöneten <code>oauth_store</code> ile denetimi yöneten <code>oauth_audit</code> bölümlerine ayrılır. <code>oauth_audit</code> içindeki <code>audit_log()</code>, çatının hata günlüğü kuyruğuna bir satır yazar; <code>httpwatch</code> bunu <code>log/error.log</code> dosyasına ekler. Uç noktaların kendileri <code>controller/src/oauth/</code> içindedir: <code>oauth_authorize.cpp</code>, <code>oauth_token.cpp</code>, <code>oauth_introspect.cpp</code>, <code>oauth_revoke.cpp</code>, <code>oauth_jwks.cpp</code>, <code>oauth_metadata.cpp</code>, <code>oauth_userinfo.cpp</code>, <code>oauth_bearerauth.cpp</code>, <code>oauth_client_add.cpp</code>, <code>oauth_purge.cpp</code>.</p>
+<p><code>libs/oauth_client</code>, belirli bir yetkilendirme sunucusuna bağlı olmayan genel bir OAuth 2.x/2.1 istemcisidir: dört uç nokta URL'sini doldurduğunuzda GitHub, Google veya kendi barındırdığınız bir oauth uç noktasıyla konuşabilir. PKCE, üç grant (authorization code, refresh, client_credentials) ve introspect ile revoke işlemlerini destekler. <code>libs/github</code>, GitHub'a özgü çeşittir: durumu <code>[adminid, client_id, rand32]</code> olmak üzere üç parçadır, revoke DELETE + Basic kullanır ve kapsama her zaman <code>read:user</code> eklenir. Ayrıca <code>github_api</code>, <code>github_config</code>, <code>github_crypto</code> ve <code>github_store</code> içerir.</p>
+<p><code>libs/webpay</code>, uygulama tarafındaki ödeme mantığıdır: sipariş durum makinesi (pending/paid/cancelled/refunded), sipariş numarası üretimi, <code>wxorder</code> ile arama, eşzamansız arama ve WeChat V3 arama yanıtları için uzlaştırma kararları; ayrıca geri aramalar, sertifika kapısı, Alipay/WeChat V2/V3, QR kodlar ve belirteçlerle ilgili dosyalar.</p>
+<p><code>libs/markdown</code> içindeki <code>markdown2html</code>, alıntı, kalın, bağlantı, başlık, yatay çizgi, tablo, görüntü, tek satırlı üstü çizili, kod blokları ve sıralı/sırasız listeleri işler; ayrıca bir içindekiler tablosu ve referans listesi tutar. <code>libs/pinyin</code>, pinyin-data verileri ve ikili arama ile Han karakterlerini pinyin'e çevirir. <code>libs/ipdata</code>, <code>ip.data</code> (ip2region biçimi) dosyasını okur ve bir IP'yi ikili aramayla ülke/il/şehre eşler. <code>libs/department</code>, <code>parentid</code> ve <code>children</code> alanlarına sahip bir organizasyon ağacı yapısıdır. <code>libs/img</code> içindeki <code>upload_images</code>, görüntü, video, base64 ve form dosyası yüklemelerini işler ve yüklenmiş dosyaları listeler. <code>libs/types</code>, iç içe nesneler ve diziler de dahil olmak üzere JSON yansıma örnek tipleri içerir ve yansıma üretimini gösterir.</p>
+<h3>İsteğe bağlı yetenek modülleri: <code>vendor/*</code></h3>
+<p>Bu modüllerin tümü <code>include/</code> + <code>src/</code> düzenini izler ve varsayılan olarak kapalıdır. Kaynakları <code>CMakeLists.txt</code> içindeki koşullu glob'larla <code>paozhu_srcs</code> öğesine eklenir ve anahtarları da yine orada toplanır. Aşağıda, gerçek bir uygulamada ihtiyaç duyulma olasılığı yüksek olandan düşük olana doğru sıralanmışlardır.</p>
+<p><strong>Belgeler ve elektronik tablolar.</strong> Bu grup arka ofis rapor dışa aktarma, Excel içe aktarma, oluşturulan sözleşme veya bildirimler ve sayfaları PDF olarak kaydetme işlerini kapsar. <code>pzexcel</code>, xlsx okuma/yazma, birden çok sayfa ve hücre stillerini yönetir. <code>pzword</code>, docx okuma/yazma, HTML ile docx arasında dönüşüm yapar ve doğrudan bellek içi bayt akışı çıkarabilir. <code>webpdf</code>, PDF işleyicisidir; genel başlığı <code>HTMLRenderer</code> sınıfını sunar ve aynı dizinde HTML, CSS, SVG ve TTF için dört ayrıştırıcı bulunur. Uygulama Office belgelerini içe veya dışa aktarıyorsa <code>ENABLE_OFFICE</code> seçeneğini açın; HTML'den PDF için ayrıca <code>ENABLE_PDF</code> seçeneğini etkinleştirin.</p>
+<p><strong>Sıkıştırma, görüntüler ve grafikler.</strong> Paketlenmiş indirmeler veya yüklenen dosyaları açmak için <code>pzzip</code> kullanın; geçici bir dosyaya dokunmadan zip'i doğrudan bellek arabelleğine yazabilir. Captcha ve genel görüntü işleme için <code>pzimage</code> kullanın; PNG/JPEG kodlayıcılarını içerir ve TrueType/OpenType ana hatlarından glif çizebilir. Rapor sayfalarına gömülen grafikler için <code>pzcharts</code> kullanın; doğrudan SVG üretir ve çizgi, yumuşatılmış çizgi, çubuk, dağılım, halka, radar, gösterge ve huni grafiklerini kapsar. Üç anahtar bağımsızdır; yalnızca gerçekten kullandığınız yetenekleri açın.</p>
+<p><strong>Ödeme ve SMS.</strong> Bir işlem akışı gerekiyorsa <code>vendor/webpay</code> kullanın; WeChat/Alipay SDK'larını sarar ve V3 sertifikaları, platform sertifikaları ve iade özkaynak anahtarları gibi alt düzey ayrıntıları işler. Uygulama tarafındaki mantık (sipariş durum makinesi, geri aramalar, sertifika kapısı), yukarıdaki <code>libs</code> bölümünde açıklandığı gibi <code>libs/webpay</code> içindedir. Doğrulama kodu veya bildirim için <code>sms</code> kullanın; Alibaba Cloud ve Tencent Cloud istemcilerini içerir. Bunlar sırasıyla <code>ENABLE_WEBPAY</code> ve <code>ENABLE_SMS</code> seçeneklerine karşılık gelir.</p>
+<p><strong>Önbellek ve diğerleri.</strong> <code>pzredis</code> bir Redis istemcisidir. <code>redis_client</code> bir bağlantı tutmaz: her komut yapılandırma bölümünden bir bağlantı ödünç alır ve işi bitince geri verir; hem zaman uyumlu hem coroutine API'si vardır. Önbellek, dağıtık kilit veya pub/sub için <code>ENABLE_REDIS</code> seçeneğini açın. Çatı düzeyindeki Redis uzun bağlantı istemcisi ayrı bir anahtardır, <code>ENABLE_REDIS_CLIENT</code>; ayrıca <code>ENABLE_REDIS</code> seçeneğinin de açık olması gerekir, aksi halde configure hemen başarısız olur.</p>
+<table>
+<thead>
+<tr>
+<th>Bileşen</th>
+<th>CMake seçeneği</th>
+<th>Yetenek</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vendor/pzexcel</code></td>
+<td><code>ENABLE_OFFICE</code></td>
+<td>xlsx okuma/yazma, birden çok sayfa, hücre değerleri ile yazı tipi/kenarlık/dolgu/hizalama stilleri</td>
+</tr>
+<tr>
+<td><code>vendor/pzword</code></td>
+<td><code>ENABLE_OFFICE</code></td>
+<td>docx okuma/yazma, HTML↔docx dönüşümü, bellek içi bayt akışı çıktısı</td>
+</tr>
+<tr>
+<td><code>vendor/webpdf</code></td>
+<td><code>ENABLE_PDF</code></td>
+<td>PDF işleme, <code>HTMLRenderer</code> ve HTML/CSS/SVG/TTF ayrıştırıcıları</td>
+</tr>
+<tr>
+<td><code>vendor/pzzip</code></td>
+<td><code>ENABLE_ZIP</code></td>
+<td>zip okuma/yazma, doğrudan bellek arabelleğine yazma desteği</td>
+</tr>
+<tr>
+<td><code>vendor/pzimage</code></td>
+<td><code>ENABLE_IMAGE</code></td>
+<td>PNG/JPEG kodlayıcıları, TrueType/OpenType glif ana hattı çizimi</td>
+</tr>
+<tr>
+<td><code>vendor/pzcharts</code></td>
+<td><code>ENABLE_CHART</code></td>
+<td>SVG grafikler: çizgi, çubuk, dağılım, halka, radar, gösterge, huni</td>
+</tr>
+<tr>
+<td><code>vendor/webpay</code></td>
+<td><code>ENABLE_WEBPAY</code></td>
+<td>WeChat/Alipay SDK sarmalayıcısı; V3 sertifikaları, platform sertifikaları ve iade özkaynak anahtarları dahil</td>
+</tr>
+<tr>
+<td><code>vendor/sms</code></td>
+<td><code>ENABLE_SMS</code></td>
+<td>Alibaba Cloud ve Tencent Cloud SMS istemcileri</td>
+</tr>
+<tr>
+<td><code>vendor/pzredis</code></td>
+<td><code>ENABLE_REDIS</code></td>
+<td>Bağlantıları yapılandırma bölümü başına ödünç alıp geri veren Redis istemcisi; zaman uyumlu ve coroutine API'leri</td>
+</tr>
+</tbody>
+</table>
+<p>Bir bağımlılık dikkate değer: <code>ENABLE_OFFICE</code>, <code>pzword</code> docx paketlerken <code>pz::zip</code> kullandığı için <code>ENABLE_ZIP</code> seçeneğini otomatik olarak açar.</p>
+<h3>Uzun ömürlü bağlantılar</h3>
+<p>Depoda öncelikle demo siteler ve örnekler olan dört bağımsız dizin vardır: <code>websockets/</code>, <code>sockets/</code>, <code>mqtt/</code> ve <code>redis/</code>. Gerçek protokol uygulamaları <code>vendor/httpserver/src/</code> içindedir: WebSocket için <code>ws_conn.cpp</code>, <code>ws_handshake.cpp</code>, <code>ws_parser.cpp</code>, <code>ws_wire.cpp</code>, <code>websockets_callback.cpp</code>; ham TCP için <code>http_socket.cpp</code>, <code>http_socket_client.cpp</code>, <code>sock_subpub_reg.cpp</code>; MQTT için <code>mqtt_frame.cpp</code>, <code>mqtt_session.cpp</code>, <code>mqtt_reg.cpp</code>, <code>mqtt_subpub_reg.cpp</code>, <code>http_mqtt_client.cpp</code>; Redis uzun bağlantısı için <code>http_rpcclient.cpp</code> ve <code>vendor/pzredis</code> içindeki istemci. Anahtarlar <code>ENABLE_WEBSOCKETS_CLIENT</code>, <code>ENABLE_SOCKETS_CLIENT</code>, <code>ENABLE_MQTT_CLIENT</code> (varsayılan açık) ve <code>ENABLE_REDIS_CLIENT</code> (varsayılan kapalı ve <code>ENABLE_REDIS</code> gerektirir). İş tarafındaki kayıt defterleri <code>common/</code> içindeki <code>*_regmethod.hpp</code> grubudur.</p>
+<h3>Görünümler, statik dosyalar ve <code>.so</code> sıcak yükleme</h3>
+<p><code>view/</code>, elle yazılmış HTML şablonlarını içerir ve iş alanlarına göre <code>home/</code>, <code>admin/</code>, <code>cms/</code>, <code>login/</code>, <code>oauth/</code>, <code>superadmin/</code> ve diğerlerine ayrılır. <code>viewsrc/include/viewsrc.h</code> ve <code>viewsrc/include/regviewmethod.hpp</code>, elle yazılmış kayıt giriş noktalarıdır. <code>viewsrc/view/**.cpp</code>, şablon ayrıştırıcısının ürettiği C++ kodudur — dosyalar <code>//This file create by paozhu</code> başlığını taşır (<code>viewsrc/view/home/header.cpp</code> dosyasına bakın) — ve şu anda <code>home/header.cpp</code>, <code>oauth/consent.cpp</code>, <code>oauth_client/page.cpp</code>, <code>superadmin/*.cpp</code> ve diğerlerini içerir. Ayrıştırıcı <code>vendor/httpcli/templateparse.hpp</code> içindedir.</p>
+<p><code>www/default/</code>, statik sitenin kök dizinidir ve <code>wwwpath = ./www/default</code> ile yapılandırılır.</p>
+<p><code>module/</code>, paylaşımlı kitaplık dizinidir; <code>module/controller/testviewso.so</code> ve <code>module/view/{admin,cms,home,login}/*.so</code> dosyalarını içerir. Her anahtar bir tarafı yönetir: <code>ENABLE_VIEWSO</code>, <code>viewsopath</code> ile <code>module/view</code> yolunu, <code>ENABLE_MODELSO</code> ise <code>controlsopath</code> ile <code>module/controller</code> yolunu gösterir. Yükleme mantığı <code>loadmodule.cpp</code> ve <code>loadviewso.cpp</code> içindedir; <code>.so</code> dosyalarını <code>pz::dll::library</code> ile açar ve kitaplık tanıtıcısını önbelleğe alınmış işlev işaretçisiyle birlikte tutar; böylece işaretçi <code>dlclose</code> sonrasında geçersiz olmaz.</p>
+<h2>5. Yapılandırma ve genişletme</h2>
+<h3>Yapılandırma dosyaları nerede</h3>
+<p><code>conf/</code> alt sistemlere göre ayrılmıştır: <code>server.conf</code>, <code>orm.conf</code>, <code>redis.conf</code>, <code>mqtt.conf</code>, <code>sockets.conf</code>, <code>websockets.conf</code>, <code>oauth.conf</code>, <code>webpay.conf</code>, <code>acme.conf</code>, <code>github.conf</code>, <code>test.conf</code> ve sertifika ile anahtar dosyaları. En sık dokunulan üçü süreç ve siteler için <code>server.conf</code>, veritabanı bağlantıları için <code>orm.conf</code> ve otomatik sertifika verme için <code>acme.conf</code>'tür. Diğerleri yalnızca ilgili alt sistem açıldığında önemlidir.</p>
+<h3><code>server.conf</code></h3>
+<p>Ana yapılandırma dosyasıdır ve başlangıçta bir kez okunur. Genel bir <code>[default]</code> bölümü ile bir ana bilgisayar adını taşıyan herhangi sayıda site bölümünden oluşur (dosya <code>[www.hggq.com]</code> kullanır). Bir site bölümü <code>wwwpath</code>, <code>http2_enable</code>, <code>acme_auto</code>, <code>upload_max_size</code>, <code>cors_domain</code>, <code>static_pre</code>, <code>fastcgi_host</code>, <code>fastcgi_port</code>, <code>siteid</code> ve <code>groupid</code> değerlerini geçersiz kılabilir. Burada portlar değiştirilir, iş parçacıkları ayarlanır, yükleme sınırı yükseltilir, statik önbellek açılıp kapatılır, hız sınırlama etkinleştirilir veya sertifika yenileme açılır. Dosya olduğu gibi şöyledir:</p>
+<pre><code>[default]
+threadmax                  = 1024
+threadmin                  = 5
+httpport                   = 80
+httpsport                  = 443
+bmcport                    = 7755 ;Baseboard Management Controller
+cothreadnum                = 4 ;Coroutines run on thread num
+per_ioc_thread_num         = 4 ;per io_context run thread num, cothreadnum * per_ioc_thread_num = threads, 4 * 4 = 16 threads
+orm_ioc_num                = 4 ;ORM io_context num;
+orm_thread_pool_num        = 4 ;0 use hardware_concurrency()
+http2_send_loop_num        = 2 ; 
+
+http2_enable               = 1
+debug_enable               = 1
+deamon_enable              = 0
+ip6_listen_enable          = 1
+
+mainhost                   = www.hggq.com
+certificate_chain_file     = www.hggq.com.pem
+private_key_file           = www.hggq.com.key
+tmp_dh_file                = dh4096.pem
+chain_crt_file             = www.hggq.com.crt
+reboot_password            = e10adc3949ba59abbe56e057f20f883e ;md5(md5("123456")+"rand_char"+md5("123456"))
+reboot_cron                = d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week
+clean_cron                 = m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+temp_clean_time            = 86400 ;seconds(3600*24); every N seconds httpwatch scans temp folder, remove pzraw_/pzup_ files modified more than N seconds ago (60-604800)
+links_restart_process      = n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+session_type               = 1 ;session save type 0.file 1.memory 2.redis 3.memcache 4.reserve
+static_file_compress_cache = 1 ;1 enable, Cache static file compress(gzip,br) content to cache directory
+resident_client_show       = 0 ;1 enable /resident_stop self-check route for resident outbound clients (redis,ws,sock,mqtt), effective at startup only
+
+rate_limit_status          = 0 ; 1 enable Traffic limiting
+rate_limit_new_wait_num    = 300 ; level 1, start rate-limiting at N connections
+rate_limit_accept_wait_num = 600 ; level 2, maximum rate-limit severity (interpolation upper bound)
+rate_limit_second_num1     = 20  ; pass per second at low load
+rate_limit_second_num2     = 5   ; pass per second at high load
+
+modelspath                 = ./models
+serverpath                 = ./
+viewpath                   = ./view
+viewsopath                 = ./module/view
+
+controlpath                = ./controller
+controlsopath              = ./module/controller
+
+temppath                   = ./temp
+logpath                    = ./log
+wwwpath                    = ./www/default
+pluginspath                = ./plugins
+libspath                   = ./libs
+directorylist              = 1
+index                      = index.html
+;html cache: 带点 url 先看盘上那个文件，没过期就发文件，过期才交给同名注册路由重生成
+;非空即开，关掉请注释掉整行；其余域名段可以各写一份覆盖这里
+usehtmlcache               = 1
+usehtmlcachetime           = 3600 ;seconds 缓存文件放多久算过期，下限 10 秒
+
+acme_auto                  = 0 ;acme automatically applies for SSL certificates, 1 自动更新SSL证书
+acme_every_day             = 7 ;What time does acme run every day, 每天几点运行一次，如果有证书需要就更新
+acme_every_num             = 5 ;How many domain names are processed at a time, 每次处理几个域名
+ocsp_intv_time             = 14400 ;OCSP update interval second(14400 * 5, may be set 3600), OCSP 更新时间间隔 至少4小时
+
+staticfile_cache_num       = 0 ;0 not cache, min 10 begin
+rewrite_404                = 0 ;1 file 2 action url path
+rewrite_404_action         = index.html
+method_pre                 = 
+method_after               = 
+show_visitinfo             = 0
+upload_max_size            = 16777216
+siteid                     = 1
+groupid                    = 0
+alias_domain               = 
+init_func                  = 
+;cors_domain CORS whitelist, comma-separated; only when the request Origin matches will the corresponding ACAO be echoed and Vary: Origin be added
+;  not written / written empty  → deny by default: this site sends no CORS headers at all (logs [CORS-WARN] naming it at startup)
+;  *                   → explicitly allow all cross-origin (echo * for any origin)
+;  when a whitelist is written in this section, sites without their own cors_domain inherit this section's list
+;  cors_expose_headers response headers that page JS is allowed to read during cross-origin, if not written the header is not sent
+;  cors_domain 实际上是白名单列表，允许那些域名通行
+cors_domain                =
+;cors_expose_headers        = x-request-id, x-total-count
+;cors_credentials whether cross-origin is allowed to carry credentials (cookie / HTTP auth); 1 or starting with T means on, default off
+;  when enabled, only responses that hit the whitelist and echo a specific Origin in ACAO carry Access-Control-Allow-Credentials: true
+;  sites that allow all (ACAO is *) do not send this header even if set to 1: per spec, "*"+credentials are mutually exclusive and browsers will hard-reject
+;  this header only solves "allowed to carry": for cookies to be sent cross-site it must also be HTTPS, and the cookie itself must have SameSite=None
+;  after setting 1 the framework will also write the session cookie as SameSite=None; Secure (HTTPS requests only; not sent in plaintext,
+;  because browsers drop Secure cookies in plaintext, which would break the login state in local http dev environments)
+;cors_credentials            = 0
+;cors_allow_methods cross-origin methods allowed in preflight (Access-Control-Allow-Methods), comma-separated
+;  not writing this line → use the framework default POST, GET, OPTIONS, QUERY (QUERY is the read-only query method of the METHOD-QUERY draft)
+;  writing the whole list overrides: both the response header and the validation of Access-Control-Request-Method use this list
+;  writing empty → this site's preflight allows no methods (Allow-Methods is not sent either, cross-origin write operations will be blocked by the browser)
+;  comparison is case-insensitive, output is uniformly converted to uppercase
+; cors_allow_methods 是OPTIONS查询返回的能力
+;cors_allow_methods           = POST, GET, OPTIONS, QUERY
+
+[www.hggq.com]
+wwwpath                    = ./www/default
+http2_enable               = 1
+acme_auto                  = 0
+;rewrite_404=1
+;rewrite_404_action=index.html|psy/index.html|exam/index.html
+;controlsopath=./controller
+static_pre                 = downloadfileauth|upload
+method_pre                 =  ;api/dev/hostcors
+method_after               = 
+isuse_php                  = 0
+rewrite_php                = ./www/mpdftest|index.php
+fastcgi_host               = 127.0.0.1 ;/run/php/php8.1-fpm.sock
+fastcgi_port               = 9000
+upload_max_size            = 16777216
+siteid                     = 1
+groupid                    = 0
+alias_domain               = 
+init_func                  = 
+;cors_domain CORS whitelist, comma-separated; only when the request Origin matches will the corresponding ACAO be echoed and Vary: Origin be added
+;  *                           allow all, echo * for any origin
+;  https://www.hggq.com        if a full origin is written it is matched as-is (non-standard ports must be written in full)
+;  www.hggq.com,www.hggq.net   domain only, automatically matches both http:// and https:// schemes
+;  not writing this line               → inherit [default]'s whitelist; writing empty makes this site exit inheritance and deny by default
+;  before entering the list: uniformly lowercase, strip trailing slash, remove default port matching the scheme (:80 / :443)
+cors_domain                = www.hggq.com, www.hggq.net
+;cors_expose_headers response headers that page JS is allowed to read during cross-origin (Access-Control-Expose-Headers)
+;  if not written the header is not sent; list as needed, e.g.: x-request-id, x-total-count
+;  writing * means expose all response headers (not recommended: internal response headers would also be exposed to page scripts)
+;cors_expose_headers        =
+;cors_credentials whether cross-origin is allowed to carry credentials (cookie / HTTP auth), 1 on 0 off
+;  not writing this line → inherit [default]; writing 0 is this site explicitly disabling it, it will not follow [default]'s 1
+;  only sent when ACAO echoes a specific Origin (whitelist hit); for mutual exclusion rules see the same-named item in the [default] section
+;cors_credentials            = 0
+;cors_allow_methods cross-origin methods allowed in preflight, comma-separated
+;  not writing this line → inherit [default]; writing the whole list overrides this site's list (response header and preflight validation share the same source)
+;  writing empty → this site's preflight allows no methods; for the default four items and other notes see the same-named item in the [default] section
+;cors_allow_methods           = POST, GET, OPTIONS, QUERY
+</code></pre>
+<p>Üç iş parçacığı ayarı birlikte çalışır. <code>cothreadnum</code>, ioc sayısının üst sınırıdır; gerçek sayı <code>min(cothreadnum, çekirdek sayısı)</code> olup 4'ten küçükse 4'e yükseltilir. <code>per_ioc_thread_num</code>, ioc başına <code>run()</code> iş parçacığı sayısıdır ve ikisinin çarpımı toplam G/Ç iş parçacığı sayısını verir. <code>orm_thread_pool_num</code>, toplam ORM iş parçacığı sayısıdır; 0, <code>hardware_concurrency()</code> anlamına gelir, 512 ile sınırlıdır ve <code>orm_ioc_num</code> ioc arasında eşit dağıtılır; kalanlar daha düşük indisli ioc'lere gider.</p>
+<p>Bazı değerler ters okunmaya elverişlidir. <code>upload_max_size</code> bayt cinsindendir; şablon değeri 16777216, yani 16 MiB'dır; sınır yalnızca 1024'ten büyük olduğunda uygulanır, 0 veya boş değer sınırsız anlamına gelir ve site bazında geçersiz kılınabilir. <code>usehtmlcache</code> için boş veya 0 ile başlayan bir değer kapalı, diğer tüm boş olmayan değerler açık anlamındadır; <code>usehtmlcachetime</code> 10 saniyenin altındaysa 10 olarak ele alınır. <code>rate_limit_second_num2</code>, <code>rate_limit_second_num1</code> değerinden kesinlikle küçük olmalı; <code>rate_limit_accept_wait_num</code> ise <code>rate_limit_new_wait_num</code> değerini 100'den fazla aşmalıdır, aksi halde iki katına sıfırlanır. <code>session_type</code> değeri 0 dosya / 1 bellek / 2 Redis / 3 Memcache / 4 ayrılmıştır. <code>acme_every_day</code> 2–23 aralığını kabul eder; <code>ocsp_intv_time</code> 3600 saniyenin altındaysa 3600 olarak ele alınır.</p>
+<p>Bir başka anahtar grubunun bu deponun C++ kodunda hiçbir okuma yeri yoktur. Tarihsel nedenlerle dosyada kalmıştır; hâlâ yapılandırılması gerektiğini varsaymayın: <code>threadmax</code>, <code>threadmin</code>, <code>bmcport</code>, <code>staticfile_cache_num</code>, <code>modelspath</code>, <code>viewpath</code>, <code>controlpath</code>, <code>libspath</code>, <code>pluginspath</code>. Yorumlar <code>bmcport</code> dosyasını yönetim ve izleme portu, <code>staticfile_cache_num</code> dosyasını önbellek girdisi sayısı olarak tanımlar; ancak ikisinin de çalışma zamanında okuyucusu yoktur.</p>
+<h3><code>orm.conf</code></h3>
+<p>Bu dosya veritabanı bağlantılarını yönetir. INI biçimindedir; bölüm adı veritabanı etiketidir (dosyada <code>[default]</code>, <code>[docs]</code>, <code>[cms]</code>, <code>[pg]</code> ve <code>[lite]</code> vardır). Her bölüm, boş satırlarla ayrılmış birkaç bağlantı bloğu içerebilir ve <code>type</code> ile ayırt edilir: <code>type = main</code> düzenleme/yazma bağlantısı, <code>type = second</code> sorgu/salt okunur bağlantıdır. Bir etiketteki iki blok ayrı bağlantı havuzlarına beslenir. Dosya olduğu gibi şöyledir:</p>
+<pre><code>[default]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = benchmarkdbuser
+password = benchmarkdbpass
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+#ssl=ON
+#sslverify=ON                    ; Verify the certificate chain 校验证书链（配合系统 CA / SSL_CERT_FILE）
+#sslhost=db.example.com          ; Certificate domain (SNI + hostname check); when empty both fall back to host. SNI is always sent regardless of sslverify; the hostname check only runs when sslverify=ON 证书域名（SNI + 域名校验），为空则两者都用 host 兜底；域名校验只在 sslverify=ON 时执行
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = benchmarkdbuser
+password = benchmarkdbpass
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+#ssl=ON
+#sslverify=ON
+#sslhost=db.example.com
+
+[docs]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = paozhu_docs
+user     = root
+password = 12345678
+pretable = web_
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = paozhu_docs
+user     = root
+password = 12345678
+pretable = web_
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+
+[cms]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+
+[pg]
+type     = main
+host     = 127.0.0.1
+port     = 5432
+dbname   = hello_world
+user     = hello
+password = 12345678
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = postgresql
+charset  = utf8
+#ssl=ON
+#sslverify=ON                    ; 校验证书链（配合系统 CA / SSL_CERT_FILE）
+#sslhost=db.example.com          ; 证书域名（SNI + 域名校验），为空则两者都用 host 兜底（host 为 IP 时域名校验比证书的 iPAddress SAN）；SNI 不受 sslverify 开关影响总会发，域名校验只在 sslverify=ON 时执行
+
+type     = second
+host     = 127.0.0.1
+port     = 5432
+dbname   = hello_world
+user     = hello
+password = 12345678
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = postgresql
+charset  = utf8
+#ssl=ON
+#sslverify=ON
+#sslhost=db.example.com
+
+[lite]
+type     = main
+host     = /Users/hzq/paozhu/docs/sqlite_lite.db
+port     =
+dbname   = lite
+user     =
+password =
+pretable =
+minpool  = 1
+maxpool  = 5
+dbtype   = sqlite
+charset  = utf8mb4
+
+type     = second
+host     = /Users/hzq/paozhu/docs/sqlite_lite.db
+port     =
+dbname   = lite
+user     =
+password =
+pretable =
+minpool  = 1
+maxpool  = 5
+dbtype   = sqlite
+charset  = utf8mb4
+</code></pre>
+<p><code>maxpool</code> ve <code>minpool</code> simetrik olmayan biçimde bölünür; bu yanlış okunmaya açıktır. Havuz ioc bazında bölmelenir ve yuva sayısı <code>orm_ioc_num</code> değerine eşittir. <code>maxpool</code>, o rol için tüm yuvaların paylaştığı genel bir bütçedir, yuva başına Kota değildir: <code>maxpool / yuva sayısı</code> hesaplanır, kalan en düşük indisli yuvalara birer birer verilir ve her yuva en az 1 alır — örneğin <code>maxpool = 20</code> ve 4 yuva yuva başına 5 verir; <code>maxpool = 10</code> ve 3 yuva ise 4/3/3 verir. <code>minpool</code> bölünmez: her yuva <code>minpool</code> kadar bağlantı önceden oluşturur, ancak o yuvanın kendi kotası üst sınırdır; dolayısıyla <code>maxpool = 5</code> ve 4 yuva ile kotalar 2/1/1/1 olur ve <code>minpool = 5</code> yine yalnızca 2/1/1/1 üretir.</p>
+<p>İki nokta daha. <code>password</code> yalnızca yazdırılabilir ASCII 0x21–0x7E karakterlerini içerebilir; boşluk, kontrol karakteri veya ASCII dışı karakter içeren bir blok atlanır ve hata olarak kaydedilir. SQLite için veritabanı dosyasının yolu <code>host</code> alanına yazılır; <code>port</code>, <code>dbname</code> ve kimlik bilgileri boş bırakılır. <code>ssl</code>, <code>sslverify</code> ve <code>sslhost</code> yalnızca MySQL ve PostgreSQL için geçerlidir.</p>
+<h3><code>acme.conf</code></h3>
+<p>Bu dosya otomatik sertifika vermeyi denetler. Varsayılan olarak ZeroSSL'in ACME uç noktalarını hedefler ve HTTP-01 doğrulamasını kullanır. Dosya olduğu gibi şöyledir:</p>
+<pre><code>[info]
+acme_path  = ./acme ;/Users/hzq/paozhu/acme ;项目目录下acme 目录，存放申请中间文件 The "acme" directory under the project directory stores intermediate application files
+cert_path  = ./conf ;/usr/local/etc/paozhu ;域名证书存放 Storage of domain name certificate
+email      = ;必须设置邮箱才能生效，Email must be set to take effect server.conf 相应的域名下 acme_auto=1 才能自动 
+days_remain= 10 ;剩余多少天才更新SSL证书
+
+[zerossl]
+server_url = https://acme.zerossl.com/v2/DV90
+eab_api    = https://api.zerossl.com/acme/eab-credentials-email
+eab_kid	=
+eab_hmac_key =
+email      = 
+user_name  =
+user_pwd   =
+</code></pre>
+<p>Verme işlemi yalnızca iki koşul birlikte sağlandığında çalışır: sitede <code>server.conf</code> dosyasında <code>acme_auto = 1</code> bulunmalı ve buradaki <code>email</code> boş olmamalı. E-posta yoksa görev hemen döner ve yalnızca <code>log/acme_log/</code> altına bir satır yazar. Ayrıca <code>cert_path</code> değeri <code>./conf</code> olsa bile mevcut kod sertifikaları gerçekte <code>server.conf</code> dosyasını içeren dizine kopyalar; bu değer okunur ancak kopya hedefini etkilemez.</p>
+<p>Verme akışı <code>httpwatch</code> tarafından günlük olarak tetiklenir: <code>acme_every_day</code> saati seçer, önceki saatte günün bayrağı kurulur ve saat gelindiğinde ayrı bir iş parçacığı <code>acme_task</code> işlevini çalıştırır. Görev siteleri dolaşır, <code>acme_auto</code> değerini kontrol eder, birincil ve <code>www</code> alan adlarını oluşturur ve <code>acme_path/&lt;primary_domain&gt;/cert.pem</code> dosyasının kalan geçerliliğini okur; <code>days_remain</code> değerini aşıyorsa site atlanır. Aksi halde görev ACME hesabı, sipariş, HTTP-01 doğrulaması, CSR ve finalize adımlarını izleyerek <code>acme_path/&lt;primary_domain&gt;/</code> altına <code>privkey.pem</code>, <code>cert.pem</code> ve <code>fullchain.pem</code> dosyalarını yazar. Başarılı olursa <code>fullchain.pem</code> dosyasını <code>conf/&lt;primary_domain&gt;.pem</code> konumuna, <code>privkey.pem</code> dosyasını <code>conf/&lt;primary_domain&gt;.key</code> konumuna ve <code>cert.pem</code> dosyasını <code>conf/&lt;primary_domain&gt;.crt</code> konumuna kopyalar, ardından SSL yapılandırmasının yeniden yüklenmesi için <code>restart_ssl_config</code> dosyasını yazar. <code>server.conf</code> içindeki <code>certificate_chain_file</code>, <code>private_key_file</code> ve <code>chain_crt_file</code> girdileri tam olarak bu dosya adlarını kullanır ve <code>server.conf</code> dosyasını içeren dizine göre çözümlenir.</p>
+<h3>Ek açıklama rotaları yazma</h3>
+<p>Rotalar, bir iş işlevinin üstündeki yorum satırında bildirilir; biçim <code>//@urlpath(pre, urlpath)</code>'tür ve HTTP yöntemlerini ayırmak için isteğe bağlı <code>:mask</code> eki eklenebilir:</p>
+<pre><code class="language-cpp">//@urlpath(superadmin_islogin,superadmin/rbac/perm)
+std::string superadmin_rbac_perm_list(std::shared_ptr&lt;httppeer&gt; peer)
+</code></pre>
+<p>Bu örnek <code>controller/src/superadmin/rbac/rbacperm.cpp</code> dosyasındandır.</p>
+<p>Taramadan sonra <code>paozhu_pre</code>, <code>reg_raw(site, path, pre_sync, co_pre, reg_sync, co_reg, mask_code)</code> biçiminde girdiler üretir ve bunlar <code>common/autocontrolmethod.hpp</code> dosyasına yerleşir. <code>:param</code> içeren bir yol, parametre adlarını da <code>common/autorestfulpaths.hpp</code> dosyasına kaydeder. Ek açıklamalar <code>//@urlpath(...):ratelimit(time,num)</code> biçiminde hız sınırlama parametreleri de taşıyabilir; bir örnek <code>controller/src/test_maskcode.cpp</code> içindedir ve ayrıştırılan değerler rota girdisinin <code>rate_time</code> ve <code>rate_num</code> alanlarına girer.</p>
+<p>Ek açıklama istemiyorsanız <code>common/reghttpmethod.hpp</code> dosyası, <code>/helloworld</code> için satır içi lambda da dahil olmak üzere tamamen elle yazılmış <code>REG_SYNC_SYNC</code> kayıt biçimini sunar. Ancak bu kayıtlar üretilen tablodan sonra gelir, bu nedenle aynı adlı bir yol üretilen girdi tarafından gölgelenir. Geçici denemeler için uygundur, üretim uç noktaları için değil.</p>
+<h3>Bir uç nokta ekleme</h3>
+<p>Normal yol kısadır: <code>controller/src/</code> altında uygun bir dosya seçin, işlevi ek açıklamasıyla yazın ve derleyin. Derleme sırasında <code>paozhu_codegen</code>, <code>paozhu_pre</code> öğesini çalıştırır; bu da <code>controller/include/</code> içindeki bildirim taslaklarını ve <code>common/autocontrolmethod.hpp</code> içindeki kayıt girdilerini günceller. Süreç başladığında üretilen tabloyu kaydeder ve istek ilgili rotaya yönlendirilebilir.</p>
+<p>Uç nokta hız sınırlama gerektiriyorsa ek açıklamanın ardına <code>ratelimit(time,num)</code> ekleyin. RBAC gerektiriyorsa rotaya sıfırdan farklı bir <code>mask_code</code> verin ve izin tablosuna aynı <code>urlpath</code> ve <code>maskcode</code> değerlerine sahip bir yetkilendirme satırı ekleyin — <code>libs/rbac/rbac.h</code> içindeki bir yorum, denetimin rotanın maskcode değerinin kullanıcının etkin izinlerinden biriyle tam olarak eşit olmasını gerektirdiğini açıklar.</p>
+<h3>Çalışma zamanında <code>.so</code> yükleme</h3>
+<p>Derleme sırasında <code>ENABLE_VIEWSO</code> veya <code>ENABLE_MODELSO</code> etkinleştirilmişse <code>module/view</code> ve <code>module/controller</code> altındaki <code>.so</code> dosyaları çalışma zamanında yüklenebilir. Görünüm tarafındaki giriş noktaları <code>loadview</code> / <code>loadviewso</code>, denetleyici tarafındaki giriş noktası ise <code>loadmodule.cpp</code> içindedir. Yapılandırmada <code>viewsopath</code> ve <code>controlsopath</code> değerlerini ilgili dizinlere yönlendirin. <code>module/</code> altındaki dosyalar derleme çıktıları veya elle dağıtılmış paylaşımlı kitaplıklardır, kaynak değildir.</p>
+<h2>6. Testler ve kendini denetleme</h2>
+<p>Testler varsayılan olarak derlenmez; yalnızca <code>-DENABLE_TESTS=ON</code> ile dahil edilir. <code>tests/CMakeLists.txt</code> kuralı, her <code>tests/*.cpp</code> ve <code>tests/orm/*.cpp</code> dosyası için aynı adlı bir çalıştırılabilir hedef oluşturmaktır; <code>pool_thread</code> istisnadır. Mevcut durumlar şunlardır: <code>test_framework_smoke.cpp</code> (çatı duman testi), <code>test_http2_ring_queue.cpp</code> ve <code>test_http2_headers_split.cpp</code> (HTTP/2 gönderme halkası ve başlık bölme), <code>test_router_hooks.cpp</code> (rota kancaları), <code>test_jwt_smoke.cpp</code> (JWT), <code>test_filename_safety.cpp</code> (dosya adı güvenliği), <code>test_pzexcel_p2.cpp</code> ve <code>test_pzzip.cpp</code> (isteğe bağlı alt modüller). Protokol ayrıştırma için <code>http1_consume/</code>, <code>multipart_boundary/</code>, <code>multipart_part_headers/</code>, <code>postform/</code>, <code>raw_post_fastpath/</code> ve <code>orm/</code> alt dizinleri de vardır.</p>
+<p>Kendini denetleme uç noktalarının tümü <code>controller/src/serverwatch.cpp</code> içindedir: <code>/metrics</code> Prometheus metin biçiminde çıktı verir, <code>/paozhu_status</code> eski özel gösterge panelidir ve <code>/frametasks_timeloop</code> çatı zamanlayıcı görevlerini gösterir. Arka ofis oturum açma uç noktaları <code>admin/login</code> ve hız sınırlı <code>admin/loginpost:ratelimit(60,5)</code> olup <code>controller/src/admin/main.cpp</code> içinde uygulanmıştır; süper yönetici giriş noktası <code>superadmin/login</code> ise <code>controller/src/superadmin/supermain.cpp</code> içindedir.</p>
+<h2>7. Doğrulama kapsamı</h2>
+<p>Bu belgedeki sonuçlar büyük ölçüde kaynak ve dizin içeriklerinin okunmasından elde edilmiştir: derleme yapılandırması, iş parçacığı topolojisi, yönlendirme yolu, HTTP/2 gönderme kuyruğu, RBAC önbelleği, hız sınırlama, üretilmiş çıktılar, <code>server.conf</code> anahtarları ve kendini denetleme uç noktaları, son bölümde listelenen dosyalar üzerinden izlenebilir. Bu tur ayrıca <code>libs/</code> ve <code>vendor/</code> altındaki modüllerin genel başlıklarını da kapsadı; <code>oauth</code>, <code>oauth_client</code>, <code>github</code>, <code>webpay</code>, <code>markdown</code>, <code>pinyin</code>, <code>ipdata</code>, <code>department</code>, <code>img</code>, <code>types</code>, <code>pzexcel</code>, <code>pzword</code>, <code>webpdf</code>, <code>pzimage</code>, <code>pzcharts</code>, <code>pzzip</code>, <code>pzredis</code> ve <code>sms</code> açıklamaları, bu başlıklardaki işlev imzalarına veya yorumlara dayanmaktadır.</p>
+<p>Altı alan uygulama uygulama okunmadı. Bu listenin dışındaki açıklamaları satır satır doğrulanmış gerçekler olarak kabul etmeyin:</p>
+<ul>
+<li><code>ENABLE_MODELSO</code> ile <code>module/controller/testviewso.so</code> içindeki işlev adlarının rotalara nasıl eşlendiği; yalnızca anahtar ile dizin ilişkisi doğrulandı, yükleme sonrasındaki tüm kayıt zinciri doğrulanmadı.</li>
+<li>Üç ORM model alanının (<code>cms</code>/<code>pg</code>/<code>lite</code>) alan kapsamı ve üretim kuralları; yalnızca üretim kaynağı, havuz bölmeleme ve &quot;mevcut model dosyalarını koruma&quot; ilkesi doğrulandı.</li>
+<li><code>view/</code> şablonlarını <code>viewsrc/view/*.cpp</code> dosyalarına dönüştüren üretim sözdizimi ve güncelleme tetikleyicileri; yalnızca dosya başlığındaki işaret ve ayrıştırıcının yeri doğrulandı.</li>
+<li>Her <code>tests/*.cpp</code> durumundaki somut iddialar; yalnızca dosya adı ve <code>tests/CMakeLists.txt</code> kuralı ile açıklanmıştır.</li>
+<li><code>startup/main_dev.cpp</code> ile <code>startup/main_daemon.cpp</code> dosyalarının fork dışında tam olarak aynı zinciri izleyip izlemediği; iki dosya satır satır karşılaştırılmadı.</li>
+<li><code>pzexcel</code>, <code>pzword</code> ve <code>webpdf</code> uygulamalarının derinliği; yalnızca genel başlıklar okundu, okuma/yazma akışları tek tek izlenmedi.</li>
+</ul>
+<h2>8. Temel sonuçlar ve ilgili dosyalar</h2>
+<table>
+<thead>
+<tr>
+<th>Sonuç</th>
+<th>Dosyalar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Proje adı, sürüm, tüm derleme seçenekleri ve kaynak glob'ları</td>
+<td><code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>Üçüncü taraf bağımlılıklar ve vcpkg özellikleri</td>
+<td><code>vcpkg.json</code>, <code>README_CN.md</code></td>
+</tr>
+<tr>
+<td>Dört iş parçacığı sınıfı, ioc sayısı formülü, ioc başına iş parçacığı, bağlantı round-robin'i, strand, peer havuzu</td>
+<td><code>vendor/httpserver/src/server.cpp</code>, <code>vendor/httpserver/include/server.h</code>, <code>vendor/httpserver/include/client_session.h</code></td>
+</tr>
+<tr>
+<td>Zaman uyumlu/coroutine yönlendirme zincirleri ve aynı şekilde davranma gereksinimi</td>
+<td><code>vendor/httpserver/src/router.cpp</code>, <code>vendor/httpserver/include/router.h</code></td>
+</tr>
+<tr>
+<td>HTTP/2 gönderme halkası, gönderme nesnesi durum makinesi, park edilmiş nesnelerin yeniden bağlanması, 120 saniye ilerlemesiz akış sıfırlama</td>
+<td><code>vendor/httpserver/include/http2_ring_queue.h</code>, <code>vendor/httpserver/include/http2_send_queue.h</code>, <code>common/cost_define.h</code>, <code>vendor/httpserver/src/server.cpp</code></td>
+</tr>
+<tr>
+<td>HTTP/1.1 ayrıştırma ve istek modeli</td>
+<td><code>vendor/httpserver/src/http_parse.cpp</code>, <code>httppeer.cpp</code>, <code>request.cpp</code></td>
+</tr>
+<tr>
+<td><code>paozhu_pre</code> / <code>paozhu_cli</code> görevleri ve üretim zinciri</td>
+<td><code>vendor/httpcli/autopickmethod.cpp</code>, <code>vendor/httpcli/http_cli.cpp</code>, <code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>Kayıt sırası, aynı adın gölgelenmesi ve <code>ROUTE-WARN</code></td>
+<td><code>vendor/httpserver/src/server.cpp</code>, <code>vendor/httpcli/autopickmethod.cpp</code></td>
+</tr>
+<tr>
+<td><code>controller/include</code> taslaklarının üretimi ve <code>file(TOUCH)</code> yer tutucuları</td>
+<td><code>vendor/httpcli/autopickmethod.cpp</code>, <code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>ORM model başlıklarının üretimi ve &quot;mevcut model dosyalarını koruma&quot; ilkesi</td>
+<td><code>orm/cms/include/sysperms_base.h</code>, <code>models/cms/Sysperms.cpp</code></td>
+</tr>
+<tr>
+<td>ORM bağlantı havuzu bölmeleme ve bölüm başına kilitler</td>
+<td><code>vendor/httpserver/include/orm_conn_pool.h</code>, <code>vendor/httpserver/src/orm_conn_pool.cpp</code></td>
+</tr>
+<tr>
+<td>RBAC karar zinciri, önbellek bölmeleme/TTL, fail-closed davranışı</td>
+<td><code>libs/rbac/rbac.h</code>, <code>libs/rbac/route_guard.cpp</code>, <code>libs/rbac/route_cache.cpp</code></td>
+</tr>
+<tr>
+<td>OAuth sunucu yapılandırması, belirteç depolama ve denetim</td>
+<td><code>libs/oauth/oauth_config.h</code>, <code>libs/oauth/oauth_store.h</code>, <code>libs/oauth/oauth_audit.h</code>, <code>controller/src/oauth/</code></td>
+</tr>
+<tr>
+<td>Genel OAuth istemcisi ve GitHub'a özgü istemci</td>
+<td><code>libs/oauth_client/oauth_client.h</code>, <code>libs/github/github_oauth.h</code></td>
+</tr>
+<tr>
+<td>Ödeme siparişi durum makinesi, arama uzlaştırması ve uygulama tarafı mantığı</td>
+<td><code>libs/webpay/webpay_order.h</code>, <code>libs/webpay/webpay_wxpayv3.h</code>, <code>vendor/webpay/include/wxpay.h</code></td>
+</tr>
+<tr>
+<td>markdown, pinyin, IP konumu, organizasyon ağacı, görüntü yükleme, JSON yansıma örnekleri</td>
+<td><code>libs/markdown/markdown2html.h</code>, <code>libs/pinyin/hanyu_to_pinyin.h</code>, <code>libs/ipdata/ip_data_obj.h</code>, <code>libs/department/department_type.h</code>, <code>libs/img/upload_images.h</code>, <code>libs/types/json_ref_obj.h</code></td>
+</tr>
+<tr>
+<td>Excel, Word ve PDF yetenekleri</td>
+<td><code>vendor/pzexcel/include/pzexcel.h</code>, <code>vendor/pzword/include/pz_word.h</code>, <code>vendor/webpdf/include/webpdf/webpdf.h</code></td>
+</tr>
+<tr>
+<td>zip, görüntü kodlayıcıları ve glif çizimi, SVG grafikler, SMS, Redis istemcisi</td>
+<td><code>vendor/pzzip/include/pzzip.h</code>, <code>vendor/pzimage/include/pzpng.h</code>, <code>vendor/pzimage/include/ttffont.h</code>, <code>vendor/pzcharts/include/svg_chart.h</code>, <code>vendor/sms/include/sms.h</code>, <code>vendor/pzredis/include/redis_client.h</code></td>
+</tr>
+<tr>
+<td>Uzun ömürlü bağlantı protokol dosyaları ve arka uç kayıt defterleri</td>
+<td><code>vendor/httpserver/src/ws_*.cpp</code>, <code>http_socket*.cpp</code>, <code>mqtt_*.cpp</code>, <code>common/*_regmethod.hpp</code></td>
+</tr>
+<tr>
+<td>Görünüm şablonu üretimi ve <code>.so</code> sıcak yükleme</td>
+<td><code>viewsrc/view/home/header.cpp</code>, <code>vendor/httpserver/src/loadmodule.cpp</code>, <code>vendor/httpserver/src/loadviewso.cpp</code>, <code>vendor/httpserver/src/serverconfig.cpp</code></td>
+</tr>
+<tr>
+<td><code>server.conf</code> önemli maddeleri, eski girdiler ve yol yapılandırması</td>
+<td><code>conf/server.conf</code></td>
+</tr>
+<tr>
+<td>Ek açıklama rotası sözdizimi, hız sınırlama örneği, elle kayıt</td>
+<td><code>controller/src/superadmin/rbac/rbacperm.cpp</code>, <code>controller/src/test_maskcode.cpp</code>, <code>common/reghttpmethod.hpp</code></td>
+</tr>
+<tr>
+<td>Test hedefi kuralları ve mevcut durumlar</td>
+<td><code>tests/CMakeLists.txt</code>, <code>tests/</code></td>
+</tr>
+<tr>
+<td>Kendini denetleme uç noktaları ve arka ofis oturum açma girişleri</td>
+<td><code>controller/src/serverwatch.cpp</code>, <code>controller/src/admin/main.cpp</code>, <code>controller/src/superadmin/supermain.cpp</code></td>
+</tr>
+<tr>
+<td>Daemon/ön plan giriş noktaları</td>
+<td><code>startup/main_daemon.cpp</code>, <code>startup/main_dev.cpp</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+  </body>
+</html>

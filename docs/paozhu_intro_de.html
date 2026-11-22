@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="de" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Paozhu (Firecracker) – Web-Framework-Einführung</title>
+     <style>
+        /* Light mode */
+        body {
+            font-family:'PingFang SC','Helvetica Neue','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC',Sathu,EucrosiaUPC,Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:1.45em;
+        }
+        /* Inline code chip; the shared modern-flat.css sets code backgrounds with !important. */
+        body code{
+            background-color: #eaf0f8 !important;
+            color: #b42318;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent !important;
+            color: inherit;
+            border: 0;
+            border-radius: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        /* Inline code chip; the shared modern-flat.css sets code backgrounds with !important. */
+        body code{
+            background-color: #eaf0f8 !important;
+            color: #b42318;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent !important;
+            color: inherit;
+            border: 0;
+            border-radius: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        body code{
+            background-color: #1c2a3a !important;
+            color: #ffa198;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+      <link rel="stylesheet" href="./styles/modern-flat.css">
+</head>
+  <body>
+  <div class="container">  
+<nav class="lang-nav" aria-label="Language" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0 12px;margin-bottom:14px;border-bottom:1px solid #888;font-size:14px;line-height:1.6;">
+<a href="paozhu_intro.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">中文</a>
+<a href="paozhu_intro_en.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">English</a>
+<a href="paozhu_intro_kr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">한국어</a>
+<a href="paozhu_intro_jp.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">日本語</a>
+<span aria-current="page" style="font-weight:bold;padding:1px 5px;border:1px solid currentColor;border-radius:4px;background:rgba(128,128,128,0.18);">Deutsch</span>
+<a href="paozhu_intro_fr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Français</a>
+<a href="paozhu_intro_tr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Türkçe</a>
+</nav>
+<h1>Paozhu (Firecracker) – Web-Framework</h1>
+<p>Paozhu ist ein in C++ geschriebenes Web-Framework. Quellcode: <a href="https://github.com/hggq/paozhu">https://github.com/hggq/paozhu</a>. Am auffälligsten ist, dass eine einzige ausführbare Datei alles enthält: HTTP/1.1, HTTP/2, WebSocket, rohes TCP, einen MQTT-Client, einen Redis-Client, ORM, Template-Views und statische Datei-Auslieferung laufen im selben Prozess, und nicht benötigte Teile werden über Compile-Time-Schalter entfernt.</p>
+<p>Zunächst das kürzeste Beispiel: Der Handler gibt eine Coroutine-Aufgabe zurück, die Zuweisung an <code>peer-&gt;output</code> ist der Antwortkörper, und die Route wird durch die Kommentarzeile über der Funktion deklariert:</p>
+<p>Nach dem Start des Servers kann <a href="http://localhost/hello">http://localhost/hello</a> im Browser geöffnet werden.</p>
+<pre><code class="language-cpp">#include "httppeer.h"
+#include "testhello.h"
+namespace http
+{
+//@urlpath(null,hello)
+asio::awaitable&lt;std::string&gt; testhello(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    peer-&gt;output = "Hello, world!";
+    co_return "";
+}
+ 
+}// namespace http
+</code></pre>
+<p>Dieses Dokument folgt der Reihenfolge, die eine Person mit erster Berührung des Repositories interessiert: was es ist, wie man es zum Laufen bringt, wie ein Request hindurchläuft, wofür jedes Verzeichnis zuständig ist und wie Konfiguration und Erweiterung funktionieren. Alle Aussagen stammen aus dem Quellbaum dieses Repositories; die Dateien hinter den wichtigsten Aussagen sind im letzten Abschnitt aufgeführt. Einige Module wurden nur über die öffentlichen Header gelesen; auch das ist im letzten Abschnitt vermerkt.</p>
+<h2>1. Was es ist</h2>
+<p>Allein aus der Quellstruktur sind mehrere klare Entwurfsentscheidungen ersichtlich.</p>
+<p><strong>Die Netzwerkschicht baut auf standalone Asio auf.</strong> Der Server hält ein <code>asio::io_context</code> statt einer eigenen Event-Loop, sodass sich die meisten Asio-Konzepte unverändert anschließen lassen.</p>
+<p><strong>I/O und Geschäftslogik sind getrennt.</strong> Die I/O-Threads erledigen nur accept, read und write; synchrone Handler werden in einen eigenen Geschäfts-Thread-Pool, <code>clientrunpool</code>, dispatcht. Blockierender Code in einem Handler belegt also den Geschäfts-Pool, niemals die Netzwerk-Threads.</p>
+<p><strong>I/O-Loops werden nicht zu einer verschmolzen, sondern nach der Kernzahl gruppiert.</strong> Der Prozess besitzt mehrere <code>io_context</code>-Instanzen, jede Verbindung wird per Round-Robin einer davon zugewiesen, und jeder ioc führt mehrere Threads aus. Details stehen in Abschnitt 3.</p>
+<p><strong>Coroutines sind der Einstieg der Routing-Schicht.</strong> Route Matching und Dispatch beginnen bei <code>router::co_resolve</code>; Pre-Handler und Handler haben sowohl synchrone als auch Coroutine-Slots, sodass Geschäftscode beide Stile wählen kann.</p>
+<p><strong>HTTP/2 ist selbst implementiert.</strong> Frame-Parsing, die von HPACK verwendete Huffman-Kodierung, der sende-Ring pro Verbindung, die globale Sendeschlange und die Flusssteuerung liegen alle in diesem Repository und nicht hinter einem Drittanbieter-Wrapper.</p>
+<p><strong>Routen werden in Kommentaren deklariert und beim Kompilieren in eine Registry übersetzt.</strong> Eine Geschäftsfunktion trägt einen <code>//@urlpath(...)</code>-Kommentar; beim Build scannt <code>paozhu_pre</code> ihn und erzeugt die Registry sowie Funktionsdeklarations-Stubs.</p>
+<p><strong>Funktionen werden als ein Bündel geliefert.</strong> ORM, Connection Pool, RBAC, OAuth, Zahlungen, Excel/Word/PDF, Bilder, Kompression, Diagramme, SMS und der Redis-Client liegen alle unter <code>vendor/</code> und <code>libs/</code> im selben Repository. Sie sind standardmäßig aus; die entsprechenden CMake-Optionen in <code>CMakeLists.txt</code> haben den Standardwert <code>OFF</code>.</p>
+<p>Das Repository lässt sich grob in vier Schichten teilen. <code>vendor/httpserver</code> ist das Framework selbst. Die übrigen <code>vendor/</code>-Unterverzeichnisse und <code>libs/</code> sind wiederverwendbare Funktionen. <code>common/</code>, <code>orm/</code>, <code>models/</code> und <code>viewsrc/</code> bilden die Klammer zwischen Framework und Geschäftscode. <code>controller/</code>, <code>view/</code>, <code>www/</code> und <code>module/</code> sind Beispiel-Geschäftscode, der sich komplett löschen lässt. <code>mini_project.sh</code> macht diese Trennung konkret: Es entfernt Demo-Verzeichnisse wie <code>controller/src/admin</code>, <code>github</code> und <code>oauth</code> und lässt nur den Framework-Kern übrig.</p>
+<h2>2. In Betrieb nehmen</h2>
+<h3>Abhängigkeiten und Build</h3>
+<p>Die Abhängigkeiten stehen in <code>vcpkg.json</code>: <code>openssl</code>, <code>brotli</code>, <code>asio</code>, <code>zlib</code>, <code>sqlite3</code> sowie das <code>gd</code>-Feature, das <code>pkgconf</code>, <code>libgd</code>, <code>freetype</code>, <code>libpng</code> und <code>libqrencode</code> mitbringt. Mit vcpkg <code>-DENABLE_VCPKG=ON</code> aktivieren und <code>CMAKE_TOOLCHAIN_FILE</code> übergeben; Einzelheiten stehen in <code>README_CN.md</code>. Für xmake-Freunde liegt außerdem eine <code>xmake.lua</code> bei.</p>
+<p>Ein normaler Build besteht aus drei Schritten:</p>
+<pre><code class="language-bash">cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+./bin/paozhu                 # you can also pass ./bin/paozhu /path/to/server.conf
+</code></pre>
+<p><code>bin/</code> enthält derzeit drei Artefakte: <code>paozhu</code>, <code>paozhu_cli</code> und <code>paozhu_pre</code>. Benchmark-Code erfordert ein explizites <code>-DENABLE_BENCHMARK=ON</code>.</p>
+<p>Der Build erzeugt vier CMake-Ziele: das Hauptprogramm <code>paozhu</code>, das Datenbank-/Modellwerkzeug <code>paozhu_cli</code>, den Annotations-Route-Generator <code>paozhu_pre</code> und <code>paozhu_codegen</code>, das bei jedem Build läuft.</p>
+<p>Die Quellmenge des Hauptprogramms wird aus mehreren Globs zusammengesetzt:</p>
+<pre><code class="language-cmake">set(paozhu_srcs
+  ${common_list} ${viewsrc_list} ${framework_cpps} ${orm_list}
+  ${reflect_list} ${src_list} ${source_list} ${controller_list})
+</code></pre>
+<p><code>reflect_list</code> übernimmt <code>libs/*.cpp</code> rekursiv.</p>
+<h3>Einstiegspunkte</h3>
+<p>Ein Release-Build verwendet <code>startup/main_daemon.cpp</code>, andere Build-Konfigurationen wechseln automatisch auf <code>startup/main_dev.cpp</code>. Die Daemon-Version behandelt <code>argv[1]</code> zunächst als Pfad zu <code>server.conf</code> bzw. als Verzeichnis, das es enthält, und forkt dann in <code>init_daemon()</code>: Das Kind führt <code>get_server_app()</code>, <code>http::rbac::install_route_guard()</code> und <code>httpmy.run(argv_str)</code> aus, während der Elternprozess in <code>wait</code> loopet und das Kind bei <code>SIGCHLD</code> neu startet. Die Vordergrundversion folgt ohne Fork demselben <code>run()</code>-Pfad.</p>
+<p>Innerhalb von <code>run()</code> ist die Reihenfolge: Konfiguration lesen, iocs und Threads erzeugen, accept starten, Routen registrieren, in die Event-Loop gehen.</p>
+<h2>3. Wie ein Request hindurchläuft</h2>
+<h3>Aufteilung der Threads</h3>
+<p>Der Prozess hat vier Klassen von Threads. Die Übersicht:</p>
+<table>
+<thead>
+<tr>
+<th>Thread-Klasse</th>
+<th>Anzahl</th>
+<th>Zuständigkeit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>accept-Threads</td>
+<td>2 (einer für HTTP, einer für SSL)</td>
+<td>blockierendes accept; neue Verbindungen an einen ioc übergeben</td>
+</tr>
+<tr>
+<td>I/O-Threads</td>
+<td>ioc-Anzahl × <code>run()</code>-Threads pro ioc</td>
+<td><code>io_context::run()</code> ausführen; Verbindungs-I/O und Protokoll-Parsing</td>
+</tr>
+<tr>
+<td>Seiten-Threads</td>
+<td>ein <code>httpwatch</code>, <code>http2_send_loop_num</code> HTTP/2-Sender (mindestens 2), ein <code>websocket_loop</code>, ein <code>ratelimiter</code></td>
+<td>periodische Prüfung, Leeren der HTTP/2-Sendeschlange, verbindungsbezogene Ratenbegrenzung</td>
+</tr>
+<tr>
+<td>Geschäfts-Pool</td>
+<td><code>hardware_concurrency() + 2</code></td>
+<td>führt synchrone Handler aus</td>
+</tr>
+</tbody>
+</table>
+<p>Die Zahl der I/O-Threads wird in zwei Stufen berechnet. Die ioc-Anzahl ist <code>min(cothreadnum, hardware_concurrency())</code> und wird auf 4 erhöht, falls sie niedriger liegt; jeder ioc startet dann <code>per_ioc_thread_num</code> <code>run()</code>-Threads. Der Kommentar in <code>conf/server.conf</code> nennt die Formel direkt: <code>cothreadnum * per_ioc_thread_num = threads</code>.</p>
+<p><code>io_contexts[0]</code> hat eine zweite Rolle: Es ist auch das Kompatibilitätsmitglied <code>io_context</code>, und die eigene Timer-Loop des Frameworks, synchrone Verbindungsbeschaffung und <code>client_context</code> bleiben darauf.</p>
+<p>Serialisierung findet nur innerhalb einer Verbindung statt. Eine neue Verbindung wird durch <code>session_ioc_cursor++ % io_contexts.size()</code> einem ioc zugewiesen und bindet ihren eigenen <code>asio::strand</code>, wodurch die Protokollbehandlung dieser Verbindung in Reihenfolge bleibt. Zwischen verschiedenen Verbindungen gibt es diese Ordnung nicht.</p>
+<p>Der <code>httppeer</code>-Pool ist kein Thread, steht hier aber, weil er leicht damit verwechselt wird. <code>acquire_peer()</code> nimmt ein wiederverwendbares Objekt, und wenn die letzte Referenz freigegeben wird, geht es über <code>reset_for_reuse()</code> zurück. Die Obergrenze ist <code>PEER_POOL_MAX = 512</code>, in einem <code>BENCHMARK</code>-Build 4096.</p>
+<p>Eine Verbindung durchläuft vom Eintreffen bis zum Verlassen diese Threads:</p>
+<ol>
+<li>Ein accept-Thread übernimmt sie und übergibt sie einem ioc.</li>
+<li>Von da an laufen Lesen, Schreiben und Protokoll-Parsing auf den <code>run()</code>-Threads dieses ioc, wobei der strand die Verbindung serialisiert.</li>
+<li>Bei einem synchronen Handler wird die Arbeit in den Geschäfts-Pool dispatcht; ein Coroutine-Handler wartet an Ort und Stelle und läuft auf dem ioc-Thread weiter.</li>
+<li>Bei der Ausgabe schreibt HTTP/1.1 der I/O-Thread direkt zurück, HTTP/2 geht an die festen <code>http2_send_queue_loop</code>-Threads, welche die Sendeschlange leeren.</li>
+<li>Seiten-Threads führen nur periodische Prüfung, Ratenbegrenzung und Queue-Leerung durch; Geschäftslogik verarbeiten sie nie.</li>
+</ol>
+<h3>Route Matching und Dispatch</h3>
+<p>Der Hauptpfad von accept bis Antwort sieht so aus:</p>
+<pre><code>accept (side thread)
+  → pick an ioc by round-robin, bind the connection to a strand
+  → parse: HTTP/1.1 via http_parse.cpp, HTTP/2 via http2_parse.cpp
+  → take an httppeer (acquire_peer)
+  → router::co_resolve
+        ├─ exact lookup, then prefix fallback (up to 6 segments)
+        ├─ write the matched mask_code into the peer
+        ├─ annotation-level rate limiting
+        ├─ RBAC hook, only when mask_code is non-zero
+        └─ pre → handler (the synchronous path goes to the business pool; coroutines await in place)
+  → write the response: HTTP/1.1 directly, HTTP/2 through the send queue
+</code></pre>
+<p><code>router.cpp</code> enthält zwei parallele Implementierungen: eine für die synchrone Kette, eine für die Coroutine-Kette in <code>co_resolve</code>. Ein Kommentar in <code>router.h</code> verlangt ausdrücklich, dass die Pre-/Handler-Zweige beider Ketten identisch funktionieren; wer eine ändert, muss die andere ebenfalls ändern.</p>
+<h3>HTTP/1.1- und HTTP/2-Ausgabe</h3>
+<p>HTTP/1.1-Parsing ist selbst implementiert, zentriert um <code>vendor/httpserver/src/http_parse.cpp</code>, unterstützt von <code>request.cpp</code> und <code>httppeer.cpp</code>. Requests und Responses sind seriell, Pipelining gibt es nicht.</p>
+<p>HTTP/2 ist vollständig implementiert; alle Dateien liegen in <code>vendor/httpserver/src/</code>: <code>http2_parse.cpp</code> für Frame-Parsing und Verbindungszustandsmaschine, <code>http2_frame.cpp</code>/<code>http2_define.cpp</code> für Frame-Struktur und Konstanten, <code>http2_huffman.cpp</code> für den von HPACK genutzten Huffman-Codec, <code>http2_ring_queue.cpp</code> für den festen Sende-Ring pro Verbindung, <code>http2_send_queue.cpp</code> für die globale Sendeschlange und <code>http2_flow.h</code> für die Flusssteuerungs-Fenster.</p>
+<p>Einige Entwurfspunkte sind wichtig:</p>
+<ul>
+<li>Jede Verbindung hat einen festen Ring mit 32 Slots, <code>CONST_HTTP2_RING_QUEUE_CAPACITY = 32</code>. Eine Compile-Time-Prüfung verlangt eine Zweierpotenz, die in ein <code>unsigned char</code> passt; <code>head_</code> und <code>tail_</code> sind atomare Indizes, dazu ein separater <code>bytes</code>-Rückstandszähler.</li>
+<li>Sendeobjekte haben eine explizite Zustandsmaschine: <code>own_state</code> sagt, ob sich ein Objekt im Pool, in der globalen Schlange, im thread-privaten Speicher oder geparkt befindet; <code>block_reason</code> hält den Grund der Blockade fest.</li>
+<li>Blockierte Objekte werden nicht wiederholt gepollt. Sie liegen in <code>parked_list</code> und werden durch <code>park()</code> / <code>detach_parked()</code> / <code>reattach_parked()</code> bei drei Ereignisarten wieder eingehängt: Fensteränderung, SETTINGS-Frame oder frei werdender Ring-Slot.</li>
+<li>Ein Stream wird nicht nach gewöhnlichem Leerlauf, sondern nach &quot;120 Sekunden ohne Fortschritt&quot; zurückgesetzt. Die Konstante ist <code>CONST_HTTP2_SEND_NO_PROGRESS_TIMEOUT = 120</code>, die Prüfung liegt in <code>server.cpp</code>.</li>
+<li>Der Schalter ist <code>http2_enable = 1</code> in <code>conf/server.conf</code>.</li>
+</ul>
+<h2>4. Was die Module tun</h2>
+<h3>Framework-Kern: <code>vendor/httpserver</code></h3>
+<p>Dieses Verzeichnis hat <code>include/</code> und <code>src/</code>, unter <code>src/</code> liegen 85 <code>.cpp</code>-Dateien. Die Zuständigkeiten gruppieren sich so:</p>
+<ul>
+<li>Server und Lebenszyklus: <code>server.cpp</code>, <code>serverconfig.cpp</code>, <code>client_context.cpp</code>, <code>resident_stop.cpp</code> — Start, Konfiguration, Thread-Orchestrierung, sauberes Shutdown.</li>
+<li>Verbindungen und Protokolle: <code>http_parse.cpp</code>, <code>http_header.cpp</code>, <code>http_domain.cpp</code>, <code>rpc_parse.cpp</code>, <code>client_session.cpp</code> — HTTP/1.1-Parsing, Host-Routing, RPC-Parsing.</li>
+<li>HTTP/2: die in Abschnitt 3 genannte Dateigruppe.</li>
+<li>Request-Modell: <code>httppeer.cpp</code>, <code>request.cpp</code>, <code>cookie.cpp</code>, <code>session_id.cpp</code>.</li>
+<li>Routing: <code>router.cpp</code>, <code>viewmethold_reg.cpp</code>.</li>
+<li>ORM und Verbindungen: <code>orm_common.cpp</code>, <code>orm_conn_pool.cpp</code>, <code>orm_connect_mar.cpp</code>, <code>orm_query.cpp</code>, <code>mysql_conn.cpp</code>, <code>pg_conn.cpp</code>, <code>sqlite_conn.cpp</code>.</li>
+<li>Thread-Primitives: <code>threadpool.cpp</code>, <code>atomic_count.cpp</code>, <code>atomic_guard.cpp</code>.</li>
+<li>Statische Dateien: <code>file_get_content.cpp</code>, <code>gzip.cpp</code>, <code>https_brotli.cpp</code>, <code>mime.cpp</code>, <code>directory_fun.cpp</code>.</li>
+<li>Langlebige Verbindungen: <code>ws_*.cpp</code>, <code>http_websocket_client.cpp</code>, <code>http_socket*.cpp</code>, <code>mqtt_*.cpp</code>, <code>sock_subpub_reg.cpp</code>.</li>
+<li>Sicherheit und Authentifizierung: <code>jwt.cpp</code>, <code>acme_*.cpp</code>, <code>ocsp_check.cpp</code>, <code>base64.cpp</code>, <code>md5.cpp</code>.</li>
+<li>Hilfsfunktionen: <code>parse_ini.cpp</code>, <code>str_fun.cpp</code>, <code>urlcode.cpp</code>, <code>unicode.cpp</code>, <code>datetime.cpp</code>, <code>qrcode.cpp</code>, <code>send_email.cpp</code>, <code>fastcgi.cpp</code>, <code>loadmodule.cpp</code>, <code>loadviewso.cpp</code>.</li>
+</ul>
+<p>Zwei Header in <code>include/</code> lassen sich leicht falsch lesen. <code>request.h</code> ist eigentlich ein eingebettetes JSON-Mikroobjekt <code>obj_val</code>, keine HTTP-Request-Klasse; der eigentliche Request-/Response-Träger ist <code>httppeer.h</code>. <code>httphook.h</code> bildet zusammen mit <code>common/httphook.cpp</code> die Hook-Schicht, an die Routing, Authentifizierung und Ratenbegrenzung anknüpfen. Außerdem sind <code>orm_cache.hpp</code>, <code>mysqlorm.hpp</code>, <code>postgresqlorm.hpp</code> und <code>sqliteorm.hpp</code> die Template-Fassaden des ORM.</p>
+<h3>Die zwei Generatoren: <code>vendor/httpcli</code></h3>
+<p>Dieses Verzeichnis baut zwei ausführbare Dateien mit völlig unterschiedlichen Aufgaben.</p>
+<p><code>paozhu_pre</code> ist der Annotations-Route-Generator. Seine Quellen sind <code>vendor/httpcli/autopickmethod.cpp</code> und <code>vendor/httpserver/src/md5.cpp</code>. Er scannt Annotationen unter <code>controller/src</code> und schreibt <code>common/autocontrolmethod.hpp</code> sowie <code>controller/include/*.h</code>.</p>
+<p><code>paozhu_cli</code> ist das Datenbank-/Modellwerkzeug. Seine Quellen sind <code>vendor/httpcli/http_cli.cpp</code> sowie ORM-Verbindungs- und Modellquellen. Zu den Funktionen gehören <code>dbcreate</code>, <code>dbconvert</code>, <code>dbschema_check</code>, <code>dbdump_*</code>, <code>templateparse*</code> und <code>struct_reflectfile</code>, deklariert in <code>vendor/httpcli/*.hpp</code>.</p>
+<p>Die <code>.hpp</code>-Dateien unter <code>vendor/httpcli/</code> sind Templates und Parser-Implementierungen der Generatoren: <code>controllerparse.hpp</code>, <code>ccontrollfun.hpp</code>, <code>dbtypes.hpp</code>, <code>modelfun.hpp</code>, <code>templateparse.hpp</code>, <code>typestatement.hpp</code>, <code>utility.hpp</code>.</p>
+<p>Die Generierungskette ist in den Build eingebunden:</p>
+<pre><code>add_custom_target(paozhu_codegen ALL)
+    COMMAND paozhu_pre &lt;source root&gt;
+add_dependencies(paozhu paozhu_codegen)
+</code></pre>
+<p>Bei jedem Build läuft also <code>paozhu_pre</code>, aber es vergleicht Datei-Hashes und mtimes und schreibt nichts, wenn sich nichts geändert hat.</p>
+<h3>Registries und Geschäftsschicht: <code>common</code>, <code>controller</code></h3>
+<p><code>common/</code> enthält 14 Dateien, überwiegend handgeschriebene globale Definitionen und Registries; nur eine ist generiert. <code>autocontrolmethod.hpp</code> ist die von <code>paozhu_pre</code> geschriebene Annotations-Route-Registry, deren Ausgabepfad in <code>vendor/httpcli/autopickmethod.cpp</code> hartcodiert ist. <code>autorestfulpaths.hpp</code> hält Parameternamen für RESTful-Pfade; <code>server.cpp</code> bindet es ein, und <code>mini_project.sh</code> schreibt es beim Anlegen eines neuen Projekts um. <code>cost_define.h</code> enthält globale Konstanten, <code>httphook.cpp</code> implementiert die Hook-Schicht, <code>json_reflect_headers.h</code> bündelt die JSON-Reflections-Header. <code>reghttpmethod.hpp</code> und <code>reghttpmethod_pre.hpp</code> sind die frühen handgeschriebenen Registries (eine <code>REG_SYNC_SYNC</code>-Makroliste, von <code>server.cpp</code> eingebunden). Die übrigen Dateien — <code>mqtt_client_regmethod.hpp</code>, <code>mqtt_method_reg.hpp</code>, <code>redis_regmethod.hpp</code>, <code>sock_client_regmethod.hpp</code>, <code>sockets_method_reg.hpp</code>, <code>websockets_method_reg.hpp</code>, <code>ws_client_regmethod.hpp</code> — sind Registries für die verschiedenen Langlebige-Verbindungs-Backends.</p>
+<p>Die Registrierungsreihenfolge ist wichtig. <code>server.cpp</code> ruft <code>_initauto_all_httputils()</code>, <code>_inithttpmethodregto()</code> und <code>_inithttpmethodregto_pre()</code> in dieser Reihenfolge: generierte Tabelle, handgeschriebene Tabelle, handgeschriebene Pre-Tabelle. <code>reg_add</code> behält die erste Registrierung, daher wird ein handgeschriebener Eintrag für denselben Pfad von der generierten Tabelle überschattet. <code>paozhu_pre</code> weiß das und meldet solche Kollisionen während der Generierung als <code>ROUTE-WARN</code>.</p>
+<p>Die 100 Header unter <code>controller/include/</code> sind generierte Funktionsdeklarations-Stubs, kein handgeschriebener Code. <code>paozhu_pre</code> schreibt sie nur um, wenn sich eine Annotations-Signatur ändert, und entscheidet anhand von md5 und mtime; während configure berührt CMake fehlende Header lediglich mit <code>file(TOUCH)</code> als Platzhalter. Die echten Implementierungen liegen in <code>controller/src/</code>, aufgeteilt nach Geschäftsbereichen: <code>admin/</code>, <code>superadmin/</code> (einschließlich <code>superadmin/rbac/</code>) und <code>rbac/</code> für Backoffice und Berechtigungen; <code>oauth/</code>, <code>oauth_client/</code> und <code>github/</code> für Autorisierung und Login; <code>saas.com/</code> für eine Multi-Tenant-Demo-Seite; <code>serverwatch.cpp</code> für Monitoring-Endpunkte; die vielen <code>test_*.cpp</code> und <code>test*.cpp</code> für Funktionsdemos und Regressionstests (zum Beispiel demonstriert <code>test_maskcode.cpp</code> Annotations-Ratenbegrenzung).</p>
+<h3>Datenschicht: <code>orm</code>, <code>models</code>, <code>schema</code></h3>
+<p><code>orm/orm.h</code> ist der Einstieg. Darunter liegen drei Modell-Domänen — <code>cms/</code>, <code>pg/</code> und <code>lite/</code> — für MySQL, PostgreSQL und SQLite. Die 64 <code>*_base.h</code>-Dateien unter <code>orm/cms/include/</code> werden von <code>paozhu_cli</code> erzeugt; ihre Köpfe enthalten <code>This file is auto create from paozhu_cli</code>. <code>fk_child_opsql.cpp</code> und <code>fk_parent_opsql.cpp</code> sind handgeschriebene Join-Queries. <code>models/</code> enthält das Modellverhalten: Diese <code>.cpp</code>-Dateien werden von <code>paozhu_cli</code> nur einmal erzeugt und danach nie überschrieben — der Dateikopf sagt, dass vorhandene Dateien behalten und fehlende erzeugt werden —, sodass man dort gefahrlos Geschäftslogik schreiben kann. <code>schema/</code> enthält die Tabellen-erzeugenden SQL-Anweisungen.</p>
+<p>Der Connection Pool liegt in <code>vendor/httpserver/src/orm_conn_pool.cpp</code> und <code>include/orm_conn_pool.h</code>. Er ist nach ioc sharded; das globale <code>max_pool</code> wird durch die Anzahl der Shards geteilt, der Rest geht an kleinere Shards, und jedes Shard bekommt mindestens einen Slot (<code>slot_max_of</code> / <code>slot_min_of</code>). Jedes Shard hat ein eigenes Lock, sodass Threads verschiedener iocs nie um dasselbe Lock konkurrieren. Die Konfigurationsschlüssel sind <code>orm_ioc_num</code> und <code>orm_thread_pool_num</code>, Verbindungsparameter stehen in <code>conf/orm.conf</code>. Das ORM bietet außerdem eine Coroutine-Schnittstelle: Queries in <code>orm_connect_mar.cpp</code> und <code>orm_query.cpp</code> lassen sich direkt awaited.</p>
+<h3>Wiederverwendbare Funktionsbibliotheken: <code>libs</code></h3>
+<p><code>libs/</code> hat 11 Unterverzeichnisse, alle handgeschrieben. Beim Build werden sie durch einen rekursiven Glob in <code>CMakeLists.txt</code> in das Hauptziel gezogen, und ihre Header-Verzeichnisse werden rekursiv zum Include-Pfad hinzugefügt.</p>
+<p><code>libs/rbac</code> ist der Kern der Berechtigungsentscheidung. <code>rbac.h</code> bietet <code>load_user_roles</code>, <code>load_role_perms</code>, <code>load_user_grants</code> (sechs Queries in einem Durchgang für Rollen, Berechtigungen, Zuordnungsebenen und Verzeichnisse), <code>user_has_url</code> und <code>user_has_permscode</code>. <code>route_guard.cpp</code> ist der Routen-Hook: Er liefert 401 ohne <code>adminid</code>, 403 ohne <code>companyid</code> und überlässt alles andere dem Cache. <code>allow()</code> in <code>route_cache.cpp</code> cachet nach <code>(adminid, companyid)</code> mit 16 Shards, 4096 Einträgen und 60 Sekunden TTL; beim Laden wird das Shard-Lock für Single-flight gehalten, und ein Ladefehler gilt als fail-closed. <code>route_cache.cpp</code> hat außerdem eine <code>stats()</code>-Funktion ohne Aufrufer.</p>
+<p><code>libs/oauth</code> ist die Serverseite von OAuth, aufgeteilt in <code>oauth_config</code> (liest <code>conf/oauth.conf</code>), <code>oauth_store</code> (Token-Hashing, PKCE-Prüfung, Basic-Client-Authentifizierung) und <code>oauth_audit</code> (Auditierung). <code>audit_log()</code> in <code>oauth_audit</code> schreibt eine Zeile in die Fehlerlog-Queue des Frameworks, und <code>httpwatch</code> hängt sie an <code>log/error.log</code>. Die Endpunkte selbst liegen in <code>controller/src/oauth/</code>: <code>oauth_authorize.cpp</code>, <code>oauth_token.cpp</code>, <code>oauth_introspect.cpp</code>, <code>oauth_revoke.cpp</code>, <code>oauth_jwks.cpp</code>, <code>oauth_metadata.cpp</code>, <code>oauth_userinfo.cpp</code>, <code>oauth_bearerauth.cpp</code>, <code>oauth_client_add.cpp</code>, <code>oauth_purge.cpp</code>.</p>
+<p><code>libs/oauth_client</code> ist ein generischer OAuth-2.x/2.1-Client, der nicht an einen bestimmten Autorisierungsserver gebunden ist: Vier Endpoint-URLs genügen, und er kann mit GitHub, Google oder einem selbst gehosteten oauth-Endpoint sprechen. Er unterstützt PKCE, drei Grants (authorization code, refresh, client_credentials) sowie introspect und revoke. <code>libs/github</code> ist die GitHub-spezifische Variante: Der State besteht aus <code>[adminid, client_id, rand32]</code>, revoke nutzt DELETE + Basic, und an den Scope wird immer <code>read:user</code> angehängt. Enthalten sind außerdem <code>github_api</code>, <code>github_config</code>, <code>github_crypto</code> und <code>github_store</code>.</p>
+<p><code>libs/webpay</code> enthält die anwendungsseitige Zahlungslogik: Bestellungs-Zustandsmaschine (pending/paid/cancelled/refunded), Bestellnummerngenerierung, Nachschlagen über <code>wxorder</code>, asynchrones Nachschlagen und Abrechnungsentscheidungen für WeChat-V3-Antworten sowie Dateien für Callbacks, Zertifikats-Gate, Alipay/WeChat V2/V3, QR-Codes und Tokens.</p>
+<p><code>markdown2html</code> in <code>libs/markdown</code> verarbeitet Blockquotes, Fettung, Links, Überschriften, horizontale Linien, Tabellen, Bilder, einzeilige Durchstreichung, Codeblöcke sowie geordnete/ungeordnete Listen und pflegt Inhaltsverzeichnis und Referenzliste. <code>libs/pinyin</code> wandelt Han-Zeichen anhand von pinyin-data per Binärsuche in Pinyin um. <code>libs/ipdata</code> liest <code>ip.data</code> (ip2region-Format) und bildet eine IP per Binärsuche auf Land/Provinz/Stadt ab. <code>libs/department</code> ist eine Organisationsbaumstruktur mit <code>parentid</code> und <code>children</code>. <code>upload_images</code> in <code>libs/img</code> verarbeitet Bild-, Video-, base64- und Formular-Uploads und listet bereits hochgeladene Dateien. <code>libs/types</code> enthält Beispieltypen für JSON-Reflection einschließlich verschachtelter Objekte und Arrays, um die Reflection-Erzeugung zu demonstrieren.</p>
+<h3>Optionale Funktionsmodule: <code>vendor/*</code></h3>
+<p>Alle diese Module folgen dem Aufbau <code>include/</code> + <code>src/</code> und sind standardmäßig aus. Ihre Quellen werden durch bedingte Globs in <code>CMakeLists.txt</code> zu <code>paozhu_srcs</code> hinzugefügt, und ihre Schalter sind dort zentral geregelt. Unten sind sie nach Wahrscheinlichkeit des Bedarfs in einer echten Anwendung geordnet.</p>
+<p><strong>Dokumente und Tabellen.</strong> Diese Gruppe deckt Backoffice-Report-Export, Excel-Import, erzeugte Verträge oder Benachrichtigungen und das Speichern von Seiten als PDF ab. <code>pzexcel</code> liest und schreibt xlsx, mehrere Blätter und Zellformate. <code>pzword</code> liest und schreibt docx, wandelt zwischen HTML und docx und kann direkt einen Byte-Stream im Speicher ausgeben. <code>webpdf</code> ist die PDF-Engine; der öffentliche Header exponiert <code>HTMLRenderer</code>, und im selben Verzeichnis liegen vier Parser für HTML, CSS, SVG und TTF. <code>ENABLE_OFFICE</code> einschalten, wenn die Anwendung Office-Dokumente importiert oder exportiert, und <code>ENABLE_PDF</code> separat für HTML-zu-PDF.</p>
+<p><strong>Kompression, Bilder und Diagramme.</strong> Für gepackte Downloads oder das Entpacken von Uploads <code>pzzip</code> verwenden; es kann ein zip direkt in einen Speicherpuffer schreiben, ohne eine temporäre Datei zu berühren. Für Captchas und gewöhnliche Bildverarbeitung <code>pzimage</code> verwenden; es bündelt PNG/JPEG-Codecs und kann Glyphen aus TrueType/OpenType-Konturen zeichnen. Für Diagramme in Report-Seiten <code>pzcharts</code> verwenden; es erzeugt direkt SVG und deckt Linien-, geglättete Linien-, Balken-, Streu-, Donut-, Radar-, Mess- und Trichterdiagramme ab. Die drei Schalter sind unabhängig, also nur tatsächlich genutzte Funktionen aktivieren.</p>
+<p><strong>Zahlungen und SMS.</strong> Wenn ein Transaktionsablauf nötig ist, <code>vendor/webpay</code> verwenden; es umschließt die WeChat/Alipay-SDKs und übernimmt Details wie V3-Zertifikate, Plattformzertifikate und Refund-Idempotenzschlüssel. Die anwendungsseitige Logik (Bestellungs-Zustandsmaschine, Callbacks, Zertifikats-Gate) liegt, wie oben im <code>libs</code>-Abschnitt beschrieben, in <code>libs/webpay</code>. Für Verifizierungscodes oder Benachrichtigungen <code>sms</code> verwenden; es enthält Alibaba-Cloud- und Tencent-Cloud-Clients. Entsprechend <code>ENABLE_WEBPAY</code> und <code>ENABLE_SMS</code>.</p>
+<p><strong>Caching und Sonstiges.</strong> <code>pzredis</code> ist ein Redis-Client. <code>redis_client</code> hält keine Verbindung: Jeder Befehl leiht eine aus einem Konfigurationsabschnitt und gibt sie danach zurück, mit synchroner und Coroutine-API. Für Caching, verteilte Locks oder pub/sub <code>ENABLE_REDIS</code> aktivieren. Der Redis-Langverbindungs-Client auf Framework-Ebene ist ein eigener Schalter, <code>ENABLE_REDIS_CLIENT</code>, der zusätzlich <code>ENABLE_REDIS</code> erfordert; anderenfalls bricht configure sofort ab.</p>
+<table>
+<thead>
+<tr>
+<th>Komponente</th>
+<th>CMake-Option</th>
+<th>Funktion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vendor/pzexcel</code></td>
+<td><code>ENABLE_OFFICE</code></td>
+<td>xlsx lesen/schreiben, mehrere Blätter, Zellwerte und Schrift-/Rahmen-/Füll-/Ausrichtungsformate</td>
+</tr>
+<tr>
+<td><code>vendor/pzword</code></td>
+<td><code>ENABLE_OFFICE</code></td>
+<td>docx lesen/schreiben, HTML↔docx-Konvertierung, Byte-Stream-Ausgabe im Speicher</td>
+</tr>
+<tr>
+<td><code>vendor/webpdf</code></td>
+<td><code>ENABLE_PDF</code></td>
+<td>PDF-Rendering, <code>HTMLRenderer</code> plus HTML/CSS/SVG/TTF-Parser</td>
+</tr>
+<tr>
+<td><code>vendor/pzzip</code></td>
+<td><code>ENABLE_ZIP</code></td>
+<td>zip lesen/schreiben, direkte Ausgabe in einen Speicherpuffer</td>
+</tr>
+<tr>
+<td><code>vendor/pzimage</code></td>
+<td><code>ENABLE_IMAGE</code></td>
+<td>PNG/JPEG-Codecs, Zeichnen von TrueType/OpenType-Glyphenkonturen</td>
+</tr>
+<tr>
+<td><code>vendor/pzcharts</code></td>
+<td><code>ENABLE_CHART</code></td>
+<td>SVG-Diagramme: Linie, Balken, Streuung, Donut, Radar, Mess, Trichter</td>
+</tr>
+<tr>
+<td><code>vendor/webpay</code></td>
+<td><code>ENABLE_WEBPAY</code></td>
+<td>WeChat/Alipay-SDK-Wrapper, inklusive V3-Zertifikate, Plattformzertifikate und Refund-Idempotenzschlüssel</td>
+</tr>
+<tr>
+<td><code>vendor/sms</code></td>
+<td><code>ENABLE_SMS</code></td>
+<td>Alibaba-Cloud- und Tencent-Cloud-SMS-Clients</td>
+</tr>
+<tr>
+<td><code>vendor/pzredis</code></td>
+<td><code>ENABLE_REDIS</code></td>
+<td>Redis-Client, der Verbindungen pro Konfigurationsabschnitt leiht und zurückgibt, mit sync- und Coroutine-APIs</td>
+</tr>
+</tbody>
+</table>
+<p>Eine Abhängigkeit ist erwähnenswert: <code>ENABLE_OFFICE</code> schaltet automatisch <code>ENABLE_ZIP</code> ein, weil <code>pzword</code> beim Packen von docx <code>pz::zip</code> verwendet.</p>
+<h3>Langlebige Verbindungen</h3>
+<p>Das Repository enthält vier eigenständige Verzeichnisse — <code>websockets/</code>, <code>sockets/</code>, <code>mqtt/</code> und <code>redis/</code> —, die vor allem Demo-Seiten und Beispiele sind. Die eigentlichen Protokollimplementierungen liegen in <code>vendor/httpserver/src/</code>: WebSocket in <code>ws_conn.cpp</code>, <code>ws_handshake.cpp</code>, <code>ws_parser.cpp</code>, <code>ws_wire.cpp</code>, <code>websockets_callback.cpp</code>; rohes TCP in <code>http_socket.cpp</code>, <code>http_socket_client.cpp</code>, <code>sock_subpub_reg.cpp</code>; MQTT in <code>mqtt_frame.cpp</code>, <code>mqtt_session.cpp</code>, <code>mqtt_reg.cpp</code>, <code>mqtt_subpub_reg.cpp</code>, <code>http_mqtt_client.cpp</code>; die Redis-Langverbindung in <code>http_rpcclient.cpp</code> sowie der Client in <code>vendor/pzredis</code>. Die Schalter sind <code>ENABLE_WEBSOCKETS_CLIENT</code>, <code>ENABLE_SOCKETS_CLIENT</code>, <code>ENABLE_MQTT_CLIENT</code> (standardmäßig an) und <code>ENABLE_REDIS_CLIENT</code> (standardmäßig aus und <code>ENABLE_REDIS</code> erfordernd). Die anwendungsseitigen Registries sind die <code>*_regmethod.hpp</code>-Gruppe in <code>common/</code>.</p>
+<h3>Views, statische Dateien und <code>.so</code>-Hot-Loading</h3>
+<p><code>view/</code> enthält handgeschriebene HTML-Templates, nach Geschäftsbereichen aufgeteilt in <code>home/</code>, <code>admin/</code>, <code>cms/</code>, <code>login/</code>, <code>oauth/</code>, <code>superadmin/</code> und andere. <code>viewsrc/include/viewsrc.h</code> und <code>viewsrc/include/regviewmethod.hpp</code> sind die handgeschriebenen Registrierungs-Einstiegspunkte. <code>viewsrc/view/**.cpp</code> ist vom Template-Parser erzeugtes C++ — die Dateien tragen den Kopf <code>//This file create by paozhu</code> (siehe <code>viewsrc/view/home/header.cpp</code>) — und enthalten derzeit <code>home/header.cpp</code>, <code>oauth/consent.cpp</code>, <code>oauth_client/page.cpp</code>, <code>superadmin/*.cpp</code> und andere. Der Parser liegt in <code>vendor/httpcli/templateparse.hpp</code>.</p>
+<p><code>www/default/</code> ist das Wurzelverzeichnis der statischen Seite, konfiguriert durch <code>wwwpath = ./www/default</code>.</p>
+<p><code>module/</code> ist das Verzeichnis für gemeinsam genutzte Bibliotheken mit <code>module/controller/testviewso.so</code> und <code>module/view/{admin,cms,home,login}/*.so</code>. Jeder Schalter gehört zu einer Seite: <code>ENABLE_VIEWSO</code> nutzt <code>viewsopath</code> für <code>module/view</code>, <code>ENABLE_MODELSO</code> nutzt <code>controlsopath</code> für <code>module/controller</code>. Die Ladelogik liegt in <code>loadmodule.cpp</code> und <code>loadviewso.cpp</code>; sie öffnet <code>.so</code>-Dateien mit <code>pz::dll::library</code> und hält das Bibliothekshandle zusammen mit dem gecachten Funktionszeiger, damit der Zeiger nach <code>dlclose</code> nicht ungültig wird.</p>
+<h2>5. Konfiguration und Erweiterung</h2>
+<h3>Wo die Konfigurationsdateien liegen</h3>
+<p><code>conf/</code> ist nach Subsystemen aufgeteilt: <code>server.conf</code>, <code>orm.conf</code>, <code>redis.conf</code>, <code>mqtt.conf</code>, <code>sockets.conf</code>, <code>websockets.conf</code>, <code>oauth.conf</code>, <code>webpay.conf</code>, <code>acme.conf</code>, <code>github.conf</code>, <code>test.conf</code> sowie Zertifikats- und Schlüsseldateien. Die drei, die man am häufigsten anfasst, sind <code>server.conf</code> für Prozess und Sites, <code>orm.conf</code> für Datenbankverbindungen und <code>acme.conf</code> für automatische Zertifikatsausstellung. Die übrigen sind nur relevant, wenn das jeweilige Subsystem aktiviert ist.</p>
+<h3><code>server.conf</code></h3>
+<p>Die Hauptkonfiguration, beim Start einmal gelesen. Sie besteht aus einem globalen Abschnitt <code>[default]</code> und einer beliebigen Zahl von Site-Abschnitten, die nach Hosts benannt sind (die Datei verwendet <code>[www.hggq.com]</code>). Ein Site-Abschnitt kann <code>wwwpath</code>, <code>http2_enable</code>, <code>acme_auto</code>, <code>upload_max_size</code>, <code>cors_domain</code>, <code>static_pre</code>, <code>fastcgi_host</code>, <code>fastcgi_port</code>, <code>siteid</code> und <code>groupid</code> überschreiben. Hier werden Ports geändert, Threads abgestimmt, das Upload-Limit erhöht, statisches Caching umgeschaltet, Ratenbegrenzung aktiviert und Zertifikatserneuerung eingeschaltet. Die Datei folgt wörtlich:</p>
+<pre><code>[default]
+threadmax                  = 1024
+threadmin                  = 5
+httpport                   = 80
+httpsport                  = 443
+bmcport                    = 7755 ;Baseboard Management Controller
+cothreadnum                = 4 ;Coroutines run on thread num
+per_ioc_thread_num         = 4 ;per io_context run thread num, cothreadnum * per_ioc_thread_num = threads, 4 * 4 = 16 threads
+orm_ioc_num                = 4 ;ORM io_context num;
+orm_thread_pool_num        = 4 ;0 use hardware_concurrency()
+http2_send_loop_num        = 2 ; 
+
+http2_enable               = 1
+debug_enable               = 1
+deamon_enable              = 0
+ip6_listen_enable          = 1
+
+mainhost                   = www.hggq.com
+certificate_chain_file     = www.hggq.com.pem
+private_key_file           = www.hggq.com.key
+tmp_dh_file                = dh4096.pem
+chain_crt_file             = www.hggq.com.crt
+reboot_password            = e10adc3949ba59abbe56e057f20f883e ;md5(md5("123456")+"rand_char"+md5("123456"))
+reboot_cron                = d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week
+clean_cron                 = m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+temp_clean_time            = 86400 ;seconds(3600*24); every N seconds httpwatch scans temp folder, remove pzraw_/pzup_ files modified more than N seconds ago (60-604800)
+links_restart_process      = n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+session_type               = 1 ;session save type 0.file 1.memory 2.redis 3.memcache 4.reserve
+static_file_compress_cache = 1 ;1 enable, Cache static file compress(gzip,br) content to cache directory
+resident_client_show       = 0 ;1 enable /resident_stop self-check route for resident outbound clients (redis,ws,sock,mqtt), effective at startup only
+
+rate_limit_status          = 0 ; 1 enable Traffic limiting
+rate_limit_new_wait_num    = 300 ; level 1, start rate-limiting at N connections
+rate_limit_accept_wait_num = 600 ; level 2, maximum rate-limit severity (interpolation upper bound)
+rate_limit_second_num1     = 20  ; pass per second at low load
+rate_limit_second_num2     = 5   ; pass per second at high load
+
+modelspath                 = ./models
+serverpath                 = ./
+viewpath                   = ./view
+viewsopath                 = ./module/view
+
+controlpath                = ./controller
+controlsopath              = ./module/controller
+
+temppath                   = ./temp
+logpath                    = ./log
+wwwpath                    = ./www/default
+pluginspath                = ./plugins
+libspath                   = ./libs
+directorylist              = 1
+index                      = index.html
+;html cache: 带点 url 先看盘上那个文件，没过期就发文件，过期才交给同名注册路由重生成
+;非空即开，关掉请注释掉整行；其余域名段可以各写一份覆盖这里
+usehtmlcache               = 1
+usehtmlcachetime           = 3600 ;seconds 缓存文件放多久算过期，下限 10 秒
+
+acme_auto                  = 0 ;acme automatically applies for SSL certificates, 1 自动更新SSL证书
+acme_every_day             = 7 ;What time does acme run every day, 每天几点运行一次，如果有证书需要就更新
+acme_every_num             = 5 ;How many domain names are processed at a time, 每次处理几个域名
+ocsp_intv_time             = 14400 ;OCSP update interval second(14400 * 5, may be set 3600), OCSP 更新时间间隔 至少4小时
+
+staticfile_cache_num       = 0 ;0 not cache, min 10 begin
+rewrite_404                = 0 ;1 file 2 action url path
+rewrite_404_action         = index.html
+method_pre                 = 
+method_after               = 
+show_visitinfo             = 0
+upload_max_size            = 16777216
+siteid                     = 1
+groupid                    = 0
+alias_domain               = 
+init_func                  = 
+;cors_domain CORS whitelist, comma-separated; only when the request Origin matches will the corresponding ACAO be echoed and Vary: Origin be added
+;  not written / written empty  → deny by default: this site sends no CORS headers at all (logs [CORS-WARN] naming it at startup)
+;  *                   → explicitly allow all cross-origin (echo * for any origin)
+;  when a whitelist is written in this section, sites without their own cors_domain inherit this section's list
+;  cors_expose_headers response headers that page JS is allowed to read during cross-origin, if not written the header is not sent
+;  cors_domain 实际上是白名单列表，允许那些域名通行
+cors_domain                =
+;cors_expose_headers        = x-request-id, x-total-count
+;cors_credentials whether cross-origin is allowed to carry credentials (cookie / HTTP auth); 1 or starting with T means on, default off
+;  when enabled, only responses that hit the whitelist and echo a specific Origin in ACAO carry Access-Control-Allow-Credentials: true
+;  sites that allow all (ACAO is *) do not send this header even if set to 1: per spec, "*"+credentials are mutually exclusive and browsers will hard-reject
+;  this header only solves "allowed to carry": for cookies to be sent cross-site it must also be HTTPS, and the cookie itself must have SameSite=None
+;  after setting 1 the framework will also write the session cookie as SameSite=None; Secure (HTTPS requests only; not sent in plaintext,
+;  because browsers drop Secure cookies in plaintext, which would break the login state in local http dev environments)
+;cors_credentials            = 0
+;cors_allow_methods cross-origin methods allowed in preflight (Access-Control-Allow-Methods), comma-separated
+;  not writing this line → use the framework default POST, GET, OPTIONS, QUERY (QUERY is the read-only query method of the METHOD-QUERY draft)
+;  writing the whole list overrides: both the response header and the validation of Access-Control-Request-Method use this list
+;  writing empty → this site's preflight allows no methods (Allow-Methods is not sent either, cross-origin write operations will be blocked by the browser)
+;  comparison is case-insensitive, output is uniformly converted to uppercase
+; cors_allow_methods 是OPTIONS查询返回的能力
+;cors_allow_methods           = POST, GET, OPTIONS, QUERY
+
+[www.hggq.com]
+wwwpath                    = ./www/default
+http2_enable               = 1
+acme_auto                  = 0
+;rewrite_404=1
+;rewrite_404_action=index.html|psy/index.html|exam/index.html
+;controlsopath=./controller
+static_pre                 = downloadfileauth|upload
+method_pre                 =  ;api/dev/hostcors
+method_after               = 
+isuse_php                  = 0
+rewrite_php                = ./www/mpdftest|index.php
+fastcgi_host               = 127.0.0.1 ;/run/php/php8.1-fpm.sock
+fastcgi_port               = 9000
+upload_max_size            = 16777216
+siteid                     = 1
+groupid                    = 0
+alias_domain               = 
+init_func                  = 
+;cors_domain CORS whitelist, comma-separated; only when the request Origin matches will the corresponding ACAO be echoed and Vary: Origin be added
+;  *                           allow all, echo * for any origin
+;  https://www.hggq.com        if a full origin is written it is matched as-is (non-standard ports must be written in full)
+;  www.hggq.com,www.hggq.net   domain only, automatically matches both http:// and https:// schemes
+;  not writing this line               → inherit [default]'s whitelist; writing empty makes this site exit inheritance and deny by default
+;  before entering the list: uniformly lowercase, strip trailing slash, remove default port matching the scheme (:80 / :443)
+cors_domain                = www.hggq.com, www.hggq.net
+;cors_expose_headers response headers that page JS is allowed to read during cross-origin (Access-Control-Expose-Headers)
+;  if not written the header is not sent; list as needed, e.g.: x-request-id, x-total-count
+;  writing * means expose all response headers (not recommended: internal response headers would also be exposed to page scripts)
+;cors_expose_headers        =
+;cors_credentials whether cross-origin is allowed to carry credentials (cookie / HTTP auth), 1 on 0 off
+;  not writing this line → inherit [default]; writing 0 is this site explicitly disabling it, it will not follow [default]'s 1
+;  only sent when ACAO echoes a specific Origin (whitelist hit); for mutual exclusion rules see the same-named item in the [default] section
+;cors_credentials            = 0
+;cors_allow_methods cross-origin methods allowed in preflight, comma-separated
+;  not writing this line → inherit [default]; writing the whole list overrides this site's list (response header and preflight validation share the same source)
+;  writing empty → this site's preflight allows no methods; for the default four items and other notes see the same-named item in the [default] section
+;cors_allow_methods           = POST, GET, OPTIONS, QUERY
+</code></pre>
+<p>Drei Thread-Einstellungen wirken zusammen. <code>cothreadnum</code> ist die Obergrenze für die ioc-Anzahl; die tatsächliche Zahl ist <code>min(cothreadnum, Kernzahl)</code> und wird auf 4 erhöht, falls niedriger. <code>per_ioc_thread_num</code> ist die Anzahl <code>run()</code>-Threads pro ioc, und das Produkt ist die gesamte I/O-Thread-Zahl. <code>orm_thread_pool_num</code> ist die gesamte ORM-Thread-Zahl; 0 bedeutet <code>hardware_concurrency()</code>, begrenzt auf 512, verteilt auf <code>orm_ioc_num</code> iocs, wobei der Rest an iocs mit niedrigerem Index geht.</p>
+<p>Einige Werte liest man leicht falsch herum. <code>upload_max_size</code> ist in Bytes; der Vorlagenwert 16777216 sind 16 MiB, die Grenze greift nur über 1024, und 0 oder leer bedeutet unbegrenzt, mit Site-übergreifenden Überschreibungen. Bei <code>usehtmlcache</code> bedeutet leer oder ein mit 0 beginnender Wert aus, jeder andere nicht leere Wert ein; <code>usehtmlcachetime</code> unter 10 Sekunden wird als 10 behandelt. <code>rate_limit_second_num2</code> muss strikt kleiner als <code>rate_limit_second_num1</code> sein und <code>rate_limit_accept_wait_num</code> muss <code>rate_limit_new_wait_num</code> um mehr als 100 übersteigen, sonst wird er auf das Doppelte zurückgesetzt. <code>session_type</code> ist 0 Datei / 1 Speicher / 2 Redis / 3 Memcache / 4 reserviert. <code>acme_every_day</code> akzeptiert 2–23, und <code>ocsp_intv_time</code> unter 3600 Sekunden wird als 3600 behandelt.</p>
+<p>Eine weitere Gruppe von Schlüsseln hat im C++-Code dieses Repositories keine Lesestelle. Sie bleiben aus historischen Gründen in der Datei, man darf also nicht annehmen, dass sie noch konfiguriert werden müssen: <code>threadmax</code>, <code>threadmin</code>, <code>bmcport</code>, <code>staticfile_cache_num</code>, <code>modelspath</code>, <code>viewpath</code>, <code>controlpath</code>, <code>libspath</code>, <code>pluginspath</code>. Die Kommentare beschreiben <code>bmcport</code> als Verwaltungs- und Überwachungsport und <code>staticfile_cache_num</code> als Anzahl der Cache-Einträge, aber für beide gibt es zur Laufzeit keinen Leser.</p>
+<h3><code>orm.conf</code></h3>
+<p>Diese Datei verwaltet Datenbankverbindungen. Sie ist im INI-Format; der Abschnittsname ist das Datenbank-Tag (die Datei enthält <code>[default]</code>, <code>[docs]</code>, <code>[cms]</code>, <code>[pg]</code> und <code>[lite]</code>). Jeder Abschnitt kann mehrere durch Leerzeilen getrennte Verbindungsblöcke enthalten, unterschieden nach <code>type</code>: <code>type = main</code> ist die Änderungs-/Schreibverbindung, <code>type = second</code> die Abfrage-/Nur-Lese-Verbindung. Die beiden Blöcke unter einem Tag speisen getrennte Connection Pools. Die Datei folgt wörtlich:</p>
+<pre><code>[default]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = benchmarkdbuser
+password = benchmarkdbpass
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+#ssl=ON
+#sslverify=ON                    ; Verify the certificate chain 校验证书链（配合系统 CA / SSL_CERT_FILE）
+#sslhost=db.example.com          ; Certificate domain (SNI + hostname check); when empty both fall back to host. SNI is always sent regardless of sslverify; the hostname check only runs when sslverify=ON 证书域名（SNI + 域名校验），为空则两者都用 host 兜底；域名校验只在 sslverify=ON 时执行
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = benchmarkdbuser
+password = benchmarkdbpass
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+#ssl=ON
+#sslverify=ON
+#sslhost=db.example.com
+
+[docs]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = paozhu_docs
+user     = root
+password = 12345678
+pretable = web_
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = paozhu_docs
+user     = root
+password = 12345678
+pretable = web_
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+
+[cms]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+
+[pg]
+type     = main
+host     = 127.0.0.1
+port     = 5432
+dbname   = hello_world
+user     = hello
+password = 12345678
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = postgresql
+charset  = utf8
+#ssl=ON
+#sslverify=ON                    ; 校验证书链（配合系统 CA / SSL_CERT_FILE）
+#sslhost=db.example.com          ; 证书域名（SNI + 域名校验），为空则两者都用 host 兜底（host 为 IP 时域名校验比证书的 iPAddress SAN）；SNI 不受 sslverify 开关影响总会发，域名校验只在 sslverify=ON 时执行
+
+type     = second
+host     = 127.0.0.1
+port     = 5432
+dbname   = hello_world
+user     = hello
+password = 12345678
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = postgresql
+charset  = utf8
+#ssl=ON
+#sslverify=ON
+#sslhost=db.example.com
+
+[lite]
+type     = main
+host     = /Users/hzq/paozhu/docs/sqlite_lite.db
+port     =
+dbname   = lite
+user     =
+password =
+pretable =
+minpool  = 1
+maxpool  = 5
+dbtype   = sqlite
+charset  = utf8mb4
+
+type     = second
+host     = /Users/hzq/paozhu/docs/sqlite_lite.db
+port     =
+dbname   = lite
+user     =
+password =
+pretable =
+minpool  = 1
+maxpool  = 5
+dbtype   = sqlite
+charset  = utf8mb4
+</code></pre>
+<p><code>maxpool</code> und <code>minpool</code> werden asymmetrisch aufgeteilt, was leicht missverstanden wird. Der Pool ist nach ioc gesharded, die Slot-Anzahl entspricht <code>orm_ioc_num</code>. <code>maxpool</code> ist ein globales Budget für alle Slots dieser Rolle, kein Slot-Kontingent: <code>maxpool / Slot-Anzahl</code> berechnen, den Rest einzeln an die niedrigst indexierten Slots verteilen und jedem Slot mindestens 1 geben — zum Beispiel <code>maxpool = 20</code> bei 4 Slots ergibt 5 pro Slot, <code>maxpool = 10</code> bei 3 Slots ergibt 4/3/3. <code>minpool</code> wird nicht geteilt: Jeder Slot baut vorab <code>minpool</code> Verbindungen, begrenzt durch sein eigenes Kontingent, sodass bei <code>maxpool = 5</code> und 4 Slots die Kontingente 2/1/1/1 sind und <code>minpool = 5</code> ebenfalls nur 2/1/1/1 ergibt.</p>
+<p>Zwei weitere Punkte. <code>password</code> darf nur druckbares ASCII 0x21–0x7E enthalten; ein Block mit Leerzeichen, Steuerzeichen oder Nicht-ASCII wird übersprungen und als Fehler protokolliert. Bei SQLite gehört der Pfad zur Datenbankdatei in <code>host</code>, während <code>port</code>, <code>dbname</code> und Zugangsdaten leer bleiben; <code>ssl</code>, <code>sslverify</code> und <code>sslhost</code> gelten nur für MySQL und PostgreSQL.</p>
+<h3><code>acme.conf</code></h3>
+<p>Diese Datei steuert die automatische Zertifikatsausstellung. Standardmäßig zielt sie auf ZeroSSLs ACME-Endpunkte und nutzt HTTP-01-Validierung. Die Datei folgt wörtlich:</p>
+<pre><code>[info]
+acme_path  = ./acme ;/Users/hzq/paozhu/acme ;项目目录下acme 目录，存放申请中间文件 The "acme" directory under the project directory stores intermediate application files
+cert_path  = ./conf ;/usr/local/etc/paozhu ;域名证书存放 Storage of domain name certificate
+email      = ;必须设置邮箱才能生效，Email must be set to take effect server.conf 相应的域名下 acme_auto=1 才能自动 
+days_remain= 10 ;剩余多少天才更新SSL证书
+
+[zerossl]
+server_url = https://acme.zerossl.com/v2/DV90
+eab_api    = https://api.zerossl.com/acme/eab-credentials-email
+eab_kid	=
+eab_hmac_key =
+email      = 
+user_name  =
+user_pwd   =
+</code></pre>
+<p>Die Ausstellung läuft nur, wenn beide Bedingungen gelten: Die Site hat <code>acme_auto = 1</code> in <code>server.conf</code>, und <code>email</code> hier ist nicht leer. Ohne E-Mail kehrt die Aufgabe sofort zurück und schreibt nur eine Zeile unter <code>log/acme_log/</code>. Auch wenn <code>cert_path</code> auf <code>./conf</code> gesetzt ist, kopiert der aktuelle Code Zertifikate tatsächlich in das Verzeichnis, das <code>server.conf</code> enthält; der Wert wird gelesen, beeinflusst aber nicht das Kopierziel.</p>
+<p>Der Ablauf wird täglich aus <code>httpwatch</code> gesteuert: <code>acme_every_day</code> bestimmt die Stunde, die vorherige Stunde setzt das Tagesflag, und zur vollen Stunde startet ein losgelöster Thread <code>acme_task</code>. Die Aufgabe geht die Sites durch, prüft <code>acme_auto</code>, bildet die Primär- und <code>www</code>-Domains und liest die Restgültigkeit von <code>acme_path/&lt;primary_domain&gt;/cert.pem</code>; übersteigt sie <code>days_remain</code>, wird die Site übersprungen. Andernfalls durchläuft die Aufgabe ACME-Konto, Bestellung, HTTP-01-Validierung, CSR und finalize und schreibt <code>privkey.pem</code>, <code>cert.pem</code> und <code>fullchain.pem</code> unter <code>acme_path/&lt;primary_domain&gt;/</code>. Bei Erfolg kopiert sie <code>fullchain.pem</code> nach <code>conf/&lt;primary_domain&gt;.pem</code>, <code>privkey.pem</code> nach <code>conf/&lt;primary_domain&gt;.key</code> und <code>cert.pem</code> nach <code>conf/&lt;primary_domain&gt;.crt</code> und schreibt <code>restart_ssl_config</code>, damit die SSL-Konfiguration neu geladen wird. Die Einträge <code>certificate_chain_file</code>, <code>private_key_file</code> und <code>chain_crt_file</code> in <code>server.conf</code> verwenden genau diese Dateinamen, relativ zum Verzeichnis von <code>server.conf</code> aufgelöst.</p>
+<h3>Annotations-Routen schreiben</h3>
+<p>Routen werden im Kommentar über einer Geschäftsfunktion deklariert, in der Form <code>//@urlpath(pre, urlpath)</code>, optional mit <code>:mask</code>-Suffix zur Unterscheidung der HTTP-Methoden:</p>
+<pre><code class="language-cpp">//@urlpath(superadmin_islogin,superadmin/rbac/perm)
+std::string superadmin_rbac_perm_list(std::shared_ptr&lt;httppeer&gt; peer)
+</code></pre>
+<p>Dieses Beispiel stammt aus <code>controller/src/superadmin/rbac/rbacperm.cpp</code>.</p>
+<p>Nach dem Scan erzeugt <code>paozhu_pre</code> Einträge der Form <code>reg_raw(site, path, pre_sync, co_pre, reg_sync, co_reg, mask_code)</code>, die in <code>common/autocontrolmethod.hpp</code> landen. Ein Pfad mit <code>:param</code> registriert die Parameternamen zusätzlich in <code>common/autorestfulpaths.hpp</code>. Annotationen können auch Ratenbegrenzungsparameter tragen: <code>//@urlpath(...):ratelimit(time,num)</code>; ein Beispiel steht in <code>controller/src/test_maskcode.cpp</code>, und die geparsten Werte gehen in <code>rate_time</code> und <code>rate_num</code> des Routeneintrags.</p>
+<p>Wer keine Annotationen möchte, findet in <code>common/reghttpmethod.hpp</code> die rein handgeschriebene Registrierungsform <code>REG_SYNC_SYNC</code>, einschließlich eines Inline-Lambdas für <code>/helloworld</code>. Deren Registrierungen kommen jedoch nach der generierten Tabelle, sodass ein gleichnamiger Pfad vom generierten Eintrag überschattet wird. Geeignet für vorübergehende Versuche, nicht für Produktions-Endpunkte.</p>
+<h3>Einen Endpunkt hinzufügen</h3>
+<p>Der normale Weg ist kurz: Eine passende Datei unter <code>controller/src/</code> wählen, die Funktion mit Annotation schreiben und bauen. Während des Builds führt <code>paozhu_codegen</code> <code>paozhu_pre</code> aus, das die Deklarations-Stubs in <code>controller/include/</code> und die Registry-Einträge in <code>common/autocontrolmethod.hpp</code> aktualisiert; beim Prozessstart wird die generierte Tabelle registriert, und der Request kann der Route zugeordnet werden.</p>
+<p>Braucht der Endpunkt Ratenbegrenzung, <code>ratelimit(time,num)</code> hinter die Annotation setzen. Braucht er RBAC, der Route einen von 0 verschiedenen <code>mask_code</code> geben und in der Berechtigungstabelle eine Autorisierungszeile mit identischem <code>urlpath</code> und <code>maskcode</code> ergänzen — ein Kommentar in <code>libs/rbac/rbac.h</code> erklärt, dass die Prüfung eine exakte Übereinstimmung der maskcode der Route mit einer der wirksamen Berechtigungen des Benutzers verlangt.</p>
+<h3><code>.so</code> zur Laufzeit laden</h3>
+<p>Wenn <code>ENABLE_VIEWSO</code> oder <code>ENABLE_MODELSO</code> beim Kompilieren aktiviert ist, lassen sich die <code>.so</code>-Dateien unter <code>module/view</code> und <code>module/controller</code> zur Laufzeit laden. Die View-Einstiegspunkte sind <code>loadview</code> / <code>loadviewso</code>, der Controller-Einstiegspunkt liegt in <code>loadmodule.cpp</code>. <code>viewsopath</code> und <code>controlsopath</code> in der Konfiguration auf die entsprechenden Verzeichnisse richten. Dateien unter <code>module/</code> sind Build-Artefakte oder manuell bereitgestellte Shared Libraries, kein Quellcode.</p>
+<h2>6. Tests und Selbstprüfung</h2>
+<p>Tests werden standardmäßig nicht gebaut und nur mit <code>-DENABLE_TESTS=ON</code> einbezogen. Die Konvention in <code>tests/CMakeLists.txt</code> ist, für jedes <code>tests/*.cpp</code> und <code>tests/orm/*.cpp</code> ein gleichnamiges ausführbares Ziel zu erzeugen, mit <code>pool_thread</code> als Ausnahme. Vorhandene Fälle sind <code>test_framework_smoke.cpp</code> (Framework-Smoke-Test), <code>test_http2_ring_queue.cpp</code> und <code>test_http2_headers_split.cpp</code> (HTTP/2-Sende-Ring und Header-Splitting), <code>test_router_hooks.cpp</code> (Routen-Hooks), <code>test_jwt_smoke.cpp</code> (JWT), <code>test_filename_safety.cpp</code> (Dateinamen-Sicherheit), <code>test_pzexcel_p2.cpp</code> und <code>test_pzzip.cpp</code> (optionale Submodule). Dazu gibt es Unterverzeichnisse für Protokoll-Parsing: <code>http1_consume/</code>, <code>multipart_boundary/</code>, <code>multipart_part_headers/</code>, <code>postform/</code>, <code>raw_post_fastpath/</code> und <code>orm/</code>.</p>
+<p>Die Selbstprüfungs-Endpunkte liegen alle in <code>controller/src/serverwatch.cpp</code>: <code>/metrics</code> gibt Prometheus-Textformat aus, <code>/paozhu_status</code> ist das ältere eigene Dashboard, und <code>/frametasks_timeloop</code> zeigt Framework-Timer-Aufgaben. Die Backoffice-Login-Endpunkte sind <code>admin/login</code> und das ratenbegrenzte <code>admin/loginpost:ratelimit(60,5)</code>, implementiert in <code>controller/src/admin/main.cpp</code>; der Superadmin-Einstieg ist <code>superadmin/login</code> in <code>controller/src/superadmin/supermain.cpp</code>.</p>
+<h2>7. Umfang der Prüfung</h2>
+<p>Die Aussagen dieses Dokuments stammen überwiegend aus dem Lesen von Quell- und Verzeichnisinhalten: Build-Konfiguration, Thread-Topologie, Routing-Pfad, HTTP/2-Sendeschlange, RBAC-Cache, Ratenbegrenzung, generierte Artefakte, die <code>server.conf</code>-Schlüssel und die Selbstprüfungs-Endpunkte lassen sich über die am Ende genannten Dateien nachvollziehen. In dieser Runde wurden auch die öffentlichen Header der Module unter <code>libs/</code> und <code>vendor/</code> gelesen; die Beschreibungen von <code>oauth</code>, <code>oauth_client</code>, <code>github</code>, <code>webpay</code>, <code>markdown</code>, <code>pinyin</code>, <code>ipdata</code>, <code>department</code>, <code>img</code>, <code>types</code>, <code>pzexcel</code>, <code>pzword</code>, <code>webpdf</code>, <code>pzimage</code>, <code>pzcharts</code>, <code>pzzip</code>, <code>pzredis</code> und <code>sms</code> stützen sich auf Funktionssignaturen oder Kommentare in diesen Headern.</p>
+<p>Sechs Bereiche wurden nicht Implementierung für Implementierung gelesen. Beschreibungen außerhalb dieser Liste nicht als Zeile-für-Zeile verifizierte Fakten behandeln:</p>
+<ul>
+<li>Bei <code>ENABLE_MODELSO</code>, wie die Funktionsnamen in <code>module/controller/testviewso.so</code> auf Routen abgebildet werden; bestätigt wurde nur die Beziehung zwischen Schalter und Verzeichnis, nicht die gesamte Registrierungskette nach dem Laden.</li>
+<li>Feldabdeckung und Generierungsregeln der drei ORM-Modell-Domänen (<code>cms</code>/<code>pg</code>/<code>lite</code>); bestätigt wurden nur Generierungsquelle, Pool-Sharding und die Strategie &quot;vorhandene Modelldateien behalten&quot;.</li>
+<li>Die Generierungssyntax und Update-Trigger, die <code>view/</code>-Templates zu <code>viewsrc/view/*.cpp</code> machen; bestätigt wurden nur die Dateikopf-Markierung und der Ort des Parsers.</li>
+<li>Die konkreten Assertions in jedem <code>tests/*.cpp</code>-Fall; beschrieben nur anhand von Dateiname und den Konventionen in <code>tests/CMakeLists.txt</code>.</li>
+<li>Ob <code>startup/main_dev.cpp</code> und <code>startup/main_daemon.cpp</code> abgesehen vom Fork exakt dieselbe Kette verfolgen; die beiden wurden nicht Zeile für Zeile verglichen.</li>
+<li>Die Implementierungstiefe von <code>pzexcel</code>, <code>pzword</code> und <code>webpdf</code>; nur die öffentlichen Header wurden gelesen, ohne die Lese-/Schreiberläufe zu verfolgen.</li>
+</ul>
+<h2>8. Wichtige Aussagen und zugehörige Dateien</h2>
+<table>
+<thead>
+<tr>
+<th>Aussage</th>
+<th>Dateien</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Projektname, Version, alle Build-Optionen und Quell-Globs</td>
+<td><code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>Abhängigkeiten Dritter und vcpkg-Features</td>
+<td><code>vcpkg.json</code>, <code>README_CN.md</code></td>
+</tr>
+<tr>
+<td>Vier Thread-Klassen, ioc-Anzahl-Formel, Threads pro ioc, Round-Robin der Verbindungen, strand, peer-Pool</td>
+<td><code>vendor/httpserver/src/server.cpp</code>, <code>vendor/httpserver/include/server.h</code>, <code>vendor/httpserver/include/client_session.h</code></td>
+</tr>
+<tr>
+<td>Synchrone/Coroutine-Routingketten und die Forderung identischen Verhaltens</td>
+<td><code>vendor/httpserver/src/router.cpp</code>, <code>vendor/httpserver/include/router.h</code></td>
+</tr>
+<tr>
+<td>HTTP/2-Sende-Ring, Zustandsmaschine der Sendeobjekte, Wiedereinhängen geparkter Objekte, 120-Sekunden-Stream-Reset ohne Fortschritt</td>
+<td><code>vendor/httpserver/include/http2_ring_queue.h</code>, <code>vendor/httpserver/include/http2_send_queue.h</code>, <code>common/cost_define.h</code>, <code>vendor/httpserver/src/server.cpp</code></td>
+</tr>
+<tr>
+<td>HTTP/1.1-Parsing und Request-Modell</td>
+<td><code>vendor/httpserver/src/http_parse.cpp</code>, <code>httppeer.cpp</code>, <code>request.cpp</code></td>
+</tr>
+<tr>
+<td>Aufgaben und Generierungskette von <code>paozhu_pre</code> / <code>paozhu_cli</code></td>
+<td><code>vendor/httpcli/autopickmethod.cpp</code>, <code>vendor/httpcli/http_cli.cpp</code>, <code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>Registrierungsreihenfolge, Überschattung gleicher Namen und <code>ROUTE-WARN</code></td>
+<td><code>vendor/httpserver/src/server.cpp</code>, <code>vendor/httpcli/autopickmethod.cpp</code></td>
+</tr>
+<tr>
+<td>Erzeugung der <code>controller/include</code>-Stubs und <code>file(TOUCH)</code>-Platzhalter</td>
+<td><code>vendor/httpcli/autopickmethod.cpp</code>, <code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>Erzeugung der ORM-Modell-Header und Strategie &quot;vorhandene Modelldateien behalten&quot;</td>
+<td><code>orm/cms/include/sysperms_base.h</code>, <code>models/cms/Sysperms.cpp</code></td>
+</tr>
+<tr>
+<td>Sharding des ORM-Connection-Pools und Shard-Locks</td>
+<td><code>vendor/httpserver/include/orm_conn_pool.h</code>, <code>vendor/httpserver/src/orm_conn_pool.cpp</code></td>
+</tr>
+<tr>
+<td>RBAC-Entscheidungskette, Cache-Sharding/TTL, fail-closed-Verhalten</td>
+<td><code>libs/rbac/rbac.h</code>, <code>libs/rbac/route_guard.cpp</code>, <code>libs/rbac/route_cache.cpp</code></td>
+</tr>
+<tr>
+<td>OAuth-Serverkonfiguration, Token-Speicherung und Auditierung</td>
+<td><code>libs/oauth/oauth_config.h</code>, <code>libs/oauth/oauth_store.h</code>, <code>libs/oauth/oauth_audit.h</code>, <code>controller/src/oauth/</code></td>
+</tr>
+<tr>
+<td>Generischer OAuth-Client und GitHub-spezifischer Client</td>
+<td><code>libs/oauth_client/oauth_client.h</code>, <code>libs/github/github_oauth.h</code></td>
+</tr>
+<tr>
+<td>Bestellungs-Zustandsmaschine, Abrechnung beim Nachschlagen und anwendungsseitige Logik</td>
+<td><code>libs/webpay/webpay_order.h</code>, <code>libs/webpay/webpay_wxpayv3.h</code>, <code>vendor/webpay/include/wxpay.h</code></td>
+</tr>
+<tr>
+<td>markdown, Pinyin, IP-Ortung, Organisationsbaum, Bild-Upload, JSON-Reflection-Beispiele</td>
+<td><code>libs/markdown/markdown2html.h</code>, <code>libs/pinyin/hanyu_to_pinyin.h</code>, <code>libs/ipdata/ip_data_obj.h</code>, <code>libs/department/department_type.h</code>, <code>libs/img/upload_images.h</code>, <code>libs/types/json_ref_obj.h</code></td>
+</tr>
+<tr>
+<td>Excel-, Word- und PDF-Funktionen</td>
+<td><code>vendor/pzexcel/include/pzexcel.h</code>, <code>vendor/pzword/include/pz_word.h</code>, <code>vendor/webpdf/include/webpdf/webpdf.h</code></td>
+</tr>
+<tr>
+<td>zip, Bild-Codecs und Glyphenzeichnen, SVG-Diagramme, SMS, Redis-Client</td>
+<td><code>vendor/pzzip/include/pzzip.h</code>, <code>vendor/pzimage/include/pzpng.h</code>, <code>vendor/pzimage/include/ttffont.h</code>, <code>vendor/pzcharts/include/svg_chart.h</code>, <code>vendor/sms/include/sms.h</code>, <code>vendor/pzredis/include/redis_client.h</code></td>
+</tr>
+<tr>
+<td>Protokolldateien langlebiger Verbindungen und Backend-Registries</td>
+<td><code>vendor/httpserver/src/ws_*.cpp</code>, <code>http_socket*.cpp</code>, <code>mqtt_*.cpp</code>, <code>common/*_regmethod.hpp</code></td>
+</tr>
+<tr>
+<td>View-Template-Erzeugung und <code>.so</code>-Hot-Loading</td>
+<td><code>viewsrc/view/home/header.cpp</code>, <code>vendor/httpserver/src/loadmodule.cpp</code>, <code>vendor/httpserver/src/loadviewso.cpp</code>, <code>vendor/httpserver/src/serverconfig.cpp</code></td>
+</tr>
+<tr>
+<td>Wichtige <code>server.conf</code>-Schlüssel, veraltete Einträge und Pfadkonfiguration</td>
+<td><code>conf/server.conf</code></td>
+</tr>
+<tr>
+<td>Syntax von Annotations-Routen, Ratenbegrenzungsbeispiel, handgeschriebene Registrierung</td>
+<td><code>controller/src/superadmin/rbac/rbacperm.cpp</code>, <code>controller/src/test_maskcode.cpp</code>, <code>common/reghttpmethod.hpp</code></td>
+</tr>
+<tr>
+<td>Test-Ziel-Konventionen und vorhandene Fälle</td>
+<td><code>tests/CMakeLists.txt</code>, <code>tests/</code></td>
+</tr>
+<tr>
+<td>Selbstprüfungs-Endpunkte und Backoffice-Login-Einträge</td>
+<td><code>controller/src/serverwatch.cpp</code>, <code>controller/src/admin/main.cpp</code>, <code>controller/src/superadmin/supermain.cpp</code></td>
+</tr>
+<tr>
+<td>Daemon-/Vordergrund-Einstiegspunkte</td>
+<td><code>startup/main_daemon.cpp</code>, <code>startup/main_dev.cpp</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+  </body>
+</html>

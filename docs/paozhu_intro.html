@@ -112,8 +112,32 @@
 </head>
   <body>
       <div class="container">  
+<nav class="lang-nav" aria-label="Language" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0 12px;margin-bottom:14px;border-bottom:1px solid #888;font-size:14px;line-height:1.6;">
+<span aria-current="page" style="font-weight:bold;padding:1px 5px;border:1px solid currentColor;border-radius:4px;background:rgba(128,128,128,0.18);">中文</span>
+<a href="paozhu_intro_en.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">English</a>
+<a href="paozhu_intro_kr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">한국어</a>
+<a href="paozhu_intro_jp.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">日本語</a>
+<a href="paozhu_intro_de.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Deutsch</a>
+<a href="paozhu_intro_fr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Français</a>
+<a href="paozhu_intro_tr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Türkçe</a>
+</nav>
 <h1>Paozhu（炮竹）Web 框架介绍</h1>
-<p>Paozhu 是一个用 C++ 写的 Web 框架，CMake 工程名是 <code>Paozhu_web_framework</code>，版本 1.0.0。它最直观的特点是&quot;一个可执行文件什么都带&quot;：HTTP/1.1、HTTP/2、WebSocket、裸 TCP、MQTT 客户端、Redis 客户端、ORM、模板视图和静态文件服务都在同一个进程里，编译时再按开关把用不到的部分裁掉。</p>
+<p>Paozhu 是一个用 C++ 写的 Web 框架，源码地址：<a href="https://github.com/hggq/paozhu">https://github.com/hggq/paozhu</a>。它最直观的特点是&quot;一个可执行文件什么都带&quot;：HTTP/1.1、HTTP/2、WebSocket、裸 TCP、MQTT 客户端、Redis 客户端、ORM、模板视图和静态文件服务都在同一个进程里，编译时再按开关把用不到的部分裁掉。</p>
+<p>先看一个最短的例子：业务函数返回协程任务，给 <code>peer-&gt;output</code> 赋值就是响应体，路由由函数上方的注解声明：</p>
+<p>服务启动后，可在浏览器访问 <a href="http://localhost/hello">http://localhost/hello</a>。</p>
+<pre><code class="language-cpp">#include "httppeer.h"
+#include "testhello.h"
+namespace http
+{
+//@urlpath(null,hello)
+asio::awaitable&lt;std::string&gt; testhello(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    peer-&gt;output = "Hello, world!";
+    co_return "";
+}
+ 
+}// namespace http
+</code></pre>
 <p>这篇文档按一个第一次接触仓库的人会关心的顺序来讲：它是什么、怎么跑起来、一次请求在里面怎么走、各个目录分别管什么、配置和扩展怎么做。文中的结论都来自当前仓库的源码和目录，关键结论对应的文件集中在最后一节。少数只读了公开头文件、没有逐行看实现的模块，也在最后一节说明。</p>
 <h2>一、它是什么</h2>
 <p>从源码结构看，Paozhu 有几个很明确的取向。</p>

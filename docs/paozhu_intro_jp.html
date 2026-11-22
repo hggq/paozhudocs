@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="ja" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Paozhu（爆竹）Web フレームワーク入門</title>
+     <style>
+        /* Light mode */
+        body {
+            font-family:'PingFang SC','Helvetica Neue','Microsoft YaHei UI','Microsoft YaHei','Noto Sans CJK SC',Sathu,EucrosiaUPC,Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:1.45em;
+        }
+        /* Inline code chip; the shared modern-flat.css sets code backgrounds with !important. */
+        body code{
+            background-color: #eaf0f8 !important;
+            color: #b42318;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        @media (prefers-color-scheme: light) {
+        body {
+            color: black;
+            background-color: white;
+            font-size: 14px;
+        }
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #EEE;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent !important;
+            color: inherit;
+            border: 0;
+            border-radius: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+        /* Inline code chip; the shared modern-flat.css sets code backgrounds with !important. */
+        body code{
+            background-color: #eaf0f8 !important;
+            color: #b42318;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+        body {
+            color: white;
+            background-color: black;
+        }
+
+        body pre {
+            padding: 5px;
+            overflow: auto;
+            line-height: 1.45em;
+            background-color: #333;
+            border-radius: 6px;
+        }
+ 
+        body pre {
+            word-wrap: normal;
+        }
+        body pre > code {
+            padding: 0;
+            margin: 0;
+            word-break: normal;
+            white-space: pre;
+            background: transparent !important;
+            color: inherit;
+            border: 0;
+            border-radius: 0;
+        }
+ 
+        body pre > code {
+            white-space: pre-wrap;
+        }
+
+        body code{
+            background-color: #1c2a3a !important;
+            color: #ffa198;
+            border-radius: 5px;
+            padding: 3px;
+        }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 1080px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+      <link rel="stylesheet" href="./styles/modern-flat.css">
+</head>
+  <body>
+  <div class="container">  
+<nav class="lang-nav" aria-label="Language" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0 12px;margin-bottom:14px;border-bottom:1px solid #888;font-size:14px;line-height:1.6;">
+<a href="paozhu_intro.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">中文</a>
+<a href="paozhu_intro_en.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">English</a>
+<a href="paozhu_intro_kr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">한국어</a>
+<span aria-current="page" style="font-weight:bold;padding:1px 5px;border:1px solid currentColor;border-radius:4px;background:rgba(128,128,128,0.18);">日本語</span>
+<a href="paozhu_intro_de.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Deutsch</a>
+<a href="paozhu_intro_fr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Français</a>
+<a href="paozhu_intro_tr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Türkçe</a>
+</nav>
+<h1>Paozhu（爆竹）Web フレームワーク</h1>
+<p>Paozhu は C++ で書かれた Web フレームワークです。ソースコード: <a href="https://github.com/hggq/paozhu">https://github.com/hggq/paozhu</a>。まず目立つのは、1 つの実行ファイルにすべてが同梱されている点です。HTTP/1.1、HTTP/2、WebSocket、生の TCP、MQTT クライアント、Redis クライアント、ORM、テンプレートビュー、静的ファイル配信がすべて同じプロセス内にあり、コンパイル時のスイッチで不要な部分を削除できます。</p>
+<p>最短の例から見てみましょう。ハンドラーはコルーチンのタスクを返し、<code>peer-&gt;output</code> に代入した値がレスポンス本文になります。ルートは関数の上のコメントで宣言します:</p>
+<p>サーバーを起動したら、ブラウザで <a href="http://localhost/hello">http://localhost/hello</a> にアクセスできます。</p>
+<pre><code class="language-cpp">#include "httppeer.h"
+#include "testhello.h"
+namespace http
+{
+//@urlpath(null,hello)
+asio::awaitable&lt;std::string&gt; testhello(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    peer-&gt;output = "Hello, world!";
+    co_return "";
+}
+ 
+}// namespace http
+</code></pre>
+<p>このドキュメントは、リポジトリを初めて見る人が気にする順番で構成されています。何なのか、どう動かすのか、リクエストが内部をどう流れるのか、各ディレクトリが何を担うのか、設定と拡張をどう行うのか、という順です。すべての結論はこのリポジトリのソースツリーから得ており、重要な結論に対応するファイルは最後の節にまとめています。公開ヘッダーだけを読んだモジュールもあり、そのことも最後の節に明記しています。</p>
+<h2>1. 概要</h2>
+<p>ソース構造を見るだけでも、明確な設計方針が読み取れます。</p>
+<p><strong>ネットワーク層は standalone Asio の上に構築されています。</strong> サーバーは独自のイベントループではなく <code>asio::io_context</code> を保持するため、Asio エコシステムのほとんどの流儀をそのまま利用できます。</p>
+<p><strong>I/O とビジネスロジックは分離されています。</strong> I/O スレッドは accept、read、write だけを行い、同期ハンドラーは専用のビジネススレッドプール <code>clientrunpool</code> にディスパッチされます。したがってハンドラー内のブロッキングコードはネットワークスレッドではなくビジネスプールを占有します。</p>
+<p><strong>I/O ループは 1 つに統合せず、コア数に応じてグループ化されています。</strong> プロセスは複数の <code>io_context</code> インスタンスを持ち、各接続はラウンドロビンでそのうちの 1 つに割り当てられ、各 ioc は複数のスレッドを実行します。詳細は第 3 節で扱います。</p>
+<p><strong>コルーチンがルーティング層のエントリーポイントです。</strong> ルートの照合とディスパッチは <code>router::co_resolve</code> から始まり、pre ハンドラーとハンドラーの両方に同期スロットとコルーチンスロットがあるため、ビジネスコードは好きな方式を選べます。</p>
+<p><strong>HTTP/2 は自前実装です。</strong> フレーム解析、HPACK が使う Huffman コーディング、接続ごとの送信リング、グローバル送信キュー、フロー制御は、サードパーティのラッパーの背後ではなく、このリポジトリ内にあります。</p>
+<p><strong>ルートはコメントで宣言し、コンパイル時にレジストリにまとめます。</strong> ビジネス関数に <code>//@urlpath(...)</code> コメントを付けると、ビルド時に <code>paozhu_pre</code> がそれを走査してレジストリと関数宣言のスタブを生成します。</p>
+<p><strong>機能はひとまとめで提供されます。</strong> ORM、コネクションプール、RBAC、OAuth、決済、Excel/Word/PDF、画像、圧縮、チャート、SMS、Redis クライアントは、すべて同じリポジトリの <code>vendor/</code> と <code>libs/</code> の下にあります。既定では無効で、<code>CMakeLists.txt</code> の対応する CMake オプションの既定値は <code>OFF</code> です。</p>
+<p>リポジトリはおおむね 4 つの層に分かれます。フレームワーク本体が <code>vendor/httpserver</code> です。その他の <code>vendor/</code> サブディレクトリと <code>libs/</code> は再利用可能な機能です。<code>common/</code>、<code>orm/</code>、<code>models/</code>、<code>viewsrc/</code> はフレームワークとビジネスコードの間の接着層です。<code>controller/</code>、<code>view/</code>、<code>www/</code>、<code>module/</code> は丸ごと削除できるサンプルビジネスコードです。<code>mini_project.sh</code> がこの分離を実際に行います。<code>controller/src/admin</code>、<code>github</code>、<code>oauth</code> などのデモディレクトリを削除し、フレームワークのコアだけを残します。</p>
+<h2>2. 起動まで</h2>
+<h3>依存関係とビルド</h3>
+<p>依存関係は <code>vcpkg.json</code> に記載されています: <code>openssl</code>、<code>brotli</code>、<code>asio</code>、<code>zlib</code>、<code>sqlite3</code> と、<code>pkgconf</code>、<code>libgd</code>、<code>freetype</code>、<code>libpng</code>、<code>libqrencode</code> を取り込む <code>gd</code> 機能です。vcpkg を使う場合は <code>-DENABLE_VCPKG=ON</code> を指定し、<code>CMAKE_TOOLCHAIN_FILE</code> を渡します。詳細は <code>README_CN.md</code> を参照してください。xmake を好む人のために <code>xmake.lua</code> も同梱されています。</p>
+<p>通常のビルドは 3 ステップです:</p>
+<pre><code class="language-bash">cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+./bin/paozhu                 # you can also pass ./bin/paozhu /path/to/server.conf
+</code></pre>
+<p><code>bin/</code> には現在 3 つの成果物があります: <code>paozhu</code>、<code>paozhu_cli</code>、<code>paozhu_pre</code>。ベンチマーク関連のコードは <code>-DENABLE_BENCHMARK=ON</code> を明示しないと含まれません。</p>
+<p>ビルドは 4 つの CMake ターゲットを生成します: メインプログラム <code>paozhu</code>、データベース/モデルツール <code>paozhu_cli</code>、アノテーションルートジェネレーター <code>paozhu_pre</code>、そしてビルドのたびに実行される <code>paozhu_codegen</code> です。</p>
+<p>メインプログラムのソース集合は複数の glob で組み立てられます:</p>
+<pre><code class="language-cmake">set(paozhu_srcs
+  ${common_list} ${viewsrc_list} ${framework_cpps} ${orm_list}
+  ${reflect_list} ${src_list} ${source_list} ${controller_list})
+</code></pre>
+<p><code>reflect_list</code> は <code>libs/*.cpp</code> を再帰的に拾います。</p>
+<h3>エントリーポイント</h3>
+<p>Release ビルドは <code>startup/main_daemon.cpp</code> を使い、他のビルド構成は自動的に <code>startup/main_dev.cpp</code> に切り替わります。デーモン版はまず <code>argv[1]</code> を <code>server.conf</code> のパス、またはそれを含むディレクトリとして扱い、<code>init_daemon()</code> の中で fork します。子プロセスは <code>get_server_app()</code>、<code>http::rbac::install_route_guard()</code>、<code>httpmy.run(argv_str)</code> を実行し、親プロセスは <code>wait</code> を繰り返して <code>SIGCHLD</code> を受け取ると子を再生成します。フォアグラウンド版は fork なしで同じ <code>run()</code> の道をたどります。</p>
+<p><code>run()</code> 内の順序は次のとおりです: 設定を読み、ioc とスレッドを作り、accept を開始し、ルートを登録し、イベントループに入ります。</p>
+<h2>3. リクエストの流れ</h2>
+<h3>スレッドの分け方</h3>
+<p>プロセスには 4 種類のスレッドがあります。概要は次のとおりです。</p>
+<table>
+<thead>
+<tr>
+<th>スレッドの種類</th>
+<th>数</th>
+<th>担当</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>accept スレッド</td>
+<td>2 つ (HTTP 用と SSL 用に 1 つずつ)</td>
+<td>ブロッキング accept。新しい接続を ioc に渡す</td>
+</tr>
+<tr>
+<td>I/O スレッド</td>
+<td>ioc 数 × ioc あたりの <code>run()</code> スレッド数</td>
+<td><code>io_context::run()</code> を実行。接続の I/O とプロトコル解析</td>
+</tr>
+<tr>
+<td>補助スレッド</td>
+<td><code>httpwatch</code> 1 つ、HTTP/2 送信 <code>http2_send_loop_num</code> 個(最小 2)、<code>websocket_loop</code> 1 つ、<code>ratelimiter</code> 1 つ</td>
+<td>定期検査、HTTP/2 送信キューの排出、接続単位のレート制限</td>
+</tr>
+<tr>
+<td>ビジネスプール</td>
+<td><code>hardware_concurrency() + 2</code></td>
+<td>同期ハンドラーを実行</td>
+</tr>
+</tbody>
+</table>
+<p>I/O スレッド数は 2 段階で計算されます。ioc 数は <code>min(cothreadnum, hardware_concurrency())</code> で、4 未満なら 4 に引き上げられます。次に各 ioc が <code>per_ioc_thread_num</code> 個の <code>run()</code> スレッドを起動します。<code>conf/server.conf</code> のコメントが式をそのまま示しています: <code>cothreadnum * per_ioc_thread_num = threads</code>。</p>
+<p><code>io_contexts[0]</code> には第 2 の役割があります。互換用メンバー <code>io_context</code> でもあり、フレームワーク自身のタイマーループ、同期接続取得、<code>client_context</code> はすべてこの上にあります。</p>
+<p>直列化は接続内だけで行われます。新しい接続は <code>session_ioc_cursor++ % io_contexts.size()</code> で ioc に割り当てられ、接続は自身の <code>asio::strand</code> をバインドして、その接続のプロトコル処理の順序を保ちます。異なる接続同士にはそのような順序保証はありません。</p>
+<p><code>httppeer</code> プールはスレッドではありませんが、混同されやすいためここに挙げます。<code>acquire_peer()</code> が再利用可能なオブジェクトを取り出し、最後の参照が解放されると <code>reset_for_reuse()</code> を経て戻ります。上限は <code>PEER_POOL_MAX = 512</code> で、<code>BENCHMARK</code> ビルドでは 4096 です。</p>
+<p>接続は到着から離脱まで次のスレッドを通ります:</p>
+<ol>
+<li>accept スレッドが接続を受け取り、ioc に渡します。</li>
+<li>以降、読み書きとプロトコル解析はその ioc の <code>run()</code> スレッドで動作し、strand が接続の処理を直列化します。</li>
+<li>同期ハンドラーに達すると処理はビジネスプールにディスパッチされ、コルーチンハンドラーはその場で await して ioc スレッド上で進み続けます。</li>
+<li>出力では、HTTP/1.1 は I/O スレッドが直接書き戻し、HTTP/2 は送信キューを排出する固定の <code>http2_send_queue_loop</code> スレッドへ渡ります。</li>
+<li>補助スレッドは定期検査、レート制限、キューの排出だけを行い、ビジネスロジックは扱いません。</li>
+</ol>
+<h3>ルートの照合とディスパッチ</h3>
+<p>accept からレスポンスまでの主要な経路は次のとおりです:</p>
+<pre><code>accept (side thread)
+  → pick an ioc by round-robin, bind the connection to a strand
+  → parse: HTTP/1.1 via http_parse.cpp, HTTP/2 via http2_parse.cpp
+  → take an httppeer (acquire_peer)
+  → router::co_resolve
+        ├─ exact lookup, then prefix fallback (up to 6 segments)
+        ├─ write the matched mask_code into the peer
+        ├─ annotation-level rate limiting
+        ├─ RBAC hook, only when mask_code is non-zero
+        └─ pre → handler (the synchronous path goes to the business pool; coroutines await in place)
+  → write the response: HTTP/1.1 directly, HTTP/2 through the send queue
+</code></pre>
+<p><code>router.cpp</code> には 2 つの並列実装があります。1 つは同期チェーン、もう 1 つは <code>co_resolve</code> 内のコルーチンチェーンです。<code>router.h</code> のコメントは、両チェーンの pre/handler 分岐が同じように振る舞うことを明示的に要求しています。片方を変更したらもう片方も変更する必要があります。</p>
+<h3>HTTP/1.1 と HTTP/2 の出力</h3>
+<p>HTTP/1.1 の解析は自前実装で、<code>vendor/httpserver/src/http_parse.cpp</code> を中心に <code>request.cpp</code> と <code>httppeer.cpp</code> が支えます。リクエストとレスポンスは直列で、パイプライン処理はありません。</p>
+<p>HTTP/2 は完全な実装で、関連ファイルはすべて <code>vendor/httpserver/src/</code> にあります。<code>http2_parse.cpp</code> はフレーム解析と接続ステートマシン、<code>http2_frame.cpp</code>/<code>http2_define.cpp</code> はフレーム構造と定数、<code>http2_huffman.cpp</code> は HPACK が使う Huffman コーデック、<code>http2_ring_queue.cpp</code> は接続ごとの固定サイズ送信リング、<code>http2_send_queue.cpp</code> はグローバル送信キュー、<code>http2_flow.h</code> はフロー制御ウィンドウの定義です。</p>
+<p>重要な設計ポイントがいくつかあります:</p>
+<ul>
+<li>接続ごとに 32 スロットの固定リングがあります。<code>CONST_HTTP2_RING_QUEUE_CAPACITY = 32</code> で、2 のべき乗であり <code>unsigned char</code> に収まることをコンパイル時に検査します。<code>head_</code> と <code>tail_</code> はアトミックなインデックスで、別に <code>bytes</code> の滞留カウンターがあります。</li>
+<li>送信オブジェクトは明示的なステートマシンを持ちます。<code>own_state</code> がプール、グローバルキュー、スレッド専用領域、待機状態のどこにあるかを示し、<code>block_reason</code> がブロックされた理由を記録します。</li>
+<li>ブロックされたオブジェクトを繰り返しポーリングしません。<code>parked_list</code> に待機させ、ウィンドウの変化、SETTINGS フレーム、リングスロットの空きという 3 種類のイベントで <code>park()</code> / <code>detach_parked()</code> / <code>reattach_parked()</code> により再接続します。</li>
+<li>ストリームは通常のアイドルタイムアウトではなく「120 秒間進展がないこと」でリセットされます。定数は <code>CONST_HTTP2_SEND_NO_PROGRESS_TIMEOUT = 120</code> で、検査は <code>server.cpp</code> にあります。</li>
+<li>スイッチは <code>conf/server.conf</code> の <code>http2_enable = 1</code> です。</li>
+</ul>
+<h2>4. 各モジュールの役割</h2>
+<h3>フレームワークコア: <code>vendor/httpserver</code></h3>
+<p>このディレクトリは <code>include/</code> と <code>src/</code> に分かれ、<code>src/</code> の下に 85 個の <code>.cpp</code> ファイルがあります。役割は次のように分類できます:</p>
+<ul>
+<li>サーバーとライフサイクル: <code>server.cpp</code>, <code>serverconfig.cpp</code>, <code>client_context.cpp</code>, <code>resident_stop.cpp</code> — 起動、設定、スレッドの調整、正常シャットダウン。</li>
+<li>接続とプロトコル: <code>http_parse.cpp</code>, <code>http_header.cpp</code>, <code>http_domain.cpp</code>, <code>rpc_parse.cpp</code>, <code>client_session.cpp</code> — HTTP/1.1 解析、ホストルーティング、RPC 解析。</li>
+<li>HTTP/2: 第 3 節に挙げたファイル群。</li>
+<li>リクエストモデル: <code>httppeer.cpp</code>, <code>request.cpp</code>, <code>cookie.cpp</code>, <code>session_id.cpp</code>。</li>
+<li>ルーティング: <code>router.cpp</code>, <code>viewmethold_reg.cpp</code>。</li>
+<li>ORM と接続: <code>orm_common.cpp</code>, <code>orm_conn_pool.cpp</code>, <code>orm_connect_mar.cpp</code>, <code>orm_query.cpp</code>, <code>mysql_conn.cpp</code>, <code>pg_conn.cpp</code>, <code>sqlite_conn.cpp</code>。</li>
+<li>スレッドプリミティブ: <code>threadpool.cpp</code>, <code>atomic_count.cpp</code>, <code>atomic_guard.cpp</code>。</li>
+<li>静的ファイル: <code>file_get_content.cpp</code>, <code>gzip.cpp</code>, <code>https_brotli.cpp</code>, <code>mime.cpp</code>, <code>directory_fun.cpp</code>。</li>
+<li>長期接続: <code>ws_*.cpp</code>, <code>http_websocket_client.cpp</code>, <code>http_socket*.cpp</code>, <code>mqtt_*.cpp</code>, <code>sock_subpub_reg.cpp</code>。</li>
+<li>セキュリティと認証: <code>jwt.cpp</code>, <code>acme_*.cpp</code>, <code>ocsp_check.cpp</code>, <code>base64.cpp</code>, <code>md5.cpp</code>。</li>
+<li>ユーティリティ: <code>parse_ini.cpp</code>, <code>str_fun.cpp</code>, <code>urlcode.cpp</code>, <code>unicode.cpp</code>, <code>datetime.cpp</code>, <code>qrcode.cpp</code>, <code>send_email.cpp</code>, <code>fastcgi.cpp</code>, <code>loadmodule.cpp</code>, <code>loadviewso.cpp</code>。</li>
+</ul>
+<p><code>include/</code> の 2 つのヘッダーは誤解されやすいです。<code>request.h</code> は実際には HTTP リクエストクラスではなく組み込み JSON マイクロオブジェクト <code>obj_val</code> で、本当のリクエスト/レスポンスの担い手は <code>httppeer.h</code> です。<code>httphook.h</code> は <code>common/httphook.cpp</code> とともに、ルーティング、認証、レート制限が接続されるフック層を形成します。また <code>orm_cache.hpp</code>、<code>mysqlorm.hpp</code>、<code>postgresqlorm.hpp</code>、<code>sqliteorm.hpp</code> は ORM のテンプレートファサードです。</p>
+<h3>2 つのジェネレーター: <code>vendor/httpcli</code></h3>
+<p>このディレクトリは役割がまったく異なる 2 つの実行ファイルを生成します。</p>
+<p><code>paozhu_pre</code> はアノテーションルートジェネレーターです。ソースは <code>vendor/httpcli/autopickmethod.cpp</code> と <code>vendor/httpserver/src/md5.cpp</code> です。<code>controller/src</code> 配下のアノテーションを走査し、<code>common/autocontrolmethod.hpp</code> と <code>controller/include/*.h</code> に書き出します。</p>
+<p><code>paozhu_cli</code> はデータベース/モデルツールです。ソースは <code>vendor/httpcli/http_cli.cpp</code> と ORM の接続・モデルソースです。<code>dbcreate</code>、<code>dbconvert</code>、<code>dbschema_check</code>、<code>dbdump_*</code>、<code>templateparse*</code>、<code>struct_reflectfile</code> などの機能を持ち、<code>vendor/httpcli/*.hpp</code> に宣言されています。</p>
+<p><code>vendor/httpcli/</code> 配下の <code>.hpp</code> ファイルはジェネレーターのテンプレートと解析実装です: <code>controllerparse.hpp</code>、<code>ccontrollfun.hpp</code>、<code>dbtypes.hpp</code>、<code>modelfun.hpp</code>、<code>templateparse.hpp</code>、<code>typestatement.hpp</code>、<code>utility.hpp</code>。</p>
+<p>生成チェーンはビルドに組み込まれています:</p>
+<pre><code>add_custom_target(paozhu_codegen ALL)
+    COMMAND paozhu_pre &lt;source root&gt;
+add_dependencies(paozhu paozhu_codegen)
+</code></pre>
+<p>したがってビルドのたびに <code>paozhu_pre</code> が実行されますが、ファイルのハッシュと mtime を比較し、変化がなければ何も書き込みません。</p>
+<h3>レジストリとビジネス層: <code>common</code>, <code>controller</code></h3>
+<p><code>common/</code> には 14 個のファイルがあり、その多くは手書きのグローバル定義とレジストリで、生成物は 1 つだけです。<code>autocontrolmethod.hpp</code> は <code>paozhu_pre</code> が書き出すアノテーションルートのレジストリで、出力先は <code>vendor/httpcli/autopickmethod.cpp</code> にハードコードされています。<code>autorestfulpaths.hpp</code> は RESTful パスのパラメーター名を記録し、<code>server.cpp</code> がインクルードし、<code>mini_project.sh</code> が新しいプロジェクトを作るときに書き換えます。<code>cost_define.h</code> はグローバル定数、<code>httphook.cpp</code> はフック層の実装、<code>json_reflect_headers.h</code> は JSON リフレクションヘッダーを集約します。<code>reghttpmethod.hpp</code> と <code>reghttpmethod_pre.hpp</code> は初期の手書きレジストリです(<code>REG_SYNC_SYNC</code> マクロのリストで、<code>server.cpp</code> がインクルード)。残りのファイル — <code>mqtt_client_regmethod.hpp</code>, <code>mqtt_method_reg.hpp</code>, <code>redis_regmethod.hpp</code>, <code>sock_client_regmethod.hpp</code>, <code>sockets_method_reg.hpp</code>, <code>websockets_method_reg.hpp</code>, <code>ws_client_regmethod.hpp</code> — はさまざまな長期接続バックエンド用のレジストリです。</p>
+<p>登録順序は覚えておく価値があります。<code>server.cpp</code> は <code>_initauto_all_httputils()</code>、<code>_inithttpmethodregto()</code>、<code>_inithttpmethodregto_pre()</code> をこの順で呼びます。生成テーブル、手書きテーブル、手書き pre テーブルの順です。<code>reg_add</code> は最初の登録を保持するため、同じパスの手書きエントリは生成テーブルに隠されます。<code>paozhu_pre</code> はこれを知っており、生成時にそのような衝突を <code>ROUTE-WARN</code> として報告します。</p>
+<p><code>controller/include/</code> 配下の 100 個のヘッダーは手書きコードではなく生成された関数宣言スタブです。<code>paozhu_pre</code> はアノテーションのシグネチャが変わったときだけ md5 と mtime で判断して書き換えます。configure 段階では CMake が足りないヘッダーを <code>file(TOUCH)</code> でプレースホルダーとして作るだけです。実際の実装は <code>controller/src/</code> にあり、ビジネスドメインごとに分かれています: 管理画面と権限用の <code>admin/</code>、<code>superadmin/</code>(<code>superadmin/rbac/</code> を含む)、<code>rbac/</code>; 認可とログイン用の <code>oauth/</code>、<code>oauth_client/</code>、<code>github/</code>; マルチテナントのデモサイト <code>saas.com/</code>; 監視エンドポイント用の <code>serverwatch.cpp</code>; 機能デモと回帰ケース用の多数の <code>test_*.cpp</code>、<code>test*.cpp</code>(たとえば <code>test_maskcode.cpp</code> はアノテーションによるレート制限を示します)。</p>
+<h3>データ層: <code>orm</code>, <code>models</code>, <code>schema</code></h3>
+<p><code>orm/orm.h</code> がエントリーポイントです。その下に MySQL、PostgreSQL、SQLite に対応する 3 つのモデルドメイン <code>cms/</code>、<code>pg/</code>、<code>lite/</code> があります。<code>orm/cms/include/</code> 配下の 64 個の <code>*_base.h</code> は <code>paozhu_cli</code> が生成し、ヘッダーに <code>This file is auto create from paozhu_cli</code> とあります。<code>fk_child_opsql.cpp</code> と <code>fk_parent_opsql.cpp</code> は手書きの結合クエリです。<code>models/</code> はモデルの振る舞いを保持します。これらの <code>.cpp</code> は <code>paozhu_cli</code> が一度だけ生成し、以降は上書きしません。ファイルヘッダーに既存ファイルは保持し、欠けているファイルを生成すると明記されているため、ここにビジネスロジックを安全に書けます。<code>schema/</code> にはテーブル作成 SQL があります。</p>
+<p>コネクションプールは <code>vendor/httpserver/src/orm_conn_pool.cpp</code> と <code>include/orm_conn_pool.h</code> にあります。プールは ioc ごとにシャーディングされます。グローバルな <code>max_pool</code> をシャード数で割り、余りは小さいシャードに順に割り当て、各シャードに最低 1 スロットを与えます(<code>slot_max_of</code> / <code>slot_min_of</code>)。シャードごとに専用のロックがあるため、異なる ioc のスレッドが同じロックで競合することはありません。設定キーは <code>orm_ioc_num</code> と <code>orm_thread_pool_num</code> で、接続パラメーターは <code>conf/orm.conf</code> にあります。ORM はコルーチンインターフェースも公開しており、<code>orm_connect_mar.cpp</code> と <code>orm_query.cpp</code> のクエリはそのまま await できます。</p>
+<h3>再利用可能な機能ライブラリ: <code>libs</code></h3>
+<p><code>libs/</code> には 11 個のサブディレクトリがあり、すべて手書きです。ビルド時に <code>CMakeLists.txt</code> の再帰 glob でメインターゲットに取り込まれ、ヘッダーディレクトリも再帰的にインクルードパスに追加されます。</p>
+<p><code>libs/rbac</code> は権限判定の核です。<code>rbac.h</code> は <code>load_user_roles</code>、<code>load_role_perms</code>、<code>load_user_grants</code>(1 回のパスで 6 つのクエリを実行し、ロール、権限、割り当て階層、ディレクトリを取得)、<code>user_has_url</code>、<code>user_has_permscode</code> を提供します。<code>route_guard.cpp</code> はルートフックで、<code>adminid</code> がなければ 401、<code>companyid</code> がなければ 403 を返し、それ以外はキャッシュに委譲します。<code>route_cache.cpp</code> の <code>allow()</code> は <code>(adminid, companyid)</code> をキーに 16 シャード、4096 エントリ、60 秒 TTL でキャッシュします。読み込み時にシャードロックを保持して single-flight を実現し、読み込み失敗は fail-closed として扱います。<code>route_cache.cpp</code> には呼び出し元のない <code>stats()</code> 関数もあります。</p>
+<p><code>libs/oauth</code> は OAuth のサーバー側で、<code>conf/oauth.conf</code> を読む <code>oauth_config</code>、トークンのハッシュ化、PKCE 検証、Basic クライアント認証を担う <code>oauth_store</code>、監査を担う <code>oauth_audit</code> に分かれます。<code>oauth_audit</code> の <code>audit_log()</code> はフレームワークのエラーログキューに 1 行を書き込み、<code>httpwatch</code> がそれを <code>log/error.log</code> に追記します。エンドポイント自体は <code>controller/src/oauth/</code> にあります: <code>oauth_authorize.cpp</code>、<code>oauth_token.cpp</code>、<code>oauth_introspect.cpp</code>、<code>oauth_revoke.cpp</code>、<code>oauth_jwks.cpp</code>、<code>oauth_metadata.cpp</code>、<code>oauth_userinfo.cpp</code>、<code>oauth_bearerauth.cpp</code>、<code>oauth_client_add.cpp</code>、<code>oauth_purge.cpp</code>。</p>
+<p><code>libs/oauth_client</code> は特定の認可サーバーに結びつかない汎用 OAuth 2.x/2.1 クライアントです。4 つのエンドポイント URL を埋めれば GitHub、Google、セルフホストの oauth エンドポイントと通信できます。PKCE、3 種類の grant(authorization code、refresh、client_credentials)、introspect と revoke をサポートします。<code>libs/github</code> は GitHub 専用の亜種で、state は <code>[adminid, client_id, rand32]</code> の 3 要素、revoke は DELETE + Basic、scope には常に <code>read:user</code> が付きます。<code>github_api</code>、<code>github_config</code>、<code>github_crypto</code>、<code>github_store</code> も含まれます。</p>
+<p><code>libs/webpay</code> はアプリケーション側の決済ロジックです。注文のステートマシン(pending/paid/cancelled/refunded)、注文番号の生成、<code>wxorder</code> による照会、非同期照会、WeChat V3 の照会レスポンスに対する精算判定と、コールバック、証明書ゲート、Alipay/WeChat V2/V3、QR コード、トークン関連のファイルがあります。</p>
+<p><code>libs/markdown</code> の <code>markdown2html</code> は引用、太字、リンク、見出し、水平線、表、画像、1 行の打ち消し線、コードブロック、順序付き/順序なしリストを処理し、目次と参照一覧も管理します。<code>libs/pinyin</code> は pinyin-data のデータと二分探索で漢字をピンインに変換します。<code>libs/ipdata</code> は <code>ip.data</code>(ip2region 形式)を読み、IP を国/省/都市に対応させます。<code>libs/department</code> は <code>parentid</code> と <code>children</code> を持つ組織ツリー構造です。<code>libs/img</code> の <code>upload_images</code> は画像、動画、base64、フォームファイルのアップロードを扱い、アップロード済みファイルを一覧します。<code>libs/types</code> には入れ子オブジェクトと配列を含む JSON リフレクション用のサンプル型があり、リフレクション生成を実演します。</p>
+<h3>オプション機能モジュール: <code>vendor/*</code></h3>
+<p>これらのモジュールはすべて <code>include/</code> + <code>src/</code> の構成で、既定では無効です。ソースは <code>CMakeLists.txt</code> の条件付き glob で <code>paozhu_srcs</code> に追加され、スイッチも同じ場所に集約されています。実際のアプリケーションで必要になる可能性が高い順に並べました。</p>
+<p><strong>ドキュメントとスプレッドシート。</strong> 管理画面のレポート出力、Excel の取り込み、契約書や通知の生成、ページの PDF 保存が対象です。<code>pzexcel</code> は xlsx の読み書き、複数シート、セルのスタイルを扱います。<code>pzword</code> は docx の読み書き、HTML と docx の相互変換を行い、メモリ上のバイトストリームに直接出力できます。<code>webpdf</code> は PDF レンダラーで、公開ヘッダーが <code>HTMLRenderer</code> を公開し、同じディレクトリに HTML、CSS、SVG、TTF 用の 4 つのパーサーがあります。アプリケーションが Office 文書を取り込む/出力する場合は <code>ENABLEOFFICE</code> を、HTML から PDF には別途 <code>ENABLE_PDF</code> をON にしてください。</p>
+<p><strong>圧縮、画像、チャート。</strong> パッケージのダウンロードやアップロードの展開には <code>pzzip</code> を使ってください。一時ファイルを使わずにメモリバッファに直接 zip を書けます。キャプチャや一般的な画像処理には <code>pzimage</code> を使ってください。PNG/JPEG コーデックを内包し、TrueType/OpenType のアウトラインからグリフを描けます。レポートページに埋め込むチャートには <code>pzcharts</code> を使ってください。SVG を直接生成し、折れ線、平滑折れ線、棒、散布、ドーナツ、レーダー、ゲージ、ファネルをカバーします。3 つのスイッチは独立しているので、実際に使う機能だけを有効にしてください。</p>
+<p><strong>決済と SMS。</strong> 取引フローが必要なら <code>vendor/webpay</code> を使ってください。WeChat/Alipay SDK をラップし、V3 証明書、プラットフォーム証明書、返金の冪等キーなどの低レベルな詳細を処理します。アプリケーション側のロジック(注文ステートマシン、コールバック、証明書ゲート)は前述の <code>libs</code> の節で説明したとおり <code>libs/webpay</code> にあります。認証番号や通知には <code>sms</code> を使ってください。Alibaba Cloud と Tencent Cloud のクライアントが含まれます。それぞれ <code>ENABLE_WEBPAY</code> と <code>ENABLE_SMS</code> に対応します。</p>
+<p><strong>キャッシュなど。</strong> <code>pzredis</code> は Redis クライアントです。<code>redis_client</code> は接続を保持しません。各コマンドが設定セクションから接続を借りて使い、終わったら返します。同期 API とコルーチン API の両方を備えます。キャッシュ、分散ロック、pub/sub には <code>ENABLE_REDIS</code> を有効にしてください。フレームワーク水準の Redis 長期接続クライアントは別のスイッチ <code>ENABLE_REDIS_CLIENT</code> で、<code>ENABLE_REDIS</code> もON である必要があります。そうでない場合 configure は即座に失敗します。</p>
+<table>
+<thead>
+<tr>
+<th>コンポーネント</th>
+<th>CMake オプション</th>
+<th>機能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vendor/pzexcel</code></td>
+<td><code>ENABLEOFFICE</code></td>
+<td>xlsx の読み書き、複数シート、セル値とフォント/罫線/塗りつぶし/配置のスタイル</td>
+</tr>
+<tr>
+<td><code>vendor/pzword</code></td>
+<td><code>ENABLEOFFICE</code></td>
+<td>docx の読み書き、HTML↔docx 変換、メモリバイトストリーム出力</td>
+</tr>
+<tr>
+<td><code>vendor/webpdf</code></td>
+<td><code>ENABLE_PDF</code></td>
+<td>PDF レンダリング、<code>HTMLRenderer</code> と HTML/CSS/SVG/TTF パーサー</td>
+</tr>
+<tr>
+<td><code>vendor/pzzip</code></td>
+<td><code>ENABLE_ZIP</code></td>
+<td>zip の読み書き、メモリバッファへの直接出力に対応</td>
+</tr>
+<tr>
+<td><code>vendor/pzimage</code></td>
+<td><code>ENABLE_IMAGE</code></td>
+<td>PNG/JPEG コーデック、TrueType/OpenType のグリフアウトライン描画</td>
+</tr>
+<tr>
+<td><code>vendor/pzcharts</code></td>
+<td><code>ENABLE_CHART</code></td>
+<td>SVG チャート: 折れ線、棒、散布、ドーナツ、レーダー、ゲージ、ファネル</td>
+</tr>
+<tr>
+<td><code>vendor/webpay</code></td>
+<td><code>ENABLE_WEBPAY</code></td>
+<td>WeChat/Alipay SDK ラッパー、V3 証明書、プラットフォーム証明書、返金冪等キーを含む</td>
+</tr>
+<tr>
+<td><code>vendor/sms</code></td>
+<td><code>ENABLE_SMS</code></td>
+<td>Alibaba Cloud と Tencent Cloud の SMS クライアント</td>
+</tr>
+<tr>
+<td><code>vendor/pzredis</code></td>
+<td><code>ENABLE_REDIS</code></td>
+<td>設定セクションごとに接続を借りて返す Redis クライアント、同期 API とコルーチン API を提供</td>
+</tr>
+</tbody>
+</table>
+<p>注目すべき依存関係が 1 つあります。<code>ENABLEOFFICE</code> は <code>ENABLE_ZIP</code> を自動的にON にします。<code>pzword</code> が docx をパッケージングするときに <code>pz::zip</code> を使うためです。</p>
+<h3>長期接続</h3>
+<p>リポジトリには主にデモサイトとサンプルである 4 つの独立ディレクトリ — <code>websockets/</code>、<code>sockets/</code>、<code>mqtt/</code>、<code>redis/</code> — があります。実際のプロトコル実装は <code>vendor/httpserver/src/</code> にあります。WebSocket は <code>ws_conn.cpp</code>、<code>ws_handshake.cpp</code>、<code>ws_parser.cpp</code>、<code>ws_wire.cpp</code>、<code>websockets_callback.cpp</code>; 生 TCP は <code>http_socket.cpp</code>、<code>http_socket_client.cpp</code>、<code>sock_subpub_reg.cpp</code>; MQTT は <code>mqtt_frame.cpp</code>、<code>mqtt_session.cpp</code>、<code>mqtt_reg.cpp</code>、<code>mqtt_subpub_reg.cpp</code>、<code>http_mqtt_client.cpp</code>; Redis 長期接続は <code>http_rpcclient.cpp</code> と <code>vendor/pzredis</code> のクライアントです。スイッチは <code>ENABLE_WEBSOCKETS_CLIENT</code>、<code>ENABLE_SOCKETS_CLIENT</code>、<code>ENABLE_MQTT_CLIENT</code>(既定でON)、<code>ENABLE_REDIS_CLIENT</code>(既定でOFF、<code>ENABLE_REDIS</code> が必要)です。ビジネス側のレジストリは <code>common/</code> の <code>*_regmethod.hpp</code> 群です。</p>
+<h3>ビュー、静的ファイル、<code>.so</code> ホットロード</h3>
+<p><code>view/</code> には手書きの HTML テンプレートがあり、ビジネスドメインごとに <code>home/</code>、<code>admin/</code>、<code>cms/</code>、<code>login/</code>、<code>oauth/</code>、<code>superadmin/</code> などに分かれています。<code>viewsrc/include/viewsrc.h</code> と <code>viewsrc/include/regviewmethod.hpp</code> は手書きの登録エントリーポイントです。<code>viewsrc/view/**.cpp</code> はテンプレートパーサーが生成した C++ で、ファイル先頭に <code>//This file create by paozhu</code> が付きます(<code>viewsrc/view/home/header.cpp</code> を参照)。現在 <code>home/header.cpp</code>、<code>oauth/consent.cpp</code>、<code>oauth_client/page.cpp</code>、<code>superadmin/*.cpp</code> などが含まれます。パーサーは <code>vendor/httpcli/templateparse.hpp</code> にあります。</p>
+<p><code>www/default/</code> は静的サイトのルートで、<code>wwwpath = ./www/default</code> で設定します。</p>
+<p><code>module/</code> は共有ライブラリのディレクトリで、<code>module/controller/testviewso.so</code> と <code>module/view/{admin,cms,home,login}/*.so</code> が入っています。スイッチがそれぞれの側を担当します。<code>ENABLE_VIEWSO</code> は <code>viewsopath</code> で <code>module/view</code> を指し、<code>ENABLE_MODELSO</code> は <code>controlsopath</code> で <code>module/controller</code> を指します。ロード処理は <code>loadmodule.cpp</code> と <code>loadviewso.cpp</code> にあり、<code>pz::dll::library</code> で <code>.so</code> を開き、ライブラリハンドルをキャッシュ済み関数ポインターと一緒に保持して <code>dlclose</code> 後にポインターが無効にならないようにします。</p>
+<h2>5. 設定と拡張</h2>
+<h3>設定ファイルの場所</h3>
+<p><code>conf/</code> はサブシステムごとに分かれています: <code>server.conf</code>、<code>orm.conf</code>、<code>redis.conf</code>、<code>mqtt.conf</code>、<code>sockets.conf</code>、<code>websockets.conf</code>、<code>oauth.conf</code>、<code>webpay.conf</code>、<code>acme.conf</code>、<code>github.conf</code>、<code>test.conf</code> と、証明書と鍵のファイルです。最も触ることになる 3 つは、プロセスとサイトを担う <code>server.conf</code>、データベース接続の <code>orm.conf</code>、自動証明書発行の <code>acme.conf</code> です。ほかは対応するサブシステムを有効にしたときにだけ関係します。</p>
+<h3><code>server.conf</code></h3>
+<p>メインの設定ファイルで、起動時に 1 度だけ読みます。<code>[default]</code> のグローバルセクションと、ホスト名を付けた任意の数のサイトセクションで構成されます(ファイルでは <code>[www.hggq.com]</code> を使用)。サイトセクションは <code>wwwpath</code>、<code>http2_enable</code>、<code>acme_auto</code>、<code>upload_max_size</code>、<code>cors_domain</code>、<code>static_pre</code>、<code>fastcgi_host</code>、<code>fastcgi_port</code>、<code>siteid</code>、<code>groupid</code> を上書きできます。ここでポートを変更し、スレッドを調整し、アップロード上限を上げ、静的キャッシュを切り替え、レート制限を有効にし、証明書の更新をON にします。ファイルの内容はそのまま次です:</p>
+<pre><code>[default]
+threadmax                  = 1024
+threadmin                  = 5
+httpport                   = 80
+httpsport                  = 443
+bmcport                    = 7755 ;Baseboard Management Controller
+cothreadnum                = 4 ;Coroutines run on thread num
+per_ioc_thread_num         = 4 ;per io_context run thread num, cothreadnum * per_ioc_thread_num = threads, 4 * 4 = 16 threads
+orm_ioc_num                = 4 ;ORM io_context num;
+orm_thread_pool_num        = 4 ;0 use hardware_concurrency()
+http2_send_loop_num        = 2 ; 
+
+http2_enable               = 1
+debug_enable               = 1
+deamon_enable              = 0
+ip6_listen_enable          = 1
+
+mainhost                   = www.hggq.com
+certificate_chain_file     = www.hggq.com.pem
+private_key_file           = www.hggq.com.key
+tmp_dh_file                = dh4096.pem
+chain_crt_file             = www.hggq.com.crt
+reboot_password            = e10adc3949ba59abbe56e057f20f883e ;md5(md5("123456")+"rand_char"+md5("123456"))
+reboot_cron                = d180h5 ;MDSW+Hhours reboot process M month D day S season (1 4 7 10) W week
+clean_cron                 = m5t600 ;5-minute interval clean 600 seconds ago inactive connection
+temp_clean_time            = 86400 ;seconds(3600*24); every N seconds httpwatch scans temp folder, remove pzraw_/pzup_ files modified more than N seconds ago (60-604800)
+links_restart_process      = n9998877ts1te5 ;More than 15000 connections, restart the process from 1:00 am to 5:00 am
+session_type               = 1 ;session save type 0.file 1.memory 2.redis 3.memcache 4.reserve
+static_file_compress_cache = 1 ;1 enable, Cache static file compress(gzip,br) content to cache directory
+resident_client_show       = 0 ;1 enable /resident_stop self-check route for resident outbound clients (redis,ws,sock,mqtt), effective at startup only
+
+rate_limit_status          = 0 ; 1 enable Traffic limiting
+rate_limit_new_wait_num    = 300 ; level 1, start rate-limiting at N connections
+rate_limit_accept_wait_num = 600 ; level 2, maximum rate-limit severity (interpolation upper bound)
+rate_limit_second_num1     = 20  ; pass per second at low load
+rate_limit_second_num2     = 5   ; pass per second at high load
+
+modelspath                 = ./models
+serverpath                 = ./
+viewpath                   = ./view
+viewsopath                 = ./module/view
+
+controlpath                = ./controller
+controlsopath              = ./module/controller
+
+temppath                   = ./temp
+logpath                    = ./log
+wwwpath                    = ./www/default
+pluginspath                = ./plugins
+libspath                   = ./libs
+directorylist              = 1
+index                      = index.html
+;html cache: 带点 url 先看盘上那个文件，没过期就发文件，过期才交给同名注册路由重生成
+;非空即开，关掉请注释掉整行；其余域名段可以各写一份覆盖这里
+usehtmlcache               = 1
+usehtmlcachetime           = 3600 ;seconds 缓存文件放多久算过期，下限 10 秒
+
+acme_auto                  = 0 ;acme automatically applies for SSL certificates, 1 自动更新SSL证书
+acme_every_day             = 7 ;What time does acme run every day, 每天几点运行一次，如果有证书需要就更新
+acme_every_num             = 5 ;How many domain names are processed at a time, 每次处理几个域名
+ocsp_intv_time             = 14400 ;OCSP update interval second(14400 * 5, may be set 3600), OCSP 更新时间间隔 至少4小时
+
+staticfile_cache_num       = 0 ;0 not cache, min 10 begin
+rewrite_404                = 0 ;1 file 2 action url path
+rewrite_404_action         = index.html
+method_pre                 = 
+method_after               = 
+show_visitinfo             = 0
+upload_max_size            = 16777216
+siteid                     = 1
+groupid                    = 0
+alias_domain               = 
+init_func                  = 
+;cors_domain CORS whitelist, comma-separated; only when the request Origin matches will the corresponding ACAO be echoed and Vary: Origin be added
+;  not written / written empty  → deny by default: this site sends no CORS headers at all (logs [CORS-WARN] naming it at startup)
+;  *                   → explicitly allow all cross-origin (echo * for any origin)
+;  when a whitelist is written in this section, sites without their own cors_domain inherit this section's list
+;  cors_expose_headers response headers that page JS is allowed to read during cross-origin, if not written the header is not sent
+;  cors_domain 实际上是白名单列表，允许那些域名通行
+cors_domain                =
+;cors_expose_headers        = x-request-id, x-total-count
+;cors_credentials whether cross-origin is allowed to carry credentials (cookie / HTTP auth); 1 or starting with T means on, default off
+;  when enabled, only responses that hit the whitelist and echo a specific Origin in ACAO carry Access-Control-Allow-Credentials: true
+;  sites that allow all (ACAO is *) do not send this header even if set to 1: per spec, "*"+credentials are mutually exclusive and browsers will hard-reject
+;  this header only solves "allowed to carry": for cookies to be sent cross-site it must also be HTTPS, and the cookie itself must have SameSite=None
+;  after setting 1 the framework will also write the session cookie as SameSite=None; Secure (HTTPS requests only; not sent in plaintext,
+;  because browsers drop Secure cookies in plaintext, which would break the login state in local http dev environments)
+;cors_credentials            = 0
+;cors_allow_methods cross-origin methods allowed in preflight (Access-Control-Allow-Methods), comma-separated
+;  not writing this line → use the framework default POST, GET, OPTIONS, QUERY (QUERY is the read-only query method of the METHOD-QUERY draft)
+;  writing the whole list overrides: both the response header and the validation of Access-Control-Request-Method use this list
+;  writing empty → this site's preflight allows no methods (Allow-Methods is not sent either, cross-origin write operations will be blocked by the browser)
+;  comparison is case-insensitive, output is uniformly converted to uppercase
+; cors_allow_methods 是OPTIONS查询返回的能力
+;cors_allow_methods           = POST, GET, OPTIONS, QUERY
+
+[www.hggq.com]
+wwwpath                    = ./www/default
+http2_enable               = 1
+acme_auto                  = 0
+;rewrite_404=1
+;rewrite_404_action=index.html|psy/index.html|exam/index.html
+;controlsopath=./controller
+static_pre                 = downloadfileauth|upload
+method_pre                 =  ;api/dev/hostcors
+method_after               = 
+isuse_php                  = 0
+rewrite_php                = ./www/mpdftest|index.php
+fastcgi_host               = 127.0.0.1 ;/run/php/php8.1-fpm.sock
+fastcgi_port               = 9000
+upload_max_size            = 16777216
+siteid                     = 1
+groupid                    = 0
+alias_domain               = 
+init_func                  = 
+;cors_domain CORS whitelist, comma-separated; only when the request Origin matches will the corresponding ACAO be echoed and Vary: Origin be added
+;  *                           allow all, echo * for any origin
+;  https://www.hggq.com        if a full origin is written it is matched as-is (non-standard ports must be written in full)
+;  www.hggq.com,www.hggq.net   domain only, automatically matches both http:// and https:// schemes
+;  not writing this line               → inherit [default]'s whitelist; writing empty makes this site exit inheritance and deny by default
+;  before entering the list: uniformly lowercase, strip trailing slash, remove default port matching the scheme (:80 / :443)
+cors_domain                = www.hggq.com, www.hggq.net
+;cors_expose_headers response headers that page JS is allowed to read during cross-origin (Access-Control-Expose-Headers)
+;  if not written the header is not sent; list as needed, e.g.: x-request-id, x-total-count
+;  writing * means expose all response headers (not recommended: internal response headers would also be exposed to page scripts)
+;cors_expose_headers        =
+;cors_credentials whether cross-origin is allowed to carry credentials (cookie / HTTP auth), 1 on 0 off
+;  not writing this line → inherit [default]; writing 0 is this site explicitly disabling it, it will not follow [default]'s 1
+;  only sent when ACAO echoes a specific Origin (whitelist hit); for mutual exclusion rules see the same-named item in the [default] section
+;cors_credentials            = 0
+;cors_allow_methods cross-origin methods allowed in preflight, comma-separated
+;  not writing this line → inherit [default]; writing the whole list overrides this site's list (response header and preflight validation share the same source)
+;  writing empty → this site's preflight allows no methods; for the default four items and other notes see the same-named item in the [default] section
+;cors_allow_methods           = POST, GET, OPTIONS, QUERY
+</code></pre>
+<p>3 つのスレッド設定は連動します。<code>cothreadnum</code> は ioc 数の上限で、実際の数は <code>min(cothreadnum, コア数)</code> であり、4 未満なら 4 に引き上げます。<code>per_ioc_thread_num</code> は ioc あたりの <code>run()</code> スレッド数で、2 つの積が I/O スレッド総数です。<code>orm_thread_pool_num</code> は ORM の全スレッド数で、0 は <code>hardware_concurrency()</code> を意味します。上限は 512 で、<code>orm_ioc_num</code> 個の ioc に均等に分け、余りはインデックスの小さい ioc に割り当てます。</p>
+<p>いくつかの値は逆に読まれやすいです。<code>upload_max_size</code> の単位はバイトで、テンプレート値 16777216 は 16 MiB です。1024 より大きいときだけ制限が適用され、0 または空は無制限を意味し、サイトごとの上書きが可能です。<code>usehtmlcache</code> は空または 0 で始まる値ならOFF、それ以外の非空の値ならON です。 <code>usehtmlcachetime</code> が 10 秒未満なら 10 秒として扱います。<code>rate_limit_second_num2</code> は <code>rate_limit_second_num1</code> より厳密に小さく、<code>rate_limit_accept_wait_num</code> は <code>rate_limit_new_wait_num</code> より 100 以上大きくなければなりません。そうでない場合は 2 倍の値に再設定されます。<code>session_type</code> は 0 ファイル / 1 メモリ / 2 Redis / 3 Memcache / 4 予約です。<code>acme_every_day</code> は 2〜23 を受け付け、<code>ocsp_intv_time</code> が 3600 秒未満なら 3600 として扱います。</p>
+<p>もう一団のキーは、このリポジトリの C++ コードのどこからも読み込まれていません。歴史的な理由でファイルに残っているだけなので、まだ設定が必要だと思わないでください: <code>threadmax</code>、<code>threadmin</code>、<code>bmcport</code>、<code>staticfile_cache_num</code>、<code>modelspath</code>、<code>viewpath</code>、<code>controlpath</code>、<code>libspath</code>、<code>pluginspath</code>。コメントは <code>bmcport</code> を管理・監視ポート、<code>staticfile_cache_num</code> をキャッシュエントリ数と説明していますが、どちらも実行時の読み取り側がありません。</p>
+<h3><code>orm.conf</code></h3>
+<p>このファイルはデータベース接続を管理します。INI 形式で、セクション名がデータベースタグです(ファイルには <code>[default]</code>、<code>[docs]</code>、<code>[cms]</code>、<code>[pg]</code>、<code>[lite]</code> があります)。各セクションは空行で区切られた複数の接続ブロックを持てて、<code>type</code> で区別します。<code>type = main</code> は更新/書き込み接続、<code>type = second</code> は照会/読み取り専用接続です。同じタグの下の 2 つのブロックは別々のコネクションプールに供給されます。ファイルの内容はそのまま次です:</p>
+<pre><code>[default]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = benchmarkdbuser
+password = benchmarkdbpass
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+#ssl=ON
+#sslverify=ON                    ; Verify the certificate chain 校验证书链（配合系统 CA / SSL_CERT_FILE）
+#sslhost=db.example.com          ; Certificate domain (SNI + hostname check); when empty both fall back to host. SNI is always sent regardless of sslverify; the hostname check only runs when sslverify=ON 证书域名（SNI + 域名校验），为空则两者都用 host 兜底；域名校验只在 sslverify=ON 时执行
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = hello_world
+user     = benchmarkdbuser
+password = benchmarkdbpass
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+#ssl=ON
+#sslverify=ON
+#sslhost=db.example.com
+
+[docs]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = paozhu_docs
+user     = root
+password = 12345678
+pretable = web_
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = paozhu_docs
+user     = root
+password = 12345678
+pretable = web_
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+
+[cms]
+type     = main
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = mysql
+charset  = utf8mb4
+
+type     = second
+host     = 127.0.0.1
+port     = 3306
+dbname   = cppcms
+user     = root
+password = 12345678
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = mysql
+charset  = utf8mb4
+
+[pg]
+type     = main
+host     = 127.0.0.1
+port     = 5432
+dbname   = hello_world
+user     = hello
+password = 12345678
+pretable = 
+minpool  = 1
+maxpool  = 5
+dbtype   = postgresql
+charset  = utf8
+#ssl=ON
+#sslverify=ON                    ; 校验证书链（配合系统 CA / SSL_CERT_FILE）
+#sslhost=db.example.com          ; 证书域名（SNI + 域名校验），为空则两者都用 host 兜底（host 为 IP 时域名校验比证书的 iPAddress SAN）；SNI 不受 sslverify 开关影响总会发，域名校验只在 sslverify=ON 时执行
+
+type     = second
+host     = 127.0.0.1
+port     = 5432
+dbname   = hello_world
+user     = hello
+password = 12345678
+pretable = 
+minpool  = 5
+maxpool  = 20
+dbtype   = postgresql
+charset  = utf8
+#ssl=ON
+#sslverify=ON
+#sslhost=db.example.com
+
+[lite]
+type     = main
+host     = /Users/hzq/paozhu/docs/sqlite_lite.db
+port     =
+dbname   = lite
+user     =
+password =
+pretable =
+minpool  = 1
+maxpool  = 5
+dbtype   = sqlite
+charset  = utf8mb4
+
+type     = second
+host     = /Users/hzq/paozhu/docs/sqlite_lite.db
+port     =
+dbname   = lite
+user     =
+password =
+pretable =
+minpool  = 1
+maxpool  = 5
+dbtype   = sqlite
+charset  = utf8mb4
+</code></pre>
+<p><code>maxpool</code> と <code>minpool</code> は非対称に分割されるため誤読しやすいです。プールは ioc ごとにシャーディングされ、スロット数は <code>orm_ioc_num</code> に等しいです。<code>maxpool</code> はその役割の全スロットが共有するグローバル予算であり、スロットごとの割り当てではありません。<code>maxpool / スロット数</code> を計算し、余りをインデックスの低いスロットに 1 つずつ渡し、各スロットに最低 1 を与えます。たとえば <code>maxpool = 20</code> でスロット 4 つなら各 5、<code>maxpool = 10</code> でスロット 3 つなら 4/3/3 です。<code>minpool</code> は分割しません。各スロットが <code>minpool</code> 個の接続をあらかじめ作りますが、そのスロット自身の割り当てが上限になるため、<code>maxpool = 5</code> でスロット 4 つなら割り当てが 2/1/1/1 となり、<code>minpool = 5</code> でも結果は 2/1/1/1 です。</p>
+<p>もう 2 点あります。<code>password</code> に使えるのは印字可能な ASCII 0x21〜0x7E だけで、空白、制御文字、非 ASCII を含むブロックはスキップされ、エラーとして記録されます。SQLite ではデータベースファイルのパスを <code>host</code> に置き、<code>port</code>、<code>dbname</code>、資格情報を空にしてください。<code>ssl</code>、<code>sslverify</code>、<code>sslhost</code> は MySQL と PostgreSQL にだけ適用されます。</p>
+<h3><code>acme.conf</code></h3>
+<p>自動証明書発行を制御します。既定では ZeroSSL の ACME エンドポイントを対象とし、HTTP-01 検証を使います。ファイルの内容はそのまま次です:</p>
+<pre><code>[info]
+acme_path  = ./acme ;/Users/hzq/paozhu/acme ;项目目录下acme 目录，存放申请中间文件 The "acme" directory under the project directory stores intermediate application files
+cert_path  = ./conf ;/usr/local/etc/paozhu ;域名证书存放 Storage of domain name certificate
+email      = ;必须设置邮箱才能生效，Email must be set to take effect server.conf 相应的域名下 acme_auto=1 才能自动 
+days_remain= 10 ;剩余多少天才更新SSL证书
+
+[zerossl]
+server_url = https://acme.zerossl.com/v2/DV90
+eab_api    = https://api.zerossl.com/acme/eab-credentials-email
+eab_kid	=
+eab_hmac_key =
+email      = 
+user_name  =
+user_pwd   =
+</code></pre>
+<p>発行は 2 つの条件がともに成り立つときだけ実行されます。サイトの <code>server.conf</code> に <code>acme_auto = 1</code> があり、ここの <code>email</code> が空でないことです。メールがなければタスクは即座に戻り、<code>log/acme_log/</code> 配下に 1 行書くだけです。また <code>cert_path</code> が <code>./conf</code> であっても、現在のコードは実際には <code>server.conf</code> のあるディレクトリに証明書をコピーするため、この値は読み込まれますがコピー先には影響しません。</p>
+<p>発行の流れは <code>httpwatch</code> が毎日動かします。<code>acme_every_day</code> が時刻を決め、その 1 時間前に当日のフラグを立て、時刻になると分離スレッドが <code>acme_task</code> を実行します。タスクはサイトを順に見て <code>acme_auto</code> を確認し、プライマリドメインと <code>www</code> ドメインを組み立て、<code>acme_path/&lt;primary_domain&gt;/cert.pem</code> の残存有効期間を読みます。<code>days_remain</code> を超えていればそのサイトを飛ばします。そうでなければ ACME のアカウント、注文、HTTP-01 検証、CSR、finalize の各ステップを進め、<code>acme_path/&lt;primary_domain&gt;/</code> 配下に <code>privkey.pem</code>、<code>cert.pem</code>、<code>fullchain.pem</code> を書き出します。成功すると <code>fullchain.pem</code> を <code>conf/&lt;primary_domain&gt;.pem</code> に、<code>privkey.pem</code> を <code>conf/&lt;primary_domain&gt;.key</code> に、<code>cert.pem</code> を <code>conf/&lt;primary_domain&gt;.crt</code> にコピーし、<code>restart_ssl_config</code> を書いて SSL 設定を再読み込みさせます。<code>server.conf</code> の <code>certificate_chain_file</code>、<code>private_key_file</code>、<code>chain_crt_file</code> はまさにこのファイル名を使い、<code>server.conf</code> のあるディレクトリを基準に解決されます。</p>
+<h3>アノテーションルートの書き方</h3>
+<p>ルートはビジネス関数の上のコメントで宣言します。形式は <code>//@urlpath(pre, urlpath)</code> で、HTTP メソッドを区別するには <code>:mask</code> 接尾辞を付けられます:</p>
+<pre><code class="language-cpp">//@urlpath(superadmin_islogin,superadmin/rbac/perm)
+std::string superadmin_rbac_perm_list(std::shared_ptr&lt;httppeer&gt; peer)
+</code></pre>
+<p>この例は <code>controller/src/superadmin/rbac/rbacperm.cpp</code> から取っています。</p>
+<p>走査の後、<code>paozhu_pre</code> は <code>reg_raw(site, path, pre_sync, co_pre, reg_sync, co_reg, mask_code)</code> の形のエントリを生成し、<code>common/autocontrolmethod.hpp</code> に置きます。<code>:param</code> を含むパスはパラメーター名も <code>common/autorestfulpaths.hpp</code> に登録します。アノテーションには <code>//@urlpath(...):ratelimit(time,num)</code> の形でレート制限パラメーターを載せることもできます。例は <code>controller/src/test_maskcode.cpp</code> にあり、解析された値はルートエントリの <code>rate_time</code> と <code>rate_num</code> に入ります。</p>
+<p>アノテーションを使いたくない場合は、<code>common/reghttpmethod.hpp</code> に純粋な手書き登録方式 <code>REG_SYNC_SYNC</code> があり、<code>/helloworld</code> 用のインラインラムダも入っています。ただしこの登録は生成テーブルの後に来るため、同じ名前のパスは生成エントリに隠されます。一時的な実験には向いていますが、本番のエンドポイントには向きません。</p>
+<h3>エンドポイントの追加</h3>
+<p>普通の手順は短いです。<code>controller/src/</code> の下で適当なファイルを選び、アノテーションを付けて関数を書き、ビルドします。ビルド中に <code>paozhu_codegen</code> が <code>paozhu_pre</code> を実行し、<code>controller/include/</code> の宣言スタブと <code>common/autocontrolmethod.hpp</code> のレジストリエントリを更新します。プロセスが起動すると生成テーブルを登録し、リクエストがそのルートへ振り向けられます。</p>
+<p>エンドポイントにレート制限が必要なら、アノテーションの後に <code>ratelimit(time,num)</code> を追加してください。RBAC が必要なら、ルートに 0 以外の <code>mask_code</code> を与え、権限テーブルに同じ <code>urlpath</code> と <code>maskcode</code> の授権行を追加してください。<code>libs/rbac/rbac.h</code> のコメントは、判定には「ルートの maskcode がユーザーの有効な権限のいずれかと厳密に一致すること」が必要だと説明しています。</p>
+<h3>実行時の <code>.so</code> ロード</h3>
+<p>コンパイル時に <code>ENABLE_VIEWSO</code> または <code>ENABLE_MODELSO</code> が有効なら、<code>module/view</code> と <code>module/controller</code> 配下の <code>.so</code> ファイルを実行時にロードできます。ビュー側のエントリーポイントは <code>loadview</code> / <code>loadviewso</code> で、コントローラー側は <code>loadmodule.cpp</code> にあります。設定で <code>viewsopath</code> と <code>controlsopath</code> をそれぞれのディレクトリに向けてください。<code>module/</code> 配下のファイルはビルド成果物または手動配置の共有ライブラリであり、ソースではありません。</p>
+<h2>6. テストと自己診断</h2>
+<p>テストは既定ではビルドされず、<code>-DENABLE_TESTS=ON</code> のときだけ含まれます。<code>tests/CMakeLists.txt</code> の規則では <code>tests/*.cpp</code> と <code>tests/orm/*.cpp</code> のそれぞれに同名の実行ターゲットを作り、<code>pool_thread</code> だけが例外です。既存のケースには <code>test_framework_smoke.cpp</code>(フレームワークのスモークテスト)、<code>test_http2_ring_queue.cpp</code> と <code>test_http2_headers_split.cpp</code>(HTTP/2 送信リングとヘッダー分割)、<code>test_router_hooks.cpp</code>(ルートフック)、<code>test_jwt_smoke.cpp</code>(JWT)、<code>test_filename_safety.cpp</code>(ファイル名の安全性)、<code>test_pzexcel_p2.cpp</code> と <code>test_pzzip.cpp</code>(オプションのサブモジュール)があります。プロトコル解析用のサブディレクトリとして <code>http1_consume/</code>、<code>multipart_boundary/</code>、<code>multipart_part_headers/</code>、<code>postform/</code>、<code>raw_post_fastpath/</code>、<code>orm/</code> もあります。</p>
+<p>自己診断エンドポイントはすべて <code>controller/src/serverwatch.cpp</code> にあります。<code>/metrics</code> は Prometheus テキスト形式を出力し、<code>/paozhu_status</code> は古い独自ダッシュボード、<code>/frametasks_timeloop</code> はフレームワークのタイマータスクを示します。管理画面のログインエンドポイントは <code>admin/login</code> とレート制限付きの <code>admin/loginpost:ratelimit(60,5)</code> で、<code>controller/src/admin/main.cpp</code> に実装されています。スーパー管理者の入口は <code>superadmin/login</code> で、<code>controller/src/superadmin/supermain.cpp</code> にあります。</p>
+<h2>7. 検証の範囲</h2>
+<p>このドキュメントの結論は、ほぼソースとディレクトリの内容を読んで得たものです。ビルド設定、スレッド構成、ルーティング経路、HTTP/2 送信キュー、RBAC キャッシュ、レート制限、生成物、<code>server.conf</code> のキー、自己診断エンドポイントは、すべて最後に挙げたファイルで辿れます。今回は <code>libs/</code> と <code>vendor/</code> 配下モジュールの公開ヘッダーも読みました。<code>oauth</code>、<code>oauth_client</code>、<code>github</code>、<code>webpay</code>、<code>markdown</code>、<code>pinyin</code>、<code>ipdata</code>、<code>department</code>、<code>img</code>、<code>types</code>、<code>pzexcel</code>、<code>pzword</code>、<code>webpdf</code>、<code>pzimage</code>、<code>pzcharts</code>、<code>pzzip</code>、<code>pzredis</code>、<code>sms</code> の説明は、それぞれのヘッダーの関数シグネチャやコメントに基づいています。</p>
+<p>次の 6 つの領域は実装を 1 つずつ読みませんでした。この一覧の外の記述を、1 行ごとに検証済みの事実として扱わないでください:</p>
+<ul>
+<li><code>ENABLE_MODELSO</code> を有効にしたとき、<code>module/controller/testviewso.so</code> 内の関数名がルートにどう対応するか。スイッチとディレクトリの対応関係だけを確認し、ロード後の登録チェーン全体は確認していません。</li>
+<li>3 つの ORM モデルドメイン(<code>cms</code>/<code>pg</code>/<code>lite</code>)のフィールド範囲と生成規則。生成元、プールのシャーディング、「既存のモデルファイルは保持する」方針だけを確認しました。</li>
+<li><code>view/</code> のテンプレートを <code>viewsrc/view/*.cpp</code> にする生成構文と更新トリガー。ファイル先頭の目印とパーサーの場所だけを確認しました。</li>
+<li>各 <code>tests/*.cpp</code> ケースの具体的なアサーション。ファイル名と <code>tests/CMakeLists.txt</code> の規則だけで説明しています。</li>
+<li><code>startup/main_dev.cpp</code> と <code>startup/main_daemon.cpp</code> が fork 以外にまったく同じチェーンをたどるかどうか。両ファイルを 1 行ずつ比較していません。</li>
+<li><code>pzexcel</code>、<code>pzword</code>、<code>webpdf</code> の実装の深さ。公開ヘッダーだけを読み、各読み書きの流れは辿っていません。</li>
+</ul>
+<h2>8. 主な結論と対応ファイル</h2>
+<table>
+<thead>
+<tr>
+<th>結論</th>
+<th>ファイル</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>プロジェクト名、バージョン、すべてのビルドオプション、ソース glob</td>
+<td><code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>サードパーティ依存関係と vcpkg 機能</td>
+<td><code>vcpkg.json</code>, <code>README_CN.md</code></td>
+</tr>
+<tr>
+<td>4 種類のスレッド、ioc 数の式、ioc あたりのスレッド数、接続のラウンドロビン、strand、peer プール</td>
+<td><code>vendor/httpserver/src/server.cpp</code>, <code>vendor/httpserver/include/server.h</code>, <code>vendor/httpserver/include/client_session.h</code></td>
+</tr>
+<tr>
+<td>同期/コルーチンのルーティングチェーンと、両者が同じように振る舞うという要件</td>
+<td><code>vendor/httpserver/src/router.cpp</code>, <code>vendor/httpserver/include/router.h</code></td>
+</tr>
+<tr>
+<td>HTTP/2 送信リング、送信オブジェクトのステートマシン、待機の再接続、120 秒無進展のストリームリセット</td>
+<td><code>vendor/httpserver/include/http2_ring_queue.h</code>, <code>vendor/httpserver/include/http2_send_queue.h</code>, <code>common/cost_define.h</code>, <code>vendor/httpserver/src/server.cpp</code></td>
+</tr>
+<tr>
+<td>HTTP/1.1 の解析とリクエストモデル</td>
+<td><code>vendor/httpserver/src/http_parse.cpp</code>, <code>httppeer.cpp</code>, <code>request.cpp</code></td>
+</tr>
+<tr>
+<td><code>paozhu_pre</code> / <code>paozhu_cli</code> の役割と生成チェーン</td>
+<td><code>vendor/httpcli/autopickmethod.cpp</code>, <code>vendor/httpcli/http_cli.cpp</code>, <code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>登録順序、同名の隠蔽、<code>ROUTE-WARN</code></td>
+<td><code>vendor/httpserver/src/server.cpp</code>, <code>vendor/httpcli/autopickmethod.cpp</code></td>
+</tr>
+<tr>
+<td><code>controller/include</code> のスタブ生成と <code>file(TOUCH)</code> プレースホルダー</td>
+<td><code>vendor/httpcli/autopickmethod.cpp</code>, <code>CMakeLists.txt</code></td>
+</tr>
+<tr>
+<td>ORM モデルヘッダーの生成と「既存モデルファイルの保持」方針</td>
+<td><code>orm/cms/include/sysperms_base.h</code>, <code>models/cms/Sysperms.cpp</code></td>
+</tr>
+<tr>
+<td>ORM コネクションプールのシャーディングとシャード別ロック</td>
+<td><code>vendor/httpserver/include/orm_conn_pool.h</code>, <code>vendor/httpserver/src/orm_conn_pool.cpp</code></td>
+</tr>
+<tr>
+<td>RBAC の判定チェーン、キャッシュのシャーディング/TTL、fail-closed の振る舞い</td>
+<td><code>libs/rbac/rbac.h</code>, <code>libs/rbac/route_guard.cpp</code>, <code>libs/rbac/route_cache.cpp</code></td>
+</tr>
+<tr>
+<td>OAuth サーバー設定、トークン保存、監査</td>
+<td><code>libs/oauth/oauth_config.h</code>, <code>libs/oauth/oauth_store.h</code>, <code>libs/oauth/oauth_audit.h</code>, <code>controller/src/oauth/</code></td>
+</tr>
+<tr>
+<td>汎用 OAuth クライアントと GitHub 専用クライアント</td>
+<td><code>libs/oauth_client/oauth_client.h</code>, <code>libs/github/github_oauth.h</code></td>
+</tr>
+<tr>
+<td>決済注文のステートマシン、照会精算、アプリケーション側ロジック</td>
+<td><code>libs/webpay/webpay_order.h</code>, <code>libs/webpay/webpay_wxpayv3.h</code>, <code>vendor/webpay/include/wxpay.h</code></td>
+</tr>
+<tr>
+<td>markdown、ピンイン、IP 位置情報、組織ツリー、画像アップロード、JSON リフレクションの例</td>
+<td><code>libs/markdown/markdown2html.h</code>, <code>libs/pinyin/hanyu_to_pinyin.h</code>, <code>libs/ipdata/ip_data_obj.h</code>, <code>libs/department/department_type.h</code>, <code>libs/img/upload_images.h</code>, <code>libs/types/json_ref_obj.h</code></td>
+</tr>
+<tr>
+<td>Excel、Word、PDF の機能</td>
+<td><code>vendor/pzexcel/include/pzexcel.h</code>, <code>vendor/pzword/include/pz_word.h</code>, <code>vendor/webpdf/include/webpdf/webpdf.h</code></td>
+</tr>
+<tr>
+<td>zip、画像コーデックとグリフ描画、SVG チャート、SMS、Redis クライアント</td>
+<td><code>vendor/pzzip/include/pzzip.h</code>, <code>vendor/pzimage/include/pzpng.h</code>, <code>vendor/pzimage/include/ttffont.h</code>, <code>vendor/pzcharts/include/svg_chart.h</code>, <code>vendor/sms/include/sms.h</code>, <code>vendor/pzredis/include/redis_client.h</code></td>
+</tr>
+<tr>
+<td>長期接続のプロトコルファイルとバックエンドレジストリ</td>
+<td><code>vendor/httpserver/src/ws_*.cpp</code>, <code>http_socket*.cpp</code>, <code>mqtt_*.cpp</code>, <code>common/*_regmethod.hpp</code></td>
+</tr>
+<tr>
+<td>ビューテンプレートの生成と <code>.so</code> ホットロード</td>
+<td><code>viewsrc/view/home/header.cpp</code>, <code>vendor/httpserver/src/loadmodule.cpp</code>, <code>vendor/httpserver/src/loadviewso.cpp</code>, <code>vendor/httpserver/src/serverconfig.cpp</code></td>
+</tr>
+<tr>
+<td><code>server.conf</code> の主要項目、旧項目、パス設定</td>
+<td><code>conf/server.conf</code></td>
+</tr>
+<tr>
+<td>アノテーションルートの構文、レート制限の例、手書き登録</td>
+<td><code>controller/src/superadmin/rbac/rbacperm.cpp</code>, <code>controller/src/test_maskcode.cpp</code>, <code>common/reghttpmethod.hpp</code></td>
+</tr>
+<tr>
+<td>テストターゲットの規則と既存ケース</td>
+<td><code>tests/CMakeLists.txt</code>, <code>tests/</code></td>
+</tr>
+<tr>
+<td>自己診断エンドポイントと管理画面のログイン入口</td>
+<td><code>controller/src/serverwatch.cpp</code>, <code>controller/src/admin/main.cpp</code>, <code>controller/src/superadmin/supermain.cpp</code></td>
+</tr>
+<tr>
+<td>デーモン/フォアグラウンドのエントリーポイント</td>
+<td><code>startup/main_daemon.cpp</code>, <code>startup/main_dev.cpp</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+  </body>
+</html>

@@ -112,8 +112,32 @@
 </head>
   <body>
   <div class="container">  
+<nav class="lang-nav" aria-label="Language" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 0 12px;margin-bottom:14px;border-bottom:1px solid #888;font-size:14px;line-height:1.6;">
+<a href="paozhu_intro.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">中文</a>
+<span aria-current="page" style="font-weight:bold;padding:1px 5px;border:1px solid currentColor;border-radius:4px;background:rgba(128,128,128,0.18);">English</span>
+<a href="paozhu_intro_kr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">한국어</a>
+<a href="paozhu_intro_jp.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">日本語</a>
+<a href="paozhu_intro_de.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Deutsch</a>
+<a href="paozhu_intro_fr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Français</a>
+<a href="paozhu_intro_tr.html" style="color:inherit;text-decoration:none;padding:1px 5px;border:1px solid transparent;border-radius:4px;">Türkçe</a>
+</nav>
 <h1>Paozhu (Firecracker) Web Framework</h1>
-<p>Paozhu is a web framework written in C++. Its CMake project is named <code>Paozhu_web_framework</code>, version 1.0.0. What stands out first is that one executable ships with everything: HTTP/1.1, HTTP/2, WebSocket, raw TCP, an MQTT client, a Redis client, an ORM, template views, and static file serving all live in the same process, and compile-time switches trim whatever you do not need.</p>
+<p>Paozhu is a web framework written in C++. Source code: <a href="https://github.com/hggq/paozhu">https://github.com/hggq/paozhu</a>. What stands out first is that one executable ships with everything: HTTP/1.1, HTTP/2, WebSocket, raw TCP, an MQTT client, a Redis client, an ORM, template views, and static file serving all live in the same process, and compile-time switches trim whatever you do not need.</p>
+<p>Here is the shortest example: the handler returns a coroutine task, writing to <code>peer-&gt;output</code> produces the response body, and the route is declared by the annotation above the function:</p>
+<p>Once the server is running, open <a href="http://localhost/hello">http://localhost/hello</a> in a browser.</p>
+<pre><code class="language-cpp">#include "httppeer.h"
+#include "testhello.h"
+namespace http
+{
+//@urlpath(null,hello)
+asio::awaitable&lt;std::string&gt; testhello(std::shared_ptr&lt;httppeer&gt; peer)
+{
+    peer-&gt;output = "Hello, world!";
+    co_return "";
+}
+ 
+}// namespace http
+</code></pre>
 <p>The document follows the order a newcomer to the repository would care about: what it is, how to get it running, how a request travels through it, what each directory is responsible for, and how configuration and extension work. Every conclusion comes from the source tree in this repository, and the files behind the key conclusions are listed in the final section. A few modules were read only at the public-header level; that is noted in the final section as well.</p>
 <h2>1. What It Is</h2>
 <p>Several design choices are visible directly in the source layout.</p>
